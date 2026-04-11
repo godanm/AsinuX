@@ -1,11 +1,11 @@
 {
-    "name": "asinux",
-    "short_name": "asinux",
+    "name": "AsinuX",
+    "short_name": "AsinuX",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0a0008",
+    "theme_color": "#E63946",
+    "description": "AsinuX — the fast-paced multiplayer card game. Play online, dodge the Donkey, and climb the leaderboard.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
