@@ -139,9 +139,9 @@ class CardBackWidget extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF283593), Color(0xFF1A237E)],
+          colors: [Color(0xFF5c0a1a), Color(0xFF1a000a)],
         ),
-        border: Border.all(color: Colors.white24),
+        border: Border.all(color: Color(0xFFE63946), width: 0.8),
         boxShadow: const [
           BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(1, 2)),
         ],
@@ -151,12 +151,12 @@ class CardBackWidget extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(5),
-            border: Border.all(color: Colors.white30, width: 1.5),
+            border: Border.all(color: const Color(0xFFE63946).withValues(alpha: 0.3), width: 1.5),
           ),
           child: Center(
             child: Icon(
               Icons.style,
-              color: Colors.white.withValues(alpha: 0.25),
+              color: const Color(0xFFE63946).withValues(alpha: 0.35),
               size: width * 0.45,
             ),
           ),

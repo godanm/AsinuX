@@ -480,20 +480,27 @@ class _GameScreenState extends State<GameScreen> {
               ),
             ),
 
-            _MyInfoBar(
-              player: me,
-              isMyTurn: myTurnActive,
-              isLeader: iAmLeader,
-            ),
-
-            _MyHand(
-              player: me,
-              isMyTurn: myTurnActive,
-              currentSuit: state.currentSuit,
-              isLeader: iAmLeader,
-              busy: _actionBusy,
-              iHavePlayed: _iHavePlayed(state),
-              onPlayCard: (idx) => _playCard(state, idx),
+            _SlideUpHand(
+              visible: myTurnActive || _iHavePlayed(state),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _MyInfoBar(
+                    player: me,
+                    isMyTurn: myTurnActive,
+                    isLeader: iAmLeader,
+                  ),
+                  _MyHand(
+                    player: me,
+                    isMyTurn: myTurnActive,
+                    currentSuit: state.currentSuit,
+                    isLeader: iAmLeader,
+                    busy: _actionBusy,
+                    iHavePlayed: _iHavePlayed(state),
+                    onPlayCard: (idx) => _playCard(state, idx),
+                  ),
+                ],
+              ),
             ),
 
             const AdBannerWidget(),
@@ -1412,6 +1419,29 @@ class _PlayerPill extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Slide-up hand panel ───────────────────────────────────────────────────────
+
+class _SlideUpHand extends StatelessWidget {
+  final bool visible;
+  final Widget child;
+
+  const _SlideUpHand({required this.visible, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSlide(
+      offset: visible ? Offset.zero : const Offset(0, 0.72),
+      duration: const Duration(milliseconds: 350),
+      curve: visible ? Curves.easeOut : Curves.easeIn,
+      child: AnimatedOpacity(
+        opacity: visible ? 1.0 : 0.55,
+        duration: const Duration(milliseconds: 350),
+        child: child,
       ),
     );
   }

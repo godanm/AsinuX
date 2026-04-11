@@ -1,6 +1,8 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../services/auth_service.dart';
+import '../services/stats_service.dart';
 import '../widgets/ad_banner_widget.dart';
 import '../widgets/how_to_play_overlay.dart';
 import '../widgets/player_avatar.dart';
@@ -20,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _playerName = '';
   bool _nameLoaded = false;
   AvatarPreset _avatar = const AvatarPreset(colorIndex: -1, iconIndex: -1);
+  PlayerStats _stats = const PlayerStats();
 
   @override
   void initState() {
@@ -31,6 +34,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadName() async {
     final name = await AuthService.instance.getOrCreateDisplayName();
     if (mounted) setState(() { _playerName = name; _nameLoaded = true; });
+    // Load stats once name/uid is ready
+    final user = await AuthService.instance.signInAnonymously();
+    final stats = await StatsService.instance.getStats(user.uid);
+    if (mounted) setState(() => _stats = stats);
   }
 
   Future<void> _loadAvatar() async {
@@ -75,224 +82,310 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0d0007),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: Column(
-                children: [
-                  // ── Top bar ──────────────────────────────────────
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    child: Row(
-                      children: [
-                        // Avatar + name
-                        GestureDetector(
-                          onTap: _openSettings,
-                          child: Row(
-                            children: [
-                              PlayerAvatarWidget(
-                                radius: 22,
-                                playerId: _playerName,
-                                playerName: _playerName,
-                                preset: _avatar,
-                              ),
-                              const SizedBox(width: 10),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: const Color(0xFF0a0008),
+      body: Stack(
+        children: [
+          // ── Background suit watermarks ────────────────────────
+          Positioned.fill(child: _SuitWatermarks()),
+
+          SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: Column(
+                    children: [
+                      // ── Top bar ────────────────────────────────
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: Row(
+                          children: [
+                            GestureDetector(
+                              onTap: _openSettings,
+                              child: Row(
                                 children: [
-                                  Text(
-                                    _nameLoaded ? _playerName : '...',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
+                                  Stack(
+                                    children: [
+                                      PlayerAvatarWidget(
+                                        radius: 22,
+                                        playerId: _playerName,
+                                        playerName: _playerName,
+                                        preset: _avatar,
+                                      ),
+                                      Positioned(
+                                        bottom: 0, right: 0,
+                                        child: Container(
+                                          width: 14, height: 14,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFE63946),
+                                            shape: BoxShape.circle,
+                                            border: Border.all(color: const Color(0xFF0a0008), width: 1.5),
+                                          ),
+                                          child: const Icon(Icons.edit, size: 8, color: Colors.white),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  Text(
-                                    'Tap to edit',
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.55),
-                                      fontSize: 10,
-                                    ),
+                                  const SizedBox(width: 10),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _nameLoaded ? _playerName : '...',
+                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                                      ),
+                                      Text(
+                                        '${_stats.totalPoints} pts',
+                                        style: TextStyle(color: const Color(0xFFFFD700).withValues(alpha: 0.85), fontSize: 11, fontWeight: FontWeight.w600),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
+                            ),
+                            const Spacer(),
+                            IconButton(
+                              icon: const Icon(Icons.bar_chart_rounded, color: Colors.white54, size: 24),
+                              tooltip: 'Stats',
+                              onPressed: () async {
+                                final user = await AuthService.instance.signInAnonymously();
+                                if (!mounted) return;
+                                Navigator.push(context, MaterialPageRoute(
+                                  builder: (_) => StatsScreen(uid: user.uid, playerName: _playerName),
+                                ));
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.help_outline_rounded, color: Colors.white54, size: 24),
+                              tooltip: 'How to play',
+                              onPressed: () => showHowToPlay(context),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.settings_outlined, color: Colors.white54, size: 24),
+                              tooltip: 'Settings',
+                              onPressed: _openSettings,
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // ── Logo block ─────────────────────────────
+                      const SizedBox(height: 8),
+                      ShaderMask(
+                        shaderCallback: (bounds) => const LinearGradient(
+                          colors: [Color(0xFFE63946), Color(0xFFFF6B6B), Color(0xFFFFD700)],
+                          stops: [0.0, 0.6, 1.0],
+                        ).createShader(bounds),
+                        child: const Text(
+                          'AsinuX',
+                          style: TextStyle(
+                            fontSize: 64,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 6,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.15),
+                      Text(
+                        '— THE CARD GAME —',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: 8,
+                          color: Colors.white.withValues(alpha: 0.35),
+                        ),
+                      ).animate().fadeIn(delay: 300.ms),
+
+                      const Spacer(),
+
+                      // ── Quick stats strip ──────────────────────
+                      if (_stats.roundsPlayed > 0)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              _QuickStat(label: 'Rounds', value: '${_stats.roundsPlayed}'),
+                              _QuickStatDivider(),
+                              _QuickStat(label: 'Escaped', value: '${_stats.escapeCount}', color: Colors.greenAccent.shade400),
+                              _QuickStatDivider(),
+                              _QuickStat(label: 'Donkey', value: '${_stats.donkeyCount}', color: Colors.redAccent),
                             ],
                           ),
-                        ),
+                        ).animate().fadeIn(delay: 400.ms),
 
-                        const Spacer(),
+                      const SizedBox(height: 20),
 
-                        // TODO: re-enable leaderboard when ready
-                        // IconButton(
-                        //   icon: const Icon(Icons.emoji_events_rounded, color: Colors.white54, size: 26),
-                        //   tooltip: 'Leaderboard',
-                        //   onPressed: () async {
-                        //     final user = await AuthService.instance.signInAnonymously();
-                        //     if (!mounted) return;
-                        //     Navigator.push(context, MaterialPageRoute(
-                        //       builder: (_) => LeaderboardScreen(currentUid: user.uid),
-                        //     ));
-                        //   },
-                        // ),
-
-                        // Stats
-                        IconButton(
-                          icon: const Icon(Icons.bar_chart_rounded, color: Colors.white54, size: 26),
-                          tooltip: 'Stats',
-                          onPressed: () async {
-                            final user = await AuthService.instance.signInAnonymously();
-                            if (!mounted) return;
-                            Navigator.push(context, MaterialPageRoute(
-                              builder: (_) => StatsScreen(uid: user.uid, playerName: _playerName),
-                            ));
-                          },
-                        ),
-
-                        // Help
-                        IconButton(
-                          icon: const Icon(Icons.help_outline_rounded, color: Colors.white54, size: 26),
-                          tooltip: 'How to play',
-                          onPressed: () => showHowToPlay(context),
-                        ),
-
-                        // Settings
-                        IconButton(
-                          icon: const Icon(Icons.settings_outlined, color: Colors.white54, size: 26),
-                          tooltip: 'Settings',
-                          onPressed: _openSettings,
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // ── Title ────────────────────────────────────────
-                  const SizedBox(height: 12),
-                  Text(
-                    'AsinuX',
-                    style: TextStyle(
-                      fontSize: 56,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 4,
-                      foreground: Paint()
-                        ..shader = const LinearGradient(
-                          colors: [Color(0xFFE63946), Color(0xFFFF6B6B)],
-                        ).createShader(const Rect.fromLTWH(0, 0, 300, 60)),
-                    ),
-                  ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.2),
-                  Text(
-                    'CARD GAME',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w300,
-                      letterSpacing: 10,
-                      color: Colors.white.withValues(alpha: 0.5),
-                    ),
-                  ).animate().fadeIn(delay: 200.ms),
-
-                  const Spacer(),
-
-                  // ── Play card ────────────────────────────────────
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: GestureDetector(
-                      onTap: _nameLoaded ? _startMatch : null,
-                      child: Container(
-                        width: double.infinity,
-                        height: 160,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(24),
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [Color(0xFF3d0020), Color(0xFF1a000e)],
-                          ),
-                          border: Border.all(
-                            color: const Color(0xFFE63946).withValues(alpha: 0.4),
-                            width: 1.5,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFFE63946).withValues(alpha: 0.2),
-                              blurRadius: 24,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
-                        child: Stack(
-                          children: [
-                            // Card suit decoration left
-                            Positioned(
-                              left: 20,
-                              top: 0,
-                              bottom: 0,
-                              child: Center(
-                                child: Icon(Icons.style_rounded, size: 56, color: Colors.white.withValues(alpha: 0.55)),
+                      // ── Play button ────────────────────────────
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: GestureDetector(
+                          onTap: _nameLoaded ? _startMatch : null,
+                          child: Container(
+                            width: double.infinity,
+                            height: 140,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(28),
+                              gradient: const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [Color(0xFF5c0a1a), Color(0xFF2a0010), Color(0xFF1a000a)],
+                                stops: [0.0, 0.5, 1.0],
                               ),
+                              border: Border.all(color: const Color(0xFFE63946).withValues(alpha: 0.5), width: 1.5),
+                              boxShadow: [
+                                BoxShadow(color: const Color(0xFFE63946).withValues(alpha: 0.3), blurRadius: 32, spreadRadius: 4),
+                                BoxShadow(color: Colors.black.withValues(alpha: 0.4), blurRadius: 12),
+                              ],
                             ),
-                            // Card suit decoration right
-                            Positioned(
-                              right: 20,
-                              top: 0,
-                              bottom: 0,
-                              child: Center(
-                                child: Icon(Icons.casino_rounded, size: 56, color: Colors.white.withValues(alpha: 0.55)),
-                              ),
-                            ),
-                            // Center content
-                            Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 10),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFE63946),
-                                      borderRadius: BorderRadius.circular(50),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: const Color(0xFFE63946).withValues(alpha: 0.5),
-                                          blurRadius: 16,
+                            child: Stack(
+                              children: [
+                                // Left suit icons
+                                Positioned(
+                                  left: 16, top: 0, bottom: 0,
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text('♠', style: TextStyle(fontSize: 28, color: Colors.white.withValues(alpha: 0.6))),
+                                      Text('♣', style: TextStyle(fontSize: 22, color: Colors.white.withValues(alpha: 0.35))),
+                                    ],
+                                  ),
+                                ),
+                                // Right suit icons
+                                Positioned(
+                                  right: 16, top: 0, bottom: 0,
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text('♥', style: TextStyle(fontSize: 28, color: const Color(0xFFE63946).withValues(alpha: 0.7))),
+                                      Text('♦', style: TextStyle(fontSize: 22, color: const Color(0xFFE63946).withValues(alpha: 0.4))),
+                                    ],
+                                  ),
+                                ),
+                                // Center
+                                Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 12),
+                                        decoration: BoxDecoration(
+                                          gradient: const LinearGradient(
+                                            colors: [Color(0xFFE63946), Color(0xFFc0182a)],
+                                            begin: Alignment.topCenter,
+                                            end: Alignment.bottomCenter,
+                                          ),
+                                          borderRadius: BorderRadius.circular(50),
+                                          boxShadow: [
+                                            BoxShadow(color: const Color(0xFFE63946).withValues(alpha: 0.6), blurRadius: 20, spreadRadius: 1),
+                                          ],
                                         ),
-                                      ],
-                                    ),
-                                    child: const Text(
-                                      'FIND MATCH',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 16,
-                                        letterSpacing: 2,
+                                        child: const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.play_arrow_rounded, color: Colors.white, size: 20),
+                                            SizedBox(width: 6),
+                                            Text(
+                                              'PLAY NOW',
+                                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 17, letterSpacing: 2),
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Matchmaking with 3 players',
+                                        style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 11, letterSpacing: 0.5),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    'Play against others online',
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.4),
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ).animate().fadeIn(delay: 500.ms, duration: 500.ms).slideY(begin: 0.1),
                         ),
-                      ).animate().fadeIn(delay: 400.ms, duration: 600.ms).slideY(begin: 0.15),
-                    ),
-                  ),
+                      ),
 
-                  const SizedBox(height: 24),
-                ],
-              ),
+                      const SizedBox(height: 28),
+                    ],
+                  ),
+                ),
+                const AdBannerWidget(),
+              ],
             ),
-            const AdBannerWidget(),
-          ],
-        ),
+          ),
+        ],
       ),
+    );
+  }
+}
+
+// ── Background suit watermarks ────────────────────────────────────────────────
+
+class _SuitWatermarks extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    return Stack(
+      children: [
+        // Top-right ♥
+        Positioned(
+          top: -30, right: -20,
+          child: Transform.rotate(
+            angle: math.pi / 12,
+            child: Text('♥', style: TextStyle(fontSize: 180, color: const Color(0xFFE63946).withValues(alpha: 0.06))),
+          ),
+        ),
+        // Bottom-left ♠
+        Positioned(
+          bottom: -20, left: -20,
+          child: Transform.rotate(
+            angle: -math.pi / 10,
+            child: Text('♠', style: TextStyle(fontSize: 160, color: Colors.white.withValues(alpha: 0.04))),
+          ),
+        ),
+        // Mid ♦
+        Positioned(
+          top: size.height * 0.38, right: -10,
+          child: Text('♦', style: TextStyle(fontSize: 100, color: const Color(0xFFE63946).withValues(alpha: 0.04))),
+        ),
+        // Mid-left ♣
+        Positioned(
+          top: size.height * 0.45, left: -10,
+          child: Text('♣', style: TextStyle(fontSize: 90, color: Colors.white.withValues(alpha: 0.03))),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Quick stat pill ───────────────────────────────────────────────────────────
+
+class _QuickStat extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _QuickStat({required this.label, required this.value, this.color = Colors.white});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(value, style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 2),
+        Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 10, letterSpacing: 1)),
+      ],
+    );
+  }
+}
+
+class _QuickStatDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1, height: 28,
+      margin: const EdgeInsets.symmetric(horizontal: 24),
+      color: Colors.white.withValues(alpha: 0.1),
     );
   }
 }
