@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../models/game_state.dart';
 import '../models/player_model.dart';
@@ -35,6 +36,7 @@ class _GameScreenState extends State<GameScreen> {
   String? _escapeeMessage;
   final Set<String> _announcedEscapees = {};
   bool _iEscaped = false;
+  bool _iHaveFinished = false; // stays true even when watching after escape
 
   // Trick fly-out animation state
   Map<String, PlayingCard> _outgoingCards = {};
@@ -69,7 +71,7 @@ class _GameScreenState extends State<GameScreen> {
     // If the round/game is already over, skip the forfeit dialog entirely.
     final phase = _lastState?.phase;
     final isOver = phase == GamePhase.gameOver || phase == GamePhase.trickEnd;
-    if (isOver || _iEscaped) {
+    if (isOver || _iHaveFinished) {
       await _exitGame();
       return false;
     }
@@ -161,6 +163,7 @@ class _GameScreenState extends State<GameScreen> {
         !_iHavePlayed(state);
     if (myTurnNow && !_wasMyTurn) {
       SoundService.instance.playYourTurn();
+      HapticFeedback.mediumImpact(); // buzz: it's your turn
     }
     _wasMyTurn = myTurnNow;
 
@@ -179,7 +182,8 @@ class _GameScreenState extends State<GameScreen> {
         _announcedEscapees.add(id);
         SoundService.instance.playEscape();
         if (id == widget.playerId) {
-          setState(() => _iEscaped = true);
+          HapticFeedback.heavyImpact(); // strong buzz: you escaped!
+          setState(() { _iEscaped = true; _iHaveFinished = true; });
         } else {
           final name = state.players[id]?.name ?? '';
           setState(() => _escapeeMessage = '✅ $name escaped!');
@@ -237,6 +241,7 @@ class _GameScreenState extends State<GameScreen> {
     setState(() => _actionBusy = true);
     try {
       SoundService.instance.playCardSlap();
+      HapticFeedback.lightImpact(); // light tap: card played
       await FirebaseService.instance.playCard(
         state: state,
         playerId: widget.playerId,
@@ -333,7 +338,7 @@ class _GameScreenState extends State<GameScreen> {
         if (state.phase == GamePhase.gameOver) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
-              AdMobService.instance.showInterstitial();
+              AdMobService.instance.showRoundEndAd();
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
@@ -350,6 +355,9 @@ class _GameScreenState extends State<GameScreen> {
         if (state.phase == GamePhase.trickEnd && state.donkeyId != null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             SoundService.instance.playDonkey();
+            // Strong double-buzz for donkey reveal — noticeable but not annoying
+            HapticFeedback.heavyImpact();
+            Future.delayed(const Duration(milliseconds: 200), HapticFeedback.heavyImpact);
           });
           return _buildRoundEndScreen(state);
         }
@@ -657,7 +665,7 @@ class _GameScreenState extends State<GameScreen> {
                       if (_isHost(state))
                         ElevatedButton(
                           onPressed: () async {
-                            AdMobService.instance.showInterstitial();
+                            AdMobService.instance.showRoundEndAd();
                             await FirebaseService.instance.startNextRound(state);
                           },
                           style: ElevatedButton.styleFrom(
@@ -906,24 +914,60 @@ class _OpponentCard extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _SpinningRing(
-            active: isTheirTurn && !escaped,
-            color: const Color(0xFFE63946),
-            radius: 22,
-            child: CircleAvatar(
-              radius: 16,
-              backgroundColor: escaped
-                  ? Colors.green.shade700
-                  : playerColor(player.id),
-              child: Text(
-                escaped ? '✓' : playerInitial(player.name),
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              _SpinningRing(
+                active: isTheirTurn && !escaped,
+                color: const Color(0xFFE63946),
+                radius: 22,
+                child: CircleAvatar(
+                  radius: 16,
+                  backgroundColor: escaped
+                      ? Colors.green.shade700
+                      : playerColor(player.id),
+                  child: Text(
+                    escaped ? '✓' : playerInitial(player.name),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
-            ),
+              // Card count badge — top right of avatar
+              if (!escaped && !player.isEliminated)
+                Positioned(
+                  top: -4,
+                  right: -4,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: player.hand.length <= 2
+                          ? const Color(0xFFE63946)
+                          : const Color(0xFF1a000e),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: player.hand.length <= 2
+                            ? Colors.white
+                            : Colors.white30,
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      '${player.hand.length}',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                        color: player.hand.length <= 2
+                            ? Colors.white
+                            : Colors.white70,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 2),
           Text(

@@ -23,6 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _nameLoaded = false;
   AvatarPreset _avatar = const AvatarPreset(colorIndex: -1, iconIndex: -1);
   PlayerStats _stats = const PlayerStats();
+  BotDifficulty _difficulty = BotDifficulty.easy;
 
   @override
   void initState() {
@@ -52,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
       MaterialPageRoute(
         builder: (_) => MatchmakingScreen(
           playerName: _playerName,
-          difficulty: BotDifficulty.medium,
+          difficulty: _difficulty,
         ),
       ),
     );
@@ -100,45 +101,57 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Row(
                           children: [
                             GestureDetector(
-                              onTap: _openSettings,
+                              onTap: _nameLoaded ? _openSettings : null,
                               child: Row(
                                 children: [
                                   Stack(
                                     children: [
-                                      PlayerAvatarWidget(
-                                        radius: 22,
-                                        playerId: _playerName,
-                                        playerName: _playerName,
-                                        preset: _avatar,
-                                      ),
-                                      Positioned(
-                                        bottom: 0, right: 0,
-                                        child: Container(
-                                          width: 14, height: 14,
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFE63946),
-                                            shape: BoxShape.circle,
-                                            border: Border.all(color: const Color(0xFF0a0008), width: 1.5),
+                                      _nameLoaded
+                                          ? PlayerAvatarWidget(
+                                              radius: 22,
+                                              playerId: _playerName,
+                                              playerName: _playerName,
+                                              preset: _avatar,
+                                            )
+                                          : _Shimmer(width: 44, height: 44, radius: 22),
+                                      if (_nameLoaded)
+                                        Positioned(
+                                          bottom: 0, right: 0,
+                                          child: Container(
+                                            width: 14, height: 14,
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFE63946),
+                                              shape: BoxShape.circle,
+                                              border: Border.all(color: const Color(0xFF0a0008), width: 1.5),
+                                            ),
+                                            child: const Icon(Icons.edit, size: 8, color: Colors.white),
                                           ),
-                                          child: const Icon(Icons.edit, size: 8, color: Colors.white),
                                         ),
-                                      ),
                                     ],
                                   ),
                                   const SizedBox(width: 10),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        _nameLoaded ? _playerName : '...',
-                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                                      ),
-                                      Text(
-                                        '${_stats.totalPoints} pts',
-                                        style: TextStyle(color: const Color(0xFFFFD700).withValues(alpha: 0.85), fontSize: 11, fontWeight: FontWeight.w600),
-                                      ),
-                                    ],
-                                  ),
+                                  _nameLoaded
+                                      ? Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              _playerName,
+                                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                                            ),
+                                            Text(
+                                              '${_stats.totalPoints} pts',
+                                              style: TextStyle(color: const Color(0xFFFFD700).withValues(alpha: 0.85), fontSize: 11, fontWeight: FontWeight.w600),
+                                            ),
+                                          ],
+                                        )
+                                      : Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            _Shimmer(width: 90, height: 12, radius: 6),
+                                            const SizedBox(height: 5),
+                                            _Shimmer(width: 55, height: 10, radius: 5),
+                                          ],
+                                        ),
                                 ],
                               ),
                             ),
@@ -305,7 +318,89 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 16),
+
+                      // ── Difficulty selector ────────────────────
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.psychology_rounded,
+                                    size: 13,
+                                    color: Colors.white.withValues(alpha: 0.35)),
+                                const SizedBox(width: 5),
+                                Text(
+                                  'BOT DIFFICULTY',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    letterSpacing: 2,
+                                    color: Colors.white.withValues(alpha: 0.35),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: BotDifficulty.values.map((d) {
+                                final selected = _difficulty == d;
+                                final color = switch (d) {
+                                  BotDifficulty.easy   => const Color(0xFF4CAF50),
+                                  BotDifficulty.medium => const Color(0xFFFF9800),
+                                  BotDifficulty.hard   => const Color(0xFFE63946),
+                                };
+                                final icon = switch (d) {
+                                  BotDifficulty.easy   => Icons.sentiment_satisfied_rounded,
+                                  BotDifficulty.medium => Icons.sentiment_neutral_rounded,
+                                  BotDifficulty.hard   => Icons.sentiment_very_dissatisfied_rounded,
+                                };
+                                return Expanded(
+                                  child: GestureDetector(
+                                    onTap: () => setState(() => _difficulty = d),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                                      padding: const EdgeInsets.symmetric(vertical: 10),
+                                      decoration: BoxDecoration(
+                                        color: selected
+                                            ? color.withValues(alpha: 0.15)
+                                            : Colors.white.withValues(alpha: 0.04),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: selected ? color : Colors.white.withValues(alpha: 0.1),
+                                          width: selected ? 1.5 : 1,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          Icon(icon,
+                                              color: selected ? color : Colors.white.withValues(alpha: 0.3),
+                                              size: 20),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            d.label.toUpperCase(),
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w700,
+                                              letterSpacing: 1,
+                                              color: selected ? color : Colors.white.withValues(alpha: 0.3),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      ).animate().fadeIn(delay: 600.ms),
+
+                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
@@ -641,6 +736,59 @@ class _SettingsSheetState extends State<_SettingsSheet> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Shimmer skeleton block ────────────────────────────────────────────────────
+
+class _Shimmer extends StatefulWidget {
+  final double width;
+  final double height;
+  final double radius;
+
+  const _Shimmer({required this.width, required this.height, required this.radius});
+
+  @override
+  State<_Shimmer> createState() => _ShimmerState();
+}
+
+class _ShimmerState extends State<_Shimmer> with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000))
+      ..repeat(reverse: true);
+    _anim = Tween(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _anim,
+      builder: (_, __) => Container(
+        width: widget.width,
+        height: widget.height,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(widget.radius),
+          color: Color.lerp(
+            Colors.white.withValues(alpha: 0.07),
+            Colors.white.withValues(alpha: 0.18),
+            _anim.value,
+          ),
+        ),
       ),
     );
   }

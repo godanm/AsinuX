@@ -6,5 +6,6 @@ class AdMobService {
 
   Future<void> initialize() async {}
   void showInterstitial() {}
+  void showRoundEndAd() {}
   dynamic createBannerAd() => null;
 }

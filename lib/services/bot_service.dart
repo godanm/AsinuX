@@ -45,24 +45,42 @@ const _botNames = [
   'Max', 'Jade', 'Sam', 'Brooke',
 ];
 
+// ── Game Phase ───────────────────────────────────────────────────────────────
+
+enum _Phase { early, mid, late }
+
 // ── Game Memory ──────────────────────────────────────────────────────────────
 
 class _GameMemory {
   final Set<String> _gone = {};
   final Map<String, Set<int>> _voids = {};
+  // Count of cards seen per suit (played onto the table)
+  final Map<int, int> _suitGoneCount = {};
 
   void reset() {
     _gone.clear();
     _voids.clear();
+    _suitGoneCount.clear();
   }
 
-  void markGone(PlayingCard card) => _gone.add(_k(card));
+  void markGone(PlayingCard card) {
+    _gone.add(_k(card));
+    _suitGoneCount[card.suit.index] = (_suitGoneCount[card.suit.index] ?? 0) + 1;
+  }
 
   void recordCut(String playerId, int leadSuitIndex) =>
       _voids.putIfAbsent(playerId, () => {}).add(leadSuitIndex);
 
   bool isVoidIn(String playerId, int suitIndex) =>
       _voids[playerId]?.contains(suitIndex) ?? false;
+
+  /// How many cards of this suit have gone "outside" (been played/discarded).
+  /// 13 total per suit in a standard deck.
+  int goneCount(int suitIndex) => _suitGoneCount[suitIndex] ?? 0;
+
+  /// Danger score for holding a card of this suit (0–1).
+  /// Higher = more cards gone = harder for others to follow suit = vettu risk.
+  double suitDanger(int suitIndex) => goneCount(suitIndex) / 13.0;
 
   int? highestLiveRank(int suitIndex) {
     for (int r = 12; r >= 0; r--) {
@@ -274,30 +292,55 @@ class BotService {
         BotDifficulty.hard   => _chooseHard(bot, state),
       };
 
-  // ── EASY: pure random ────────────────────────────────────────
+  // ── Game phase ───────────────────────────────────────────────
   //
-  // Picks any valid card at random. Follows suit if it has one
-  // (Firebase rejects invalid plays), otherwise plays anything.
+  // Based on average cards remaining across active players.
+  // Early: >8 cards avg  |  Mid: 4–8  |  Late: <4
+
+  _Phase _gamePhase(GameState state) {
+    final active = state.activePlayers.where((p) => p.hand.isNotEmpty).toList();
+    if (active.isEmpty) return _Phase.late;
+    final avg = active.map((p) => p.hand.length).reduce((a, b) => a + b) / active.length;
+    if (avg > 8) return _Phase.early;
+    if (avg > 4) return _Phase.mid;
+    return _Phase.late;
+  }
+
+  // ── EASY: pure random ────────────────────────────────────────
 
   int _chooseEasy(Player bot, GameState state) {
     final hand = bot.hand;
     if (state.currentSuit == null) return _random.nextInt(hand.length);
-
     final suit = state.currentSuit!;
     final matching = [for (int i = 0; i < hand.length; i++) if (hand[i].suit.index == suit) i];
     if (matching.isNotEmpty) return matching[_random.nextInt(matching.length)];
     return _random.nextInt(hand.length);
   }
 
-  // ── MEDIUM: suit-aware, no memory ────────────────────────────
+  // ── MEDIUM: phase-aware, no memory ───────────────────────────
   //
-  // Follows suit. When following, avoids being the table high
-  // (picks a safe card below current highest if possible).
-  // When cutting, dumps highest rank.
+  // Early: dump highest cards when leading.
+  // Late: play under the table, never be highest unless forced.
+  // Cut: dump highest danger card.
 
   int _chooseMedium(Player bot, GameState state) {
     final hand = bot.hand;
-    if (state.currentSuit == null) return _random.nextInt(hand.length);
+    final phase = _gamePhase(state);
+
+    if (state.currentSuit == null) {
+      // Leading
+      if (phase == _Phase.early) {
+        // Early: dump highest card (A, K, Q) — low vettu risk
+        return hand.indexed
+            .reduce((a, b) => a.$2.rank.index > b.$2.rank.index ? a : b)
+            .$1;
+      } else {
+        // Mid/Late: play lowest card — stay under the radar
+        return hand.indexed
+            .reduce((a, b) => a.$2.rank.index < b.$2.rank.index ? a : b)
+            .$1;
+      }
+    }
 
     final suit = state.currentSuit!;
     final matching = [for (int i = 0; i < hand.length; i++) if (hand[i].suit.index == suit) i];
@@ -309,26 +352,32 @@ class BotService {
           tableHigh = played.rank.index;
         }
       }
+      // Late game: always try to play under — never be top card
       final safe = matching.where((i) => hand[i].rank.index < tableHigh).toList();
       if (safe.isNotEmpty) {
+        // Play highest safe card (use up big cards while staying below table high)
         safe.sort((a, b) => hand[b].rank.index.compareTo(hand[a].rank.index));
         return safe.first;
       }
-      // No safe card — play lowest to minimise pickup damage
+      // Forced to play — go lowest
       matching.sort((a, b) => hand[a].rank.index.compareTo(hand[b].rank.index));
       return matching.first;
     }
 
-    // Cutting — dump highest card
+    // Cutting — dump highest rank (vettu is a weapon, clean your hand)
     return hand.indexed
         .reduce((a, b) => a.$2.rank.index > b.$2.rank.index ? a : b)
         .$1;
   }
 
-  // ── HARD: full memory + void tracking ────────────────────────
+  // ── HARD: full memory + phase + targeting ─────────────────────
   //
-  // Uses _GameMemory to lead safely, follow aggressively when
-  // protected, and cut with the most dangerous card.
+  // Early:  aggressively dump Aces/Kings when leading.
+  // Mid:    track voids, lead depleted suits to target the player
+  //         closest to winning (fewest cards).
+  // Late:   never be highest on table. Play under everyone.
+  // Cut:    dump highest danger card into the pile.
+  // Vettu target: always aim at the player with fewest cards.
 
   int _chooseHard(Player bot, GameState state) {
     if (state.currentSuit == null) return _leadCard(bot, state);
@@ -342,22 +391,71 @@ class BotService {
 
   int _leadCard(Player bot, GameState state) {
     final hand = bot.hand;
-    final opponentIds = state.activePlayers
-        .where((p) => p.id != bot.id)
-        .map((p) => p.id)
-        .toList();
+    final phase = _gamePhase(state);
+    final opponents = state.activePlayers.where((p) => p.id != bot.id && p.hand.isNotEmpty).toList();
+    final opponentIds = opponents.map((p) => p.id).toList();
 
+    // ── Target: the opponent closest to winning (fewest cards) ──
+    // We want to force a vettu onto them.
+    final target = opponents.isEmpty
+        ? null
+        : opponents.reduce((a, b) => a.hand.length < b.hand.length ? a : b);
+
+    _log('${bot.name} LEADING [${phase.name}] — target=${target?.name} (${target?.hand.length} cards)');
+
+    // ── Early game: dump high cards aggressively ─────────────────
+    if (phase == _Phase.early) {
+      // Pick highest card in a suit where NO opponent is void
+      // (safe to play high — everyone can follow)
+      int bestIdx = 0;
+      int bestRank = -1;
+      for (int i = 0; i < hand.length; i++) {
+        final card = hand[i];
+        final voids = _memory.knownVoidCount(opponentIds, card.suit.index);
+        if (voids == 0 && card.rank.index > bestRank) {
+          bestRank = card.rank.index;
+          bestIdx = i;
+        }
+      }
+      // If all suits have known voids, fall through to safe lead
+      if (bestRank >= 0) {
+        _log('${bot.name} EARLY: dumping high card ${hand[bestIdx].rank.name}');
+        return bestIdx;
+      }
+    }
+
+    // ── Mid/Late: target the leader with a depleted suit ─────────
+    // If we know the target is void in a suit, lead that suit to force a vettu on them.
+    if (target != null && phase != _Phase.early) {
+      for (int s = 0; s < 4; s++) {
+        if (_memory.isVoidIn(target.id, s)) {
+          // Find lowest card of this suit in hand to lead — low card, big damage
+          final ofSuit = [for (int i = 0; i < hand.length; i++) if (hand[i].suit.index == s) i];
+          if (ofSuit.isNotEmpty) {
+            ofSuit.sort((a, b) => hand[a].rank.index.compareTo(hand[b].rank.index));
+            _log('${bot.name} TARGETING ${target.name} with depleted suit ${Suit.values[s].name}');
+            return ofSuit.first;
+          }
+        }
+      }
+    }
+
+    // ── Default lead: safest card ─────────────────────────────────
+    // Score = rank + isTopCard penalty + void risk + suit danger
+    // Lower score = safer to lead.
     int bestIdx = 0;
     double bestScore = double.infinity;
 
-    _log('${bot.name} LEADING — evaluating ${hand.length} cards:');
     for (int i = 0; i < hand.length; i++) {
       final card = hand[i];
       final s = card.suit.index;
-      final topCard = _memory.isTopCard(card) ? 25.0 : 0.0;
-      final voids = _memory.knownVoidCount(opponentIds, s).toDouble();
-      final score = card.rank.index + topCard + voids * 8;
-      _log('  ${card.rank.name} of ${Suit.values[s].name} → score=$score');
+      final topPenalty = _memory.isTopCard(card) ? 30.0 : 0.0;
+      final voidRisk = _memory.knownVoidCount(opponentIds, s) * 10.0;
+      final dangerRisk = _memory.suitDanger(s) * 20.0; // many cards gone = risky suit to lead
+      final rankBase = phase == _Phase.late ? (12 - card.rank.index).toDouble() : card.rank.index.toDouble();
+      final score = rankBase + topPenalty + voidRisk + dangerRisk;
+
+      _log('  ${card.rank.name}/${Suit.values[s].name} top=$topPenalty void=$voidRisk danger=$dangerRisk → $score');
       if (score < bestScore) { bestScore = score; bestIdx = i; }
     }
 
@@ -367,6 +465,8 @@ class BotService {
 
   int _followCard(Player bot, GameState state, List<int> matching, int leadSuit) {
     final hand = bot.hand;
+    final phase = _gamePhase(state);
+
     int tableHigh = -1;
     for (final played in state.playedCards.values) {
       if (played.suit.index == leadSuit && played.rank.index > tableHigh) {
@@ -374,30 +474,45 @@ class BotService {
       }
     }
 
+    // Safe cards: below the current table high (won't be top card)
     final safe = matching.where((i) => hand[i].rank.index < tableHigh).toList();
+
     if (safe.isNotEmpty) {
-      safe.sort((a, b) => hand[b].rank.index.compareTo(hand[a].rank.index));
+      if (phase == _Phase.early) {
+        // Early: use highest safe card — dump big cards while still protected
+        safe.sort((a, b) => hand[b].rank.index.compareTo(hand[a].rank.index));
+      } else {
+        // Mid/Late: use lowest safe card — stay as low as possible
+        safe.sort((a, b) => hand[a].rank.index.compareTo(hand[b].rank.index));
+      }
       return safe.first;
     }
 
+    // No safe card — forced to potentially be top card
+    // Late game: play absolute lowest to minimise pickup damage
+    // Early game: doesn't matter much, play lowest anyway
     final sorted = List<int>.from(matching)
-      ..sort((a, b) => hand[b].rank.index.compareTo(hand[a].rank.index));
+      ..sort((a, b) => hand[a].rank.index.compareTo(hand[b].rank.index));
     return sorted.first;
   }
 
   int _cutCard(Player bot, GameState state) {
     final hand = bot.hand;
+    // Vettu is a weapon — dump the most dangerous card in your hand.
+    // Danger = high rank + high suit danger (many cards of that suit already gone
+    // means you're likely to face a vettu on that suit soon anyway).
     int bestIdx = 0;
     double bestDanger = -1;
 
     for (int i = 0; i < hand.length; i++) {
       final card = hand[i];
-      final top = _memory.highestLiveRank(card.suit.index) ?? card.rank.index;
-      final isTop = card.rank.index >= top ? 15.0 : 0.0;
-      final danger = card.rank.index + isTop;
+      final suitDanger = _memory.suitDanger(card.suit.index) * 15.0;
+      final isTop = _memory.isTopCard(card) ? 20.0 : 0.0;
+      final danger = card.rank.index + isTop + suitDanger;
       if (danger > bestDanger) { bestDanger = danger; bestIdx = i; }
     }
 
+    _log('${bot.name} CUTTING with ${hand[bestIdx].rank.name} of ${hand[bestIdx].suit.name}');
     return bestIdx;
   }
 
