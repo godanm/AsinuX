@@ -508,7 +508,7 @@ class _GameScreenState extends State<GameScreen> {
                 children: [
                   Positioned.fill(
                     child: Container(
-                      color: const Color(0xFF2a0018),
+                      color: const Color(0xFFF5EDE0),
                     ),
                   ),
                   Center(
@@ -1036,76 +1036,86 @@ class _CenterTable extends StatelessWidget {
 
   const _CenterTable({required this.state, required this.myId});
 
+  // Slot colors per seat index (matches the colorful placeholder look)
+  static const _slotColors = [
+    Color(0xFFE8B84B), // amber
+    Color(0xFF4A7FD4), // blue
+    Color(0xFFD44A8C), // rose
+    Color(0xFF4AB87A), // green
+  ];
+
   @override
   Widget build(BuildContext context) {
     final played = state.playedCards;
-    if (played.isEmpty) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.style_rounded,
-            color: Colors.white.withValues(alpha: 0.15),
-            size: 48,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Waiting for leader...',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.3),
-              fontSize: 12,
-            ),
-          ),
-        ],
-      );
-    }
-
-    // Sort by seat order so cards always appear in player-position order
-    final orderedEntries = state.playerOrder
-        .where(played.containsKey)
-        .map((id) => MapEntry(id, played[id]!))
-        .toList();
+    final order = state.playerOrder;
 
     return Wrap(
-      spacing: 8,
-      runSpacing: 8,
+      spacing: 10,
+      runSpacing: 10,
       alignment: WrapAlignment.center,
-      children: orderedEntries.map((e) {
-        final isMe = e.key == myId;
-        final playerName = state.players[e.key]?.name.split(' ').last ?? '';
-        final isCut = state.currentSuit != null &&
-            e.value.suit.index != state.currentSuit;
+      children: List.generate(order.length.clamp(0, 4), (i) {
+        final id = order[i];
+        final card = played[id];
+        final isMe = id == myId;
+        final playerName = isMe ? 'You' : (state.players[id]?.name.split(' ').last ?? '');
+        final slotColor = _slotColors[i % _slotColors.length];
+        final isCut = card != null &&
+            state.currentSuit != null &&
+            card.suit.index != state.currentSuit;
+
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              decoration: isCut
-                  ? BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.redAccent, width: 2),
-                    )
-                  : null,
-              child: CardWidget(
-                card: e.value,
-                width: 58,
-                height: 82,
+            if (card != null)
+              Container(
+                decoration: isCut
+                    ? BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.redAccent, width: 2.5),
+                      )
+                    : null,
+                child: CardWidget(card: card, width: 62, height: 88),
+              )
+                  .animate()
+                  .slideY(begin: isMe ? 0.6 : -0.6, duration: 300.ms, curve: Curves.easeOut)
+                  .fadeIn(duration: 250.ms)
+            else
+              // Placeholder slot
+              Container(
+                width: 62,
+                height: 88,
+                decoration: BoxDecoration(
+                  color: slotColor.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: slotColor.withValues(alpha: 0.55),
+                    width: 2.5,
+                  ),
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.add_rounded,
+                    color: slotColor.withValues(alpha: 0.4),
+                    size: 24,
+                  ),
+                ),
               ),
-            )
-                .animate()
-                .slideY(begin: isMe ? 0.6 : -0.6, duration: 300.ms, curve: Curves.easeOut)
-                .fadeIn(duration: 250.ms),
             const SizedBox(height: 4),
             Text(
-              isMe ? 'You' : playerName,
+              playerName,
               style: TextStyle(
-                color: isCut ? Colors.redAccent : Colors.white.withValues(alpha: 0.5),
+                color: isCut
+                    ? Colors.redAccent
+                    : (card != null
+                        ? Colors.black54
+                        : slotColor.withValues(alpha: 0.6)),
                 fontSize: 10,
-                fontWeight: isCut ? FontWeight.bold : FontWeight.normal,
+                fontWeight: isCut ? FontWeight.bold : FontWeight.w500,
               ),
-            ).animate().fadeIn(delay: 200.ms, duration: 200.ms),
+            ).animate().fadeIn(delay: 100.ms, duration: 200.ms),
           ],
         );
-      }).toList(),
+      }),
     );
   }
 }

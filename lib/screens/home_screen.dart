@@ -5,6 +5,7 @@ import '../services/auth_service.dart';
 import '../services/stats_service.dart';
 import '../widgets/ad_banner_widget.dart';
 import '../widgets/how_to_play_overlay.dart';
+import '../widgets/feedback_sheet.dart';
 import '../widgets/player_avatar.dart';
 import '../services/bot_service.dart';
 import 'matchmaking_screen.dart';
@@ -100,7 +101,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         child: Row(
                           children: [
-                            GestureDetector(
+                            Flexible(
+                              child: GestureDetector(
                               onTap: _nameLoaded ? _openSettings : null,
                               child: Row(
                                 children: [
@@ -155,6 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ],
                               ),
                             ),
+                            ),
                             const Spacer(),
                             IconButton(
                               icon: const Icon(Icons.bar_chart_rounded, color: Colors.white54, size: 24),
@@ -171,6 +174,11 @@ class _HomeScreenState extends State<HomeScreen> {
                               icon: const Icon(Icons.help_outline_rounded, color: Colors.white54, size: 24),
                               tooltip: 'How to play',
                               onPressed: () => showHowToPlay(context),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.outlined_flag, color: Colors.white54, size: 22),
+                              tooltip: 'Feedback / Report issue',
+                              onPressed: () => FeedbackSheet.show(context),
                             ),
                             IconButton(
                               icon: const Icon(Icons.settings_outlined, color: Colors.white54, size: 24),
@@ -318,85 +326,67 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 10),
 
-                      // ── Difficulty selector ────────────────────
+                      // ── Difficulty picker ─────────────────────────
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.psychology_rounded,
-                                    size: 13,
-                                    color: Colors.white.withValues(alpha: 0.35)),
-                                const SizedBox(width: 5),
-                                Text(
-                                  'BOT DIFFICULTY',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    letterSpacing: 2,
-                                    color: Colors.white.withValues(alpha: 0.35),
-                                    fontWeight: FontWeight.w600,
+                        padding: const EdgeInsets.symmetric(horizontal: 28),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: BotDifficulty.values.map((d) {
+                            final selected = _difficulty == d;
+                            final color = switch (d) {
+                              BotDifficulty.easy   => const Color(0xFF4CAF50),
+                              BotDifficulty.medium => const Color(0xFFFF9800),
+                              BotDifficulty.hard   => const Color(0xFFE63946),
+                            };
+                            final icon = switch (d) {
+                              BotDifficulty.easy   => Icons.child_care_rounded,
+                              BotDifficulty.medium => Icons.person_rounded,
+                              BotDifficulty.hard   => Icons.local_fire_department_rounded,
+                            };
+                            final label = switch (d) {
+                              BotDifficulty.easy   => 'Easy',
+                              BotDifficulty.medium => 'Medium',
+                              BotDifficulty.hard   => 'Hard',
+                            };
+                            return GestureDetector(
+                              onTap: () => setState(() => _difficulty = d),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                margin: const EdgeInsets.symmetric(horizontal: 6),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: selected
+                                      ? color.withValues(alpha: 0.18)
+                                      : Colors.white.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: selected
+                                        ? color.withValues(alpha: 0.7)
+                                        : Colors.white.withValues(alpha: 0.1),
+                                    width: 1,
                                   ),
                                 ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: BotDifficulty.values.map((d) {
-                                final selected = _difficulty == d;
-                                final color = switch (d) {
-                                  BotDifficulty.easy   => const Color(0xFF4CAF50),
-                                  BotDifficulty.medium => const Color(0xFFFF9800),
-                                  BotDifficulty.hard   => const Color(0xFFE63946),
-                                };
-                                final icon = switch (d) {
-                                  BotDifficulty.easy   => Icons.sentiment_satisfied_rounded,
-                                  BotDifficulty.medium => Icons.sentiment_neutral_rounded,
-                                  BotDifficulty.hard   => Icons.sentiment_very_dissatisfied_rounded,
-                                };
-                                return Expanded(
-                                  child: GestureDetector(
-                                    onTap: () => setState(() => _difficulty = d),
-                                    child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
-                                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                                      padding: const EdgeInsets.symmetric(vertical: 10),
-                                      decoration: BoxDecoration(
-                                        color: selected
-                                            ? color.withValues(alpha: 0.15)
-                                            : Colors.white.withValues(alpha: 0.04),
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                          color: selected ? color : Colors.white.withValues(alpha: 0.1),
-                                          width: selected ? 1.5 : 1,
-                                        ),
-                                      ),
-                                      child: Column(
-                                        children: [
-                                          Icon(icon,
-                                              color: selected ? color : Colors.white.withValues(alpha: 0.3),
-                                              size: 20),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            d.label.toUpperCase(),
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w700,
-                                              letterSpacing: 1,
-                                              color: selected ? color : Colors.white.withValues(alpha: 0.3),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ],
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(icon,
+                                      color: selected ? color : Colors.white.withValues(alpha: 0.3),
+                                      size: 16),
+                                    const SizedBox(width: 5),
+                                    Text(label,
+                                      style: TextStyle(
+                                        color: selected ? color : Colors.white.withValues(alpha: 0.3),
+                                        fontSize: 12,
+                                        fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+                                        letterSpacing: 0.5,
+                                      )),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
                         ),
                       ).animate().fadeIn(delay: 600.ms),
 
