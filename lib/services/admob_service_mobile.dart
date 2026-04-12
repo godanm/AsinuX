@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class AdMobService {
@@ -7,20 +8,28 @@ class AdMobService {
   AdMobService._();
 
   // ── Ad Unit IDs ──────────────────────────────────────────────
+  // In debug mode, always use Google's official test IDs so ads render.
+  // Real IDs only serve once the app is live and AdMob-approved.
   static String get bannerAdUnitId {
-    if (Platform.isAndroid) {
-      return 'ca-app-pub-9287774769346149/5092029867';
-    } else {
-      return 'ca-app-pub-9287774769346149/2135665202';
+    if (kDebugMode) {
+      return Platform.isAndroid
+          ? 'ca-app-pub-3940256099942544/6300978111'  // test banner Android
+          : 'ca-app-pub-3940256099942544/2934735716'; // test banner iOS
     }
+    return Platform.isAndroid
+        ? 'ca-app-pub-9287774769346149/5092029867'
+        : 'ca-app-pub-9287774769346149/2135665202';
   }
 
   static String get interstitialAdUnitId {
-    if (Platform.isAndroid) {
-      return 'ca-app-pub-9287774769346149/2330135158';
-    } else {
-      return 'ca-app-pub-9287774769346149/2985712449';
+    if (kDebugMode) {
+      return Platform.isAndroid
+          ? 'ca-app-pub-3940256099942544/1033173712'  // test interstitial Android
+          : 'ca-app-pub-3940256099942544/4411468910'; // test interstitial iOS
     }
+    return Platform.isAndroid
+        ? 'ca-app-pub-9287774769346149/2330135158'
+        : 'ca-app-pub-9287774769346149/2985712449';
   }
 
   InterstitialAd? _interstitialAd;

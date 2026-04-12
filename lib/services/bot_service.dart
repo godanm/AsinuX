@@ -102,13 +102,18 @@ class BotService {
 
   // ── Public API ───────────────────────────────────────────────
 
-  Future<void> addBots(GameState state, int count) async {
+  Future<void> addBots(GameState state, int count, {List<String>? names}) async {
     final db = FirebaseDatabase.instance;
     final roomRef = db.ref('rooms/${state.roomId}');
-    final usedNames = state.players.values.map((p) => p.name).toSet();
-    final availableNames =
-        _botNames.where((n) => !usedNames.contains(n)).toList()
-          ..shuffle(_random);
+    final List<String> availableNames;
+    if (names != null && names.length >= count) {
+      availableNames = names;
+    } else {
+      final usedNames = state.players.values.map((p) => p.name).toSet();
+      availableNames =
+          _botNames.where((n) => !usedNames.contains(n)).toList()
+            ..shuffle(_random);
+    }
 
     final newOrder = List<String>.from(state.playerOrder);
 

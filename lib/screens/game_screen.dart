@@ -36,6 +36,13 @@ class _GameScreenState extends State<GameScreen> {
   final Set<String> _announcedEscapees = {};
   bool _iEscaped = false;
 
+  // Trick fly-out animation state
+  Map<String, PlayingCard> _outgoingCards = {};
+  String? _outgoingWinnerId;
+  bool _outgoingIsCut = false;
+  List<String> _outgoingOrder = [];
+  Timer? _outgoingTimer;
+
   @override
   void initState() {
     super.initState();
@@ -46,6 +53,7 @@ class _GameScreenState extends State<GameScreen> {
   void dispose() {
     _trickTimer?.cancel();
     BotService.instance.stop(); // safety net: stop bots if screen is force-closed
+    _outgoingTimer?.cancel();
     super.dispose();
   }
 
@@ -124,7 +132,28 @@ class _GameScreenState extends State<GameScreen> {
   bool _wasMyTurn = false;
 
   void _onStateChange(GameState state) {
+    final prev = _lastState;
     _lastState = state;
+
+    // Detect trick being cleared — trigger fly-out animation
+    if (prev != null &&
+        prev.playedCards.isNotEmpty &&
+        state.playedCards.isEmpty) {
+      final winnerId = prev.trickWinnerId;
+      final isCut = winnerId == null;
+      // For a cut the cutter becomes the next leader
+      final effectiveId = winnerId ?? state.currentLeader;
+      _outgoingTimer?.cancel();
+      setState(() {
+        _outgoingCards = Map.from(prev.playedCards);
+        _outgoingOrder = List.from(prev.playerOrder);
+        _outgoingWinnerId = effectiveId;
+        _outgoingIsCut = isCut;
+      });
+      _outgoingTimer = Timer(const Duration(milliseconds: 750), () {
+        if (mounted) setState(() => _outgoingCards = {});
+      });
+    }
 
     // Your turn notification
     final myTurnNow = _isMyTurn(state) &&
@@ -445,62 +474,72 @@ class _GameScreenState extends State<GameScreen> {
               onExit: () => _confirmExit(context),
             ),
 
+            // Opponents — fixed height so avatars always render consistently
+            SizedBox(
+              height: 110,
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: RadialGradient(
+                    center: Alignment.topCenter,
+                    radius: 1.5,
+                    colors: [Color(0xFF4a0028), Color(0xFF220010)],
+                  ),
+                ),
+                child: _OpponentsLayout(
+                  players: others,
+                  currentTurn: state.currentTurn,
+                  playedCards: state.playedCards,
+                  leadSuit: state.currentSuit,
+                ),
+              ),
+            ),
+
+            // Center table — sits between opponents and hand, never overlaps either
             Expanded(
-              flex: 5,
               child: Stack(
                 children: [
-                  Container(
-                    decoration: const BoxDecoration(
-                      gradient: RadialGradient(
-                        center: Alignment.center,
-                        radius: 1.2,
-                        colors: [Color(0xFF4a0028), Color(0xFF220010)],
-                      ),
+                  Positioned.fill(
+                    child: Container(
+                      color: const Color(0xFF2a0018),
                     ),
                   ),
-
-                  _OpponentsLayout(
-                    players: others,
-                    currentTurn: state.currentTurn,
-                    playedCards: state.playedCards,
-                    leadSuit: state.currentSuit,
-                  ),
-
                   Center(
                     child: _CenterTable(
                       state: state,
                       myId: widget.playerId,
                     ),
                   ),
-
-                  // Show players who just escaped (emptied their hand)
+                  // Fly-out animation when trick is cleared
+                  if (_outgoingCards.isNotEmpty)
+                    Center(
+                      child: _TrickFlyOut(
+                        cards: _outgoingCards,
+                        playerOrder: _outgoingOrder,
+                        winnerId: _outgoingWinnerId,
+                        isCut: _outgoingIsCut,
+                        myId: widget.playerId,
+                      ),
+                    ),
                   if (trickEnded)
                     ..._escapedBadges(state),
                 ],
               ),
             ),
 
-            _SlideUpHand(
-              visible: myTurnActive || _iHavePlayed(state),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _MyInfoBar(
-                    player: me,
-                    isMyTurn: myTurnActive,
-                    isLeader: iAmLeader,
-                  ),
-                  _MyHand(
-                    player: me,
-                    isMyTurn: myTurnActive,
-                    currentSuit: state.currentSuit,
-                    isLeader: iAmLeader,
-                    busy: _actionBusy,
-                    iHavePlayed: _iHavePlayed(state),
-                    onPlayCard: (idx) => _playCard(state, idx),
-                  ),
-                ],
-              ),
+            // Hand — always visible
+            _MyInfoBar(
+              player: me,
+              isMyTurn: myTurnActive,
+              isLeader: iAmLeader,
+            ),
+            _MyHand(
+              player: me,
+              isMyTurn: myTurnActive,
+              currentSuit: state.currentSuit,
+              isLeader: iAmLeader,
+              busy: _actionBusy,
+              iHavePlayed: _iHavePlayed(state),
+              onPlayCard: (idx) => _playCard(state, idx),
             ),
 
             const AdBannerWidget(),
@@ -847,12 +886,12 @@ class _OpponentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
         color: escaped
             ? Colors.green.shade900.withValues(alpha: 0.35)
             : Colors.black.withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: escaped
               ? Colors.green.shade700
@@ -870,28 +909,28 @@ class _OpponentCard extends StatelessWidget {
           _SpinningRing(
             active: isTheirTurn && !escaped,
             color: const Color(0xFFE63946),
-            radius: 28,
+            radius: 22,
             child: CircleAvatar(
-              radius: 22,
+              radius: 16,
               backgroundColor: escaped
                   ? Colors.green.shade700
                   : playerColor(player.id),
               child: Text(
                 escaped ? '✓' : playerInitial(player.name),
                 style: const TextStyle(
-                  fontSize: 18,
+                  fontSize: 13,
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(
-            player.name.split(' ').last,
+            player.name.split('_').first, // show just first name part
             style: TextStyle(
               color: escaped ? Colors.green.shade300 : Colors.white,
-              fontSize: 11,
+              fontSize: 9,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -977,11 +1016,17 @@ class _CenterTable extends StatelessWidget {
       );
     }
 
+    // Sort by seat order so cards always appear in player-position order
+    final orderedEntries = state.playerOrder
+        .where(played.containsKey)
+        .map((id) => MapEntry(id, played[id]!))
+        .toList();
+
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       alignment: WrapAlignment.center,
-      children: played.entries.map((e) {
+      children: orderedEntries.map((e) {
         final isMe = e.key == myId;
         final playerName = state.players[e.key]?.name.split(' ').last ?? '';
         final isCut = state.currentSuit != null &&
@@ -1162,9 +1207,14 @@ class _MyHand extends StatelessWidget {
           : 'No ${suit?.name ?? ''} — TAP any card to cut';
     }
 
-    const double colHeight = 220.0;
     const double cardH = 90.0;
     const double peekH = 26.0; // enough to show rank+suit at top of each card
+
+    return LayoutBuilder(builder: (context, constraints) {
+    // Clamp column height so the hand never overflows on small screens.
+    // Reserve ~90px for top bar + ~50px for ad + ~70px for info bar + status text.
+    final screenH = MediaQuery.of(context).size.height;
+    final colHeight = (screenH * 0.30).clamp(130.0, 220.0);
 
     return Container(
       color: const Color(0xFF5a1a30),
@@ -1322,6 +1372,7 @@ class _MyHand extends StatelessWidget {
         ],
       ),
     );
+    }); // LayoutBuilder
   }
 }
 
@@ -1419,29 +1470,6 @@ class _PlayerPill extends StatelessWidget {
               ),
             ),
         ],
-      ),
-    );
-  }
-}
-
-// ── Slide-up hand panel ───────────────────────────────────────────────────────
-
-class _SlideUpHand extends StatelessWidget {
-  final bool visible;
-  final Widget child;
-
-  const _SlideUpHand({required this.visible, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedSlide(
-      offset: visible ? Offset.zero : const Offset(0, 0.72),
-      duration: const Duration(milliseconds: 350),
-      curve: visible ? Curves.easeOut : Curves.easeIn,
-      child: AnimatedOpacity(
-        opacity: visible ? 1.0 : 0.55,
-        duration: const Duration(milliseconds: 350),
-        child: child,
       ),
     );
   }
@@ -1563,5 +1591,76 @@ class _ArcPainter extends CustomPainter {
   @override
   bool shouldRepaint(_ArcPainter old) =>
       old.progress != progress || old.active != active;
+}
+
+// ── Trick fly-out animation ───────────────────────────────────────────────────
+
+class _TrickFlyOut extends StatelessWidget {
+  final Map<String, PlayingCard> cards;
+  final List<String> playerOrder;
+  final String? winnerId;
+  final bool isCut;
+  final String myId;
+
+  const _TrickFlyOut({
+    required this.cards,
+    required this.playerOrder,
+    required this.winnerId,
+    required this.isCut,
+    required this.myId,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final winnerIsMe = winnerId == myId;
+    // Cards fly down toward local player, up toward opponents, scatter on cut
+    final dy = winnerIsMe ? 180.0 : -180.0;
+    final cutColor = Colors.red.shade700.withValues(alpha: 0.6);
+
+    final ordered = playerOrder
+        .where(cards.containsKey)
+        .map((id) => MapEntry(id, cards[id]!))
+        .toList();
+
+    return IgnorePointer(
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        alignment: WrapAlignment.center,
+        children: ordered.map((e) {
+          final card = e.value;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                decoration: isCut
+                    ? BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: cutColor, width: 2),
+                        boxShadow: [BoxShadow(color: cutColor, blurRadius: 8, spreadRadius: 2)],
+                      )
+                    : null,
+                child: CardWidget(card: card, width: 58, height: 82),
+              )
+                  .animate()
+                  .then(delay: 80.ms) // brief pause so player sees cards before fly-out
+                  .move(
+                    begin: Offset.zero,
+                    end: isCut
+                        ? Offset(
+                            (e.key.hashCode % 3 - 1) * 60.0, // scatter x
+                            dy * 0.7,
+                          )
+                        : Offset(0, dy),
+                    duration: 420.ms,
+                    curve: Curves.easeIn,
+                  )
+                  .fadeOut(duration: 350.ms, delay: 150.ms),
+            ],
+          );
+        }).toList(),
+      ),
+    );
+  }
 }
 

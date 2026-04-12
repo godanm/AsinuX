@@ -61,6 +61,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen> {
   final _random = Random();
   // Slot 0 = the real player. Slots 1–3 = fake joiners.
   final List<String?> _slots = [null, null, null, null];
+  late final List<String> _generatedBotNames;
   bool _launching = false;
   final List<Timer> _timers = [];
 
@@ -68,12 +69,12 @@ class _MatchmakingScreenState extends State<MatchmakingScreen> {
   void initState() {
     super.initState();
     _slots[0] = widget.playerName; // Real player is already "in"
+    _generatedBotNames = List.generate(3, (_) => _fakeName(_random));
     _scheduleFakeJoins();
   }
 
   void _scheduleFakeJoins() {
-    // Generate 3 unique fake names like "Arjun_ace247"
-    final names = List.generate(3, (_) => _fakeName(_random));
+    final names = _generatedBotNames;
 
     // Stagger them: 1.2s, 2.8s, 4.4s (feels natural)
     final delays = [1200, 2800, 4400];
@@ -102,7 +103,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen> {
         playerId: user.uid,
         playerName: widget.playerName,
       );
-      await BotService.instance.addBots(state, 3);
+      await BotService.instance.addBots(state, 3, names: _generatedBotNames);
       final fresh = await FirebaseService.instance.getFreshState(state.roomId);
       if (fresh != null) state = fresh;
       BotService.instance.start(state.roomId, difficulty: widget.difficulty);

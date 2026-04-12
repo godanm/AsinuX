@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../services/admob_service.dart';
 
 class AdBannerWidget extends StatefulWidget {
@@ -36,6 +37,6 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
   @override
   Widget build(BuildContext context) {
     if (kIsWeb || !_loaded || _ad == null) return const SizedBox.shrink();
-    return SizedBox(height: 50, child: _ad.widget as Widget);
+    return SizedBox(height: 50, child: AdWidget(ad: _ad));
   }
 }
