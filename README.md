@@ -112,21 +112,6 @@ flutter build appbundle --release
 
 ---
 
-## AdMob Unit IDs
-
-| Placement | Platform | ID |
-|---|---|---|
-| Banner | Android | `ca-app-pub-9287774769346149/5092029867` |
-| Banner | iOS | `ca-app-pub-9287774769346149/2135665202` |
-| Rewarded Interstitial | Android | `ca-app-pub-9287774769346149/6714019132` |
-| Rewarded Interstitial | iOS | `ca-app-pub-9287774769346149/5400937468` |
-| Interstitial (fallback) | Android | `ca-app-pub-9287774769346149/2330135158` |
-| Interstitial (fallback) | iOS | `ca-app-pub-9287774769346149/2985712449` |
-
-Debug builds automatically use Google's official test IDs.
-
----
-
 ## Feedback / Support
 
 In-app flag icon → opens mail to **godansudha@gmail.com**  
