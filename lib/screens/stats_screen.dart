@@ -98,7 +98,7 @@ class StatsScreen extends StatelessWidget {
                 _StatRow(label: 'Rounds played', value: '${stats.roundsPlayed}', icon: Icons.casino_outlined),
                 _StatRow(label: 'Times escaped', value: '${stats.escapeCount}', icon: Icons.exit_to_app, color: Colors.green.shade400),
                 _StatRow(label: 'Times the Donkey', value: '${stats.donkeyCount}', icon: Icons.mood_bad, color: Colors.redAccent),
-                _StatRow(label: 'Times finished 1st', value: '${stats.wins}', icon: Icons.emoji_events, color: const Color(0xFFFFD700)),
+                _StatRow(label: 'Times finished 1st', value: '${stats.firstPlaceCount}', icon: Icons.emoji_events, color: const Color(0xFFFFD700)),
 
                 const SizedBox(height: 32),
 

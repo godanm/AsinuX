@@ -14,9 +14,32 @@ class AuthService {
 
   Future<User> signInAnonymously() async {
     final user = _auth.currentUser;
-    if (user != null) return user;
+    if (user != null) {
+      // Save UID so we can cross-reference stats if session ever resets
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('uid', user.uid);
+      return user;
+    }
     final cred = await _auth.signInAnonymously();
-    return cred.user!;
+    final newUser = cred.user!;
+    final prefs = await SharedPreferences.getInstance();
+    // If we have a previously stored UID (different from new one), migrate the name
+    final storedUid = prefs.getString('uid');
+    if (storedUid != null && storedUid != newUser.uid) {
+      // Restore name from Firebase using old UID so stats link is maintained
+      final oldName = await FirebaseDatabase.instance
+          .ref('stats/$storedUid/displayName')
+          .get();
+      if (oldName.exists) {
+        final name = oldName.value as String;
+        await prefs.setString('playerName', name);
+        await FirebaseDatabase.instance
+            .ref('stats/${newUser.uid}/displayName')
+            .set(name);
+      }
+    }
+    await prefs.setString('uid', newUser.uid);
+    return newUser;
   }
 
   Future<String> getOrCreateDisplayName() async {

@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Play Kazhutha — Rules, Strategy & Tips</title>
+  <meta name="description" content="Learn how to play Kazhutha, the fast-paced South Indian card game. Complete rules, strategy guides, vettu explained, and tips to avoid being the Donkey." />
+  <meta name="keywords" content="kazhutha, how to play kazhutha, donkey card game, indian card game rules, vettu card game, kazhutha strategy" />
+  <meta property="og:title" content="How to Play Kazhutha — Rules, Strategy & Tips" />
+  <meta property="og:description" content="Complete guide to Kazhutha — the South Indian card game where the last player holding cards becomes the Donkey." />
+  <meta property="og:url" content="https://kazhutha.app/how-to-play" />
+  <meta property="og:type" content="article" />
+  <link rel="canonical" href="https://kazhutha.app/how-to-play" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0d0007;
+      color: #f0e6ee;
+      line-height: 1.7;
+    }
+
+    /* ── Nav ── */
+    nav {
+      background: #1a000e;
+      border-bottom: 1px solid rgba(230,57,70,0.2);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-logo {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: #E63946;
+      text-decoration: none;
+    }
+    .nav-logo span { color: #fff; }
+    .nav-play {
+      background: #E63946;
+      color: #fff;
+      padding: 8px 20px;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(135deg, #2a0010 0%, #1a000a 100%);
+      border-bottom: 1px solid rgba(230,57,70,0.15);
+      padding: 64px 24px 48px;
+      text-align: center;
+    }
+    .hero-suits {
+      font-size: 36px;
+      margin-bottom: 16px;
+      opacity: 0.6;
+      letter-spacing: 8px;
+    }
+    .hero h1 {
+      font-size: clamp(28px, 5vw, 48px);
+      font-weight: 900;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+      background: linear-gradient(90deg, #E63946, #FF6B6B, #FFD700);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 18px;
+      color: rgba(240,230,238,0.6);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    /* ── Sections ── */
+    h2 {
+      font-size: 24px;
+      font-weight: 800;
+      color: #fff;
+      margin: 48px 0 16px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid rgba(230,57,70,0.3);
+    }
+    h2:first-child { margin-top: 0; }
+
+    h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #E63946;
+      margin: 28px 0 10px;
+    }
+
+    p { color: rgba(240,230,238,0.8); margin-bottom: 16px; }
+
+    /* ── Card rules ── */
+    .rule-list { list-style: none; padding: 0; }
+    .rule-list li {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .rule-emoji { font-size: 28px; flex-shrink: 0; line-height: 1; }
+    .rule-text strong { color: #fff; display: block; margin-bottom: 4px; font-size: 15px; }
+    .rule-text span { color: rgba(240,230,238,0.65); font-size: 14px; line-height: 1.5; }
+
+    /* ── Scoring table ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 24px;
+      font-size: 15px;
+    }
+    thead { background: rgba(230,57,70,0.15); }
+    th {
+      padding: 12px 16px;
+      text-align: left;
+      color: #E63946;
+      font-weight: 700;
+      border-bottom: 1px solid rgba(230,57,70,0.3);
+    }
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      color: rgba(240,230,238,0.8);
+    }
+    tr:last-child td { border-bottom: none; }
+    .pts { color: #FFD700; font-weight: 700; }
+
+    /* ── Tips ── */
+    .tip-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .tip-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 20px;
+    }
+    .tip-card .tip-icon { font-size: 28px; margin-bottom: 10px; }
+    .tip-card h4 { color: #fff; font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+    .tip-card p { font-size: 13px; color: rgba(240,230,238,0.6); margin: 0; }
+
+    /* ── Vettu highlight ── */
+    .highlight-box {
+      background: rgba(230,57,70,0.1);
+      border: 1px solid rgba(230,57,70,0.35);
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin: 20px 0;
+    }
+    .highlight-box p { margin: 0; color: rgba(240,230,238,0.8); font-size: 15px; }
+    .highlight-box strong { color: #E63946; }
+
+    /* ── FAQ ── */
+    .faq-item { margin-bottom: 24px; }
+    .faq-item h4 { color: #fff; font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+    .faq-item p { color: rgba(240,230,238,0.65); font-size: 14px; margin: 0; }
+
+    /* ── CTA ── */
+    .cta {
+      background: linear-gradient(135deg, #2a0010, #1a000a);
+      border: 1px solid rgba(230,57,70,0.3);
+      border-radius: 20px;
+      padding: 40px 24px;
+      text-align: center;
+      margin-top: 56px;
+    }
+    .cta h2 { border: none; margin: 0 0 12px; }
+    .cta p { margin-bottom: 24px; }
+    .cta a {
+      display: inline-block;
+      background: #E63946;
+      color: #fff;
+      padding: 14px 40px;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: 1px;
+      box-shadow: 0 0 30px rgba(230,57,70,0.4);
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 32px 24px;
+      color: rgba(240,230,238,0.25);
+      font-size: 13px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    footer a { color: rgba(230,57,70,0.6); text-decoration: none; }
+  </style>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "How to Play Kazhutha — Complete Rules and Strategy Guide",
+    "description": "Learn how to play Kazhutha, the fast-paced South Indian card game. Rules, vettu explained, scoring, and strategy tips.",
+    "url": "https://kazhutha.app/how-to-play",
+    "publisher": {
+      "@type": "Organization",
+      "name": "Kazhutha",
+      "url": "https://kazhutha.app"
+    }
+  }
+  </script>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6MBDL2081K"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6MBDL2081K');
+  </script>
+</head>
+<body>
+
+  <nav>
+    <a class="nav-logo" href="/">KAZHU<span>THA</span></a>
+    <div style="display:flex;gap:24px;align-items:center;">
+      <a href="/about" style="color:rgba(240,230,238,0.5);text-decoration:none;font-size:14px;">About</a>
+      <a class="nav-play" href="/">Play Now →</a>
+    </div>
+  </nav>
+
+  <div class="hero">
+    <div class="hero-suits">♠ ♥ ♦ ♣</div>
+    <h1>How to Play Kazhutha</h1>
+    <p>The fast-paced South Indian card game where the last player holding cards becomes the Donkey.<br>
+    <span style="font-size:15px; opacity:0.5; letter-spacing:2px;">கழுதை &nbsp;·&nbsp; കഴുത</span></p>
+  </div>
+
+  <div class="container">
+
+    <!-- What is Kazhutha -->
+    <h2>What is Kazhutha?</h2>
+    <p>Kazhutha (கழுதை · കഴുത) is a traditional South Indian card game popular in Tamil Nadu and Kerala. The name literally means <strong>"Donkey"</strong> — the player who fails to empty their hand last earns that title and is eliminated from the game. It is a trick-taking game for 4 players using a standard 52-card deck, combining elements of skill, memory, and strategy.</p>
+    <p>Also known regionally as <em>Donkey</em>, <em>Kalutai</em>, or <em>Kattai</em>, the game rewards players who can read the table, manage their hand efficiently, and use the Vettu (cut) tactically to force opponents to pick up cards.</p>
+
+    <!-- Setup -->
+    <h2>Setup</h2>
+    <ul class="rule-list">
+      <li>
+        <span class="rule-emoji">🃏</span>
+        <div class="rule-text">
+          <strong>Players &amp; Deck</strong>
+          <span>4 players, standard 52-card deck. No jokers.</span>
+        </div>
+      </li>
+      <li>
+        <span class="rule-emoji">🤲</span>
+        <div class="rule-text">
+          <strong>Dealing</strong>
+          <span>All 52 cards are dealt evenly — each player receives 13 cards.</span>
+        </div>
+      </li>
+      <li>
+        <span class="rule-emoji">♠</span>
+        <div class="rule-text">
+          <strong>First Lead</strong>
+          <span>The player holding the Ace of Spades leads the first trick. After that, the winner of each trick leads the next.</span>
+        </div>
+      </li>
+    </ul>
+
+    <!-- How a trick works -->
+    <h2>How a Trick Works</h2>
+    <p>A trick is one round of card play where each player plays exactly one card. Here is how it unfolds:</p>
+    <ul class="rule-list">
+      <li>
+        <span class="rule-emoji">1️⃣</span>
+        <div class="rule-text">
+          <strong>Leader plays a card</strong>
+          <span>The current leader places one card face-up. That card's suit becomes the <em>lead suit</em> for this trick.</span>
+        </div>
+      </li>
+      <li>
+        <span class="rule-emoji">2️⃣</span>
+        <div class="rule-text">
+          <strong>Others must follow suit</strong>
+          <span>Every other player must play a card of the same suit if they have one. There is no rank comparison — suit-following is the only obligation.</span>
+        </div>
+      </li>
+      <li>
+        <span class="rule-emoji">✂️</span>
+        <div class="rule-text">
+          <strong>Vettu — the Cut</strong>
+          <span>If a player has no cards of the lead suit, they may play any card from another suit. This is called a Vettu (cut). When this happens, the leader must pick up all cards played in the trick and add them to their hand.</span>
+        </div>
+      </li>
+      <li>
+        <span class="rule-emoji">▶️</span>
+        <div class="rule-text">
+          <strong>Next trick</strong>
+          <span>If no one cuts, the trick cards are discarded and the leader leads again. If a cut happens, the cutter leads the next trick.</span>
+        </div>
+      </li>
+    </ul>
+
+    <!-- Vettu deep dive -->
+    <h2>The Vettu (Cut) — Explained</h2>
+    <div class="highlight-box">
+      <p>The <strong>Vettu</strong> is the heart of Kazhutha strategy. When you cut, the <strong>leader</strong> — not you — picks up all the cards on the table. This can instantly balloon their hand from a few cards to ten or more, setting them back significantly.</p>
+    </div>
+    <p>Unlike traditional trick-taking games, there is no trump suit. Any card from any other suit can cut. The only requirement is that you genuinely have no cards in the lead suit. Playing a cut when you actually have the lead suit is considered a foul.</p>
+    <p>Skilled players deliberately deplete specific suits from their hand early so they can cut at critical moments — especially when an opponent is about to escape the round.</p>
+
+    <!-- Escaping -->
+    <h2>Escaping the Round</h2>
+    <p>Your primary goal each round is to <strong>empty your hand</strong> before the other players. As soon as you play your last card, you <em>escape</em> — you are safe for that round and earn points based on your finishing position.</p>
+    <p>Escaped players remain visible at the table as observers but cannot play cards or affect the remaining tricks. The game continues until only one player still holds cards — that player becomes the <strong>Donkey</strong>.</p>
+
+    <!-- Scoring -->
+    <h2>Scoring</h2>
+    <p>Points are awarded at the end of each round based on finishing order:</p>
+    <table>
+      <thead>
+        <tr><th>Finishing Position</th><th>Points Awarded</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1st to escape</td><td class="pts">100 pts</td></tr>
+        <tr><td>2nd to escape</td><td class="pts">60 pts</td></tr>
+        <tr><td>3rd to escape</td><td class="pts">30 pts</td></tr>
+        <tr><td>Donkey (last)</td><td class="pts">0 pts — eliminated</td></tr>
+      </tbody>
+    </table>
+    <p>The Donkey is eliminated from the game. Remaining players continue into the next round until only one player is left — that player is the overall winner.</p>
+
+    <!-- Strategy -->
+    <h2>Strategy Guide</h2>
+    <h3>Early Game (13–9 cards in hand)</h3>
+    <p>Focus on suit depletion. Identify which suits you have the fewest cards in and play those first. Becoming void in a suit early gives you Vettu opportunities throughout the mid and late game.</p>
+
+    <div class="tip-grid">
+      <div class="tip-card">
+        <div class="tip-icon">♟️</div>
+        <h4>Lead depleted suits</h4>
+        <p>When you lead, play cards from your shortest suit. This helps you void that suit faster and forces opponents to follow or cut.</p>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">👀</div>
+        <h4>Watch who cuts what</h4>
+        <p>When an opponent cuts, note the suit they played. That tells you they are void in the lead suit — avoid leading that suit against them later.</p>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">🎯</div>
+        <h4>Target the leader</h4>
+        <p>A Vettu punishes the leader, not just anyone. Time your cuts for when the leader has a small hand — one big cut can put them back in danger.</p>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">🃏</div>
+        <h4>Hold your Ace carefully</h4>
+        <p>High cards like Aces and Kings are just cards in Kazhutha — no rank wins a trick. But leading an Ace can bait opponents into following safely, letting you control the pace.</p>
+      </div>
+    </div>
+
+    <h3>Mid Game (8–4 cards in hand)</h3>
+    <p>By now, you should have at least one suit void. Use Vettu aggressively to slow down whoever is closest to escaping. If you are in the lead, try to escape before others can set up cuts against you.</p>
+
+    <h3>Late Game (3 or fewer cards)</h3>
+    <p>Play conservatively. If you are close to escaping, avoid leading a suit where someone might cut you back. Play your safest cards and escape cleanly. If you are behind, a well-timed Vettu on the leader is your only lifeline.</p>
+
+    <!-- Variations -->
+    <h2>Regional Variations</h2>
+    <p>Kazhutha goes by different names and has minor rule variations across South India:</p>
+    <ul class="rule-list">
+      <li>
+        <span class="rule-emoji">🗺️</span>
+        <div class="rule-text">
+          <strong>Kazhutha / கழுதை (Tamil Nadu)</strong>
+          <span>The standard 4-player version described above. The Ace of Spades leads first. Vettu is allowed any time you are void in the lead suit.</span>
+        </div>
+      </li>
+      <li>
+        <span class="rule-emoji">🗺️</span>
+        <div class="rule-text">
+          <strong>കഴുത / Kalutai (Kerala)</strong>
+          <span>Similar rules. Some variations allow the Donkey to carry a penalty score into the next session rather than being eliminated outright.</span>
+        </div>
+      </li>
+      <li>
+        <span class="rule-emoji">🗺️</span>
+        <div class="rule-text">
+          <strong>Kattai</strong>
+          <span>A stricter variant where players must announce a cut out loud before playing. Failing to announce is a penalty and the card must be taken back.</span>
+        </div>
+      </li>
+    </ul>
+
+    <!-- FAQ -->
+    <h2>Frequently Asked Questions</h2>
+    <div class="faq-item">
+      <h4>Can I cut even if I have one card left in the lead suit?</h4>
+      <p>No. You can only cut if you have zero cards of the lead suit. Playing a cut when you have the lead suit is a foul.</p>
+    </div>
+    <div class="faq-item">
+      <h4>What happens if two people cut in the same trick?</h4>
+      <p>Only the first cut matters — the leader picks up all cards. The second cutter is simply following (with an off-suit card), which is allowed since the cut already happened.</p>
+    </div>
+    <div class="faq-item">
+      <h4>Does the rank of the card matter?</h4>
+      <p>No. In Kazhutha, rank is irrelevant. A 2 of Hearts and an Ace of Hearts are equal — both just follow the lead suit. Rank only matters in how it affects your hand size and suit distribution.</p>
+    </div>
+    <div class="faq-item">
+      <h4>Can the Donkey win the overall game?</h4>
+      <p>No. Once a player becomes the Donkey they are eliminated. The last player remaining after all eliminations wins.</p>
+    </div>
+    <div class="faq-item">
+      <h4>How many rounds does a game last?</h4>
+      <p>With 4 players, a game lasts 3 rounds (since one player is eliminated per round until one remains). Games are typically 10–20 minutes.</p>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta">
+      <h2>Ready to Play?</h2>
+      <p>Jump into a live match — real opponents, instant matchmaking, no sign-up needed.</p>
+      <a href="/">Play Kazhutha Free →</a>
+    </div>
+
+  </div>
+
+  <footer>
+    <p>&copy; 2026 Kazhutha &nbsp;·&nbsp; <a href="/">Play Now</a> &nbsp;·&nbsp; <a href="/privacy">Privacy Policy</a></p>
+  </footer>
+
+</body>
+</html>

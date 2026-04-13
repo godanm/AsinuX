@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import '../firebase_options.dart';
 import '../services/admob_service.dart';
@@ -32,6 +33,10 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _init() async {
     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    // On web, persist auth across browser restarts so returning users keep their profile
+    if (kIsWeb) {
+      await FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
+    }
     if (!kIsWeb) await AdMobService.instance.initialize();
     await SoundService.instance.initialize();
     // Minimum splash time so animation is visible

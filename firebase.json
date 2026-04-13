@@ -39,6 +39,14 @@
         "destination": "/privacy.html"
       },
       {
+        "source": "/how-to-play",
+        "destination": "/how-to-play.html"
+      },
+      {
+        "source": "/about",
+        "destination": "/about.html"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
@@ -61,20 +69,8 @@
         "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
       },
       {
-        "source": "/main.dart.js",
-        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
-      },
-      {
-        "source": "**/*.js",
-        "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
-      },
-      {
-        "source": "**/*.wasm",
-        "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
-      },
-      {
         "source": "**",
-        "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600" }]
+        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
       }
     ]
   }

@@ -18,6 +18,7 @@ class PlayerStats {
   final int roundsPlayed;
   final int donkeyCount;
   final int escapeCount;
+  final int firstPlaceCount;
   final int wins;
   final int totalPoints;
 
@@ -26,6 +27,7 @@ class PlayerStats {
     this.roundsPlayed = 0,
     this.donkeyCount = 0,
     this.escapeCount = 0,
+    this.firstPlaceCount = 0,
     this.wins = 0,
     this.totalPoints = 0,
   });
@@ -44,6 +46,7 @@ class PlayerStats {
         roundsPlayed: (map['roundsPlayed'] as int?) ?? 0,
         donkeyCount: (map['donkeyCount'] as int?) ?? 0,
         escapeCount: (map['escapeCount'] as int?) ?? 0,
+        firstPlaceCount: (map['firstPlaceCount'] as int?) ?? 0,
         wins: (map['wins'] as int?) ?? 0,
         totalPoints: (map['totalPoints'] as int?) ?? 0,
       );
@@ -53,6 +56,7 @@ class PlayerStats {
         'roundsPlayed': roundsPlayed,
         'donkeyCount': donkeyCount,
         'escapeCount': escapeCount,
+        'firstPlaceCount': firstPlaceCount,
         'wins': wins,
         'totalPoints': totalPoints,
       };
@@ -151,6 +155,7 @@ class StatsService {
       final isDonkey = originalId == donkeyId;
       final isWinner = originalId == winnerId;
       final escaped = escapeIndex >= 0;
+      final isFirst = escapeIndex == 0;
 
       // Position: escaped players get 0,1,2... donkey gets last position
       final position = isDonkey ? allPlayerIds.length - 1 : escapeIndex;
@@ -166,6 +171,7 @@ class StatsService {
         'totalPoints': newPoints,
         if (entry.displayName != null) 'displayName': entry.displayName!,
         if (escaped) 'escapeCount': ServerValue.increment(1),
+        if (isFirst) 'firstPlaceCount': ServerValue.increment(1),
         if (isDonkey) 'donkeyCount': ServerValue.increment(1),
         if (isWinner) 'wins': ServerValue.increment(1),
         if (isWinner || isDonkey) 'gamesPlayed': ServerValue.increment(1),
