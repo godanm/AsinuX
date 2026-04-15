@@ -1,0 +1,30 @@
+{
+  "rules": {
+    "rooms": {
+      "$roomId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "roomCodes": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "stats": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && (auth.uid == $uid || $uid.matches(/^npc_/))"
+      }
+    },
+    "matchmaking": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "gamelogs": {
+      "$roomId": {
+        ".read": false,
+        ".write": "auth != null"
+      }
+    }
+  }
+}

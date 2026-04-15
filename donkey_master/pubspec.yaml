@@ -1,0 +1,44 @@
+name: asinux
+description: "AsinuX — the fast-paced multiplayer card game. Play online, dodge the Donkey, and climb the leaderboard."
+publish_to: 'none'
+
+version: 1.0.0+3
+
+environment:
+  sdk: ^3.10.7
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # Firebase
+  firebase_core: ^3.13.0
+  firebase_auth: ^5.5.3
+  firebase_database: ^11.3.5
+
+  # Ads
+  google_mobile_ads: ^5.3.0
+
+  # Web APIs
+  web: ^1.1.0
+
+  # Utilities
+  uuid: ^4.5.1
+  shared_preferences: ^2.5.3
+  provider: ^6.1.2
+  animations: ^2.0.11
+  flutter_animate: ^4.5.2
+  audioplayers: ^6.4.0
+  url_launcher: ^6.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/sounds/
+    - assets/images/
