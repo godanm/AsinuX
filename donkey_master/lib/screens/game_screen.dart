@@ -10,6 +10,7 @@ import '../services/firebase_service.dart';
 import '../services/admob_service.dart';
 import '../services/bot_service.dart';
 import '../services/sound_service.dart';
+import '../services/stats_service.dart';
 import '../utils/game_logic.dart';
 import '../widgets/card_widget.dart';
 import '../widgets/ad_banner_widget.dart';
@@ -60,6 +61,26 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Future<void> _exitGame() async {
+    // If this player escaped but the round isn't over yet, write their stats
+    // now before leaving. When leaveRoom() deletes the room (last human gone),
+    // bots stop and _resolveTrick never fires — stats would be lost otherwise.
+    // Guard: only write early if this is the sole non-bot player, so multi-human
+    // games don't double-count when recordRound fires normally at round end.
+    final state = _lastState;
+    if (_iEscaped && state != null && (state.donkeyId == null || state.donkeyId!.isEmpty)) {
+      final humanIds = state.playerOrder.where((id) => !id.startsWith('bot_')).toList();
+      if (humanIds.length == 1 && humanIds.first == widget.playerId) {
+        final playerNames = {for (final p in state.players.values) p.id: p.name};
+        StatsService.instance.recordRound(
+          allPlayerIds: [widget.playerId],
+          escapedIds: state.finishOrder,
+          donkeyId: '',
+          winnerId: null,
+          isBot: false,
+          playerNames: playerNames,
+        ).catchError((e) => debugPrint('[GameScreen] early stats write failed: $e'));
+      }
+    }
     BotService.instance.stop();
     await FirebaseService.instance.leaveRoom(widget.roomId, widget.playerId);
     if (mounted) {
