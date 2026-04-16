@@ -4,7 +4,6 @@ import '../models/game_state.dart';
 import '../services/firebase_service.dart';
 import '../services/bot_service.dart';
 import '../services/stats_service.dart';
-import '../services/admob_service.dart';
 import '../widgets/ad_banner_widget.dart';
 import 'home_screen.dart';
 
@@ -28,17 +27,9 @@ class _ResultsScreenState extends State<ResultsScreen> {
   @override
   void initState() {
     super.initState();
-    // Show rewarded ad as soon as results screen is visible; navigate home
-    // after it's dismissed. postFrameCallback ensures screen is rendered first.
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      await AdMobService.instance.showRewardedAsync(context);
-      // Brief pause so player can read results before being taken home
-      await Future.delayed(const Duration(seconds: 3));
-      _goHome();
-    });
-    // Safety net: go home if ad never shows or takes too long
-    Future.delayed(const Duration(seconds: 20), _goHome);
+    // Ad is shown by game_screen before navigating here.
+    // Auto-navigate home after player has had time to read results.
+    Future.delayed(const Duration(seconds: 8), _goHome);
   }
 
   void _goHome() {

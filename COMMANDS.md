@@ -28,7 +28,7 @@ flutter analyze
 ## 2. Android — Release Build
 
 > Before building, bump the version code in `pubspec.yaml`:
-> `version: 1.0.0+4`  →  increment the number after `+`
+> `version: 1.0.0+7`  →  increment the number after `+`
 
 ```bash
 # Generate release AAB (for Play Store upload)
@@ -43,15 +43,15 @@ flutter build appbundle --release
 ## 3. Web — Release Build & Firebase Deploy
 
 ```bash
-# Build web release
-flutter build web --release
+# Build web release (reads version from pubspec.yaml automatically)
+flutter build web --release --dart-define=APP_VERSION=$(grep '^version:' pubspec.yaml | awk '{print $2}')
 
 # Deploy to Firebase Hosting (asinux-89da0.web.app)
 # Run from donkey_master/ directory
 firebase deploy --only hosting
 
 # Build + deploy in one line
-flutter build web --release && firebase deploy --only hosting
+flutter build web --release --dart-define=APP_VERSION=$(grep '^version:' pubspec.yaml | awk '{print $2}') && firebase deploy --only hosting
 ```
 
 ---
@@ -134,7 +134,7 @@ Edit `donkey_master/lib/services/admob_service_stub.dart`:
 const _interstitialSlotId = '';      // paste slot ID here
 const _rewardedSlotId = '';          // paste slot ID here
 ```
-Then run: `flutter build web --release && firebase deploy --only hosting`
+Then run: `flutter build web --release --dart-define=APP_VERSION=$(grep '^version:' pubspec.yaml | awk '{print $2}') && firebase deploy --only hosting`
 
 ---
 
@@ -152,7 +152,7 @@ Then run: `flutter build web --release && firebase deploy --only hosting`
 | Task | Command |
 |------|---------|
 | Build AAB | `flutter build appbundle --release` |
-| Deploy web | `flutter build web --release && firebase deploy --only hosting` |
+| Deploy web | `flutter build web --release --dart-define=APP_VERSION=$(grep '^version:' pubspec.yaml \| awk '{print $2}') && firebase deploy --only hosting` |
 | Run on Chrome | `flutter run -d chrome` |
 | Run on Android | `flutter run -d android` |
 | Clean build | `flutter clean && flutter pub get` |

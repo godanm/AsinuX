@@ -478,6 +478,9 @@ class _SettingsSheet extends StatefulWidget {
   State<_SettingsSheet> createState() => _SettingsSheetState();
 }
 
+// Injected at build time via --dart-define=APP_VERSION=x.y.z+n
+const _kAppVersion = String.fromEnvironment('APP_VERSION', defaultValue: '');
+
 class _SettingsSheetState extends State<_SettingsSheet> {
   late final TextEditingController _nameCtrl;
   late int _colorIndex;
@@ -647,7 +650,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
           const SizedBox(height: 16),
           Center(
             child: Text(
-              'AsinuX $kAppVersion',
+              _kAppVersion.isNotEmpty ? 'AsinuX $_kAppVersion' : 'AsinuX',
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.2),
                 fontSize: 11,
@@ -659,10 +662,6 @@ class _SettingsSheetState extends State<_SettingsSheet> {
     );
   }
 }
-
-// ── App version ──────────────────────────────────────────────────────────────
-// Keep in sync with pubspec.yaml `version:` field.
-const String kAppVersion = '1.0.0+3';
 
 // ── Shimmer skeleton block ────────────────────────────────────────────────────
 

@@ -39,6 +39,7 @@ class _GameScreenState extends State<GameScreen> {
   bool _iEscaped = false;
   bool _iHaveFinished = false; // stays true even when watching after escape
   bool _roundEndAdFired = false; // prevents duplicate ad per round
+  bool _gameOverAdFired = false; // prevents duplicate ad on game over
 
   // Trick fly-out animation state
   Map<String, PlayingCard> _outgoingCards = {};
@@ -200,9 +201,11 @@ class _GameScreenState extends State<GameScreen> {
       SoundService.instance.playCut();
     }
 
-    // Detect newly escaped players
+    // Detect newly escaped players — only after the trick fully resolves so we
+    // don't flash the escaped screen while the trick is still being played.
     for (final id in state.finishOrder) {
       if (!_announcedEscapees.contains(id) &&
+          state.phase == GamePhase.trickEnd &&
           (state.players[id]?.hand.isEmpty ?? false)) {
         _announcedEscapees.add(id);
         SoundService.instance.playEscape();
@@ -373,19 +376,29 @@ class _GameScreenState extends State<GameScreen> {
           _onStateChange(state);
         });
 
-        if (state.phase == GamePhase.gameOver) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ResultsScreen(
-                    state: state,
-                    playerId: widget.playerId,
-                  ),
-                ),
-              );
+        if (state.phase == GamePhase.gameOver && !_gameOverAdFired) {
+          _gameOverAdFired = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
+            if (!mounted) return;
+            final ctx = context;
+            // Top-2 finishers get rewarded ad; 3rd place and donkey get interstitial
+            final finishIndex = state.finishOrder.indexOf(widget.playerId);
+            final isTopTwo = finishIndex >= 0 && finishIndex < 2;
+            if (isTopTwo) {
+              await AdMobService.instance.showRewardedAsync(ctx);
+            } else {
+              await AdMobService.instance.showInterstitialAsync(ctx);
             }
+            if (!mounted) return;
+            Navigator.pushReplacement(
+              ctx,
+              MaterialPageRoute(
+                builder: (_) => ResultsScreen(
+                  state: state,
+                  playerId: widget.playerId,
+                ),
+              ),
+            );
           });
         }
 
