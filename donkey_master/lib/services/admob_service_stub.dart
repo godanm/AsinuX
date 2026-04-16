@@ -1,85 +1,34 @@
-// Web interstitial implementation — uses a Flutter dialog overlay with an
-// embedded AdSense 300×250 unit via HtmlElementView.
+// Web interstitial implementation — pure Flutter overlay dialog.
 //
 // Ad unit slots to fill in once created in AdSense console:
-//   _interstitialSlotId   → equivalent of "AsinuX - Interstitial"
-//   _rewardedSlotId       → equivalent of "AsinuX - Rewarded Interstitial"
-// Both use a 300×250 display unit on web (AdSense has no rewarded format).
+//   _interstitialSlotId   → "AsinuX - Interstitial"
+//   _rewardedSlotId       → "AsinuX - Rewarded Interstitial"
 
 import 'dart:async';
-import 'dart:js_interop';
-import 'dart:ui_web' as ui_web;
 
 import 'package:flutter/material.dart';
-import 'package:web/web.dart' as web;
-
-const _publisherId = 'ca-pub-9287774769346149';
 
 // TODO: paste AdSense ad-unit slot IDs here once created in AdSense console
-const _interstitialSlotId = '';      // "AsinuX - Interstitial" equivalent
-const _rewardedSlotId = '';          // "AsinuX - Rewarded Interstitial" equivalent
+const _interstitialSlotId = '';
+const _rewardedSlotId = '';
 
 // Active slot: prefer rewarded slot if set, otherwise interstitial
 const _adSlotId =
     _rewardedSlotId.length > 0 ? _rewardedSlotId : _interstitialSlotId;
-
-bool _viewFactoryRegistered = false;
-
-void _ensureViewFactory() {
-  if (_viewFactoryRegistered) return;
-  _viewFactoryRegistered = true;
-  ui_web.platformViewRegistry.registerViewFactory(
-    'adsense-interstitial',
-    (int viewId) {
-      final div = web.document.createElement('div');
-      div.setAttribute(
-        'style',
-        'width:300px;height:250px;background:#0d0007;'
-        'display:flex;align-items:center;justify-content:center;',
-      );
-
-      if (_adSlotId.isNotEmpty) {
-        // Real AdSense unit
-        final ins = web.document.createElement('ins');
-        ins.setAttribute('class', 'adsbygoogle');
-        ins.setAttribute('style', 'display:block;width:300px;height:250px');
-        ins.setAttribute('data-ad-client', _publisherId);
-        ins.setAttribute('data-ad-slot', _adSlotId);
-        div.appendChild(ins);
-
-        final script = web.document.createElement('script');
-        script.textContent =
-            '(adsbygoogle = window.adsbygoogle || []).push({});';
-        div.appendChild(script);
-      } else {
-        // Placeholder until slot ID is configured
-        div.innerHTML =
-            ('<div style="color:rgba(255,255,255,0.15);font-family:sans-serif;'
-            'font-size:13px;letter-spacing:1px;text-align:center;">'
-            '<div style="font-size:28px;margin-bottom:8px">📢</div>'
-            'Advertisement</div>').toJS;
-      }
-      return div;
-    },
-  );
-}
 
 class AdMobService {
   static final AdMobService _instance = AdMobService._();
   static AdMobService get instance => _instance;
   AdMobService._();
 
-  Future<void> initialize() async {
-    _ensureViewFactory();
-  }
+  Future<void> initialize() async {}
 
   void showInterstitial([BuildContext? context]) => showRoundEndAd(context);
 
   /// Shows a full-screen interstitial overlay.
-  /// On web: Flutter dialog with embedded AdSense unit (auto-closes in 5 s).
+  /// On web: Flutter dialog (auto-closes after 5 s or on skip tap).
   Future<void> showRoundEndAd([BuildContext? context]) async {
     if (context == null || !context.mounted) return;
-    _ensureViewFactory();
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -88,11 +37,9 @@ class AdMobService {
     );
   }
 
-  /// Awaitable interstitial — on web shows the same AdSense dialog.
   Future<void> showInterstitialAsync([BuildContext? context]) =>
       showRoundEndAd(context);
 
-  /// Awaitable rewarded — on web shows the same AdSense dialog.
   Future<void> showRewardedAsync([BuildContext? context]) =>
       showRoundEndAd(context);
 
@@ -181,11 +128,35 @@ class _WebInterstitialDialogState extends State<_WebInterstitialDialog> {
               ),
               const Divider(height: 1, color: Colors.white10),
 
-              // ── Ad area (300×250 AdSense unit) ───────────────────
-              const SizedBox(
+              // ── Ad area ──────────────────────────────────────────
+              // Pure Flutter placeholder shown until AdSense slot IDs are
+              // configured. When _adSlotId is set, replace this with the
+              // live AdSense unit (inject via dart:js_interop).
+              Container(
                 width: 300,
                 height: 250,
-                child: HtmlElementView(viewType: 'adsense-interstitial'),
+                color: const Color(0xFF0d0007),
+                child: _adSlotId.isNotEmpty
+                    ? const SizedBox.shrink() // live ad injected via JS
+                    : Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.campaign_outlined,
+                                size: 40,
+                                color: Colors.white.withValues(alpha: 0.15)),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Advertisement',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                fontSize: 13,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
               ),
 
               const SizedBox(height: 16),
