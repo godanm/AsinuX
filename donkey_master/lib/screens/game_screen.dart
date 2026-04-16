@@ -338,7 +338,6 @@ class _GameScreenState extends State<GameScreen> {
         if (state.phase == GamePhase.gameOver) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
-              AdMobService.instance.showRoundEndAd();
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(

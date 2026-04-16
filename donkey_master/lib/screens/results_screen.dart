@@ -4,6 +4,7 @@ import '../models/game_state.dart';
 import '../services/firebase_service.dart';
 import '../services/bot_service.dart';
 import '../services/stats_service.dart';
+import '../services/admob_service.dart';
 import '../widgets/ad_banner_widget.dart';
 import 'home_screen.dart';
 
@@ -25,6 +26,12 @@ class _ResultsScreenState extends State<ResultsScreen> {
   @override
   void initState() {
     super.initState();
+    // Show interstitial as soon as the results screen is visible.
+    // Using postFrameCallback ensures the screen is rendered before the ad
+    // overlays it (avoids timing issues on Android; shows dialog on web).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) AdMobService.instance.showRoundEndAd(context);
+    });
     // Leave room when viewing results
     Future.delayed(const Duration(seconds: 10), () {
       if (mounted) _leaveAndGoHome();

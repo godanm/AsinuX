@@ -299,12 +299,27 @@ class BotService {
     // ── Leading ──────────────────────────────────────────────────
     if (state.currentSuit == null) {
       if (phase == _Phase.early) {
-        // Dump Aces/Kings first — low vettu risk early.
-        return hand.indexed
-            .reduce((a, b) => a.$2.rank.index > b.$2.rank.index ? a : b)
-            .$1;
+        // Dump Aces/Kings first — but only in suits where nobody is known void.
+        // Leading into a known void means the bot picks up its own card back
+        // (it holds the highest lead-suit card), causing an infinite loop.
+        final opponentIds = state.activePlayers
+            .where((p) => p.id != bot.id)
+            .map((p) => p.id)
+            .toList();
+        int bestIdx = -1;
+        int bestRank = -1;
+        for (int i = 0; i < hand.length; i++) {
+          final card = hand[i];
+          if (_memory.knownVoidCount(opponentIds, card.suit.index) == 0 &&
+              card.rank.index > bestRank) {
+            bestRank = card.rank.index;
+            bestIdx = i;
+          }
+        }
+        if (bestIdx >= 0) return bestIdx;
+        // All suits have known voids — fall through to safe default below.
       }
-      // Mid/Late: play lowest card to stay under the radar.
+      // Mid/Late (or early with all suits voided): play lowest card to stay safe.
       return hand.indexed
           .reduce((a, b) => a.$2.rank.index < b.$2.rank.index ? a : b)
           .$1;
@@ -498,17 +513,20 @@ class BotService {
 
   int _cutCard(Player bot, GameState state) {
     final hand = bot.hand;
-    // Vettu is a weapon — dump the most dangerous card.
-    // Danger = high rank + top-card status + suit danger.
+    // Tier 1 (priority 100–112): top cards — will definitely pick up if that
+    //   suit is led, so dump the highest-rank one first.
+    // Tier 0 (priority 0–12): non-top cards — dump highest rank.
+    // Using integer tiers prevents the old float formula's side effect where a
+    // low-rank top card (e.g. 9♥ after all higher hearts gone) could outscore
+    // a high-rank non-top card (e.g. Q♣), making the bot visibly dump small
+    // cards while holding large ones.
     int bestIdx = 0;
-    double bestDanger = -1;
+    int bestPriority = -1;
 
     for (int i = 0; i < hand.length; i++) {
       final card = hand[i];
-      final suitD = _memory.suitDanger(card.suit.index) * 15.0;
-      final topBonus = _memory.isTopCard(card) ? 20.0 : 0.0;
-      final danger = card.rank.index + topBonus + suitD;
-      if (danger > bestDanger) { bestDanger = danger; bestIdx = i; }
+      final priority = (_memory.isTopCard(card) ? 100 : 0) + card.rank.index;
+      if (priority > bestPriority) { bestPriority = priority; bestIdx = i; }
     }
 
     _log('${bot.name} CUTTING with ${hand[bestIdx].rank.name} of ${hand[bestIdx].suit.name}');

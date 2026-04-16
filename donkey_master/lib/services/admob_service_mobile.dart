@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class AdMobService {
@@ -91,7 +92,7 @@ class AdMobService {
     );
   }
 
-  void showInterstitial() {
+  void showInterstitial([BuildContext? context]) {
     if (_isInterstitialReady && _interstitialAd != null) {
       _interstitialAd!.show();
     }
@@ -134,7 +135,8 @@ class AdMobService {
 
   /// Show a rewarded interstitial video ad after a round.
   /// Falls back to standard interstitial if video isn't ready.
-  void showRoundEndAd() {
+  /// [context] is accepted for API compatibility with the web stub but ignored.
+  void showRoundEndAd([BuildContext? context]) {
     if (_isRewardedReady && _rewardedAd != null) {
       _rewardedAd!.show(
         onUserEarnedReward: (_, __) {

@@ -405,6 +405,18 @@ class FirebaseService {
         trickNumber: state.trickNumber,
       );
 
+      // Guard: recover any escaped players dropped from finishOrder due to
+      // race conditions in concurrent finishOrder writes (each player
+      // overwrites the whole array from their local state snapshot, so a
+      // fast bot write can clobber an earlier human escape entry).
+      // Every active player who isn't the donkey must have escaped.
+      for (final p in state.activePlayers) {
+        if (p.id != donkeyId && !finishOrder.contains(p.id)) {
+          debugPrint('[FirebaseService] recovering missing escapee ${p.name} (${p.id}) in finishOrder');
+          finishOrder.add(p.id);
+        }
+      }
+
       debugPrint('[FirebaseService] round ended — donkey=$donkeyId '
           'winner=${roundResult.tournamentWinnerId} finishOrder=$finishOrder '
           'allPlayers=${state.playerOrder}');
