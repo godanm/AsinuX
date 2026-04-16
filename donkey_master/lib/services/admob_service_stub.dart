@@ -88,6 +88,14 @@ class AdMobService {
     );
   }
 
+  /// Awaitable interstitial — on web shows the same AdSense dialog.
+  Future<void> showInterstitialAsync([BuildContext? context]) =>
+      showRoundEndAd(context);
+
+  /// Awaitable rewarded — on web shows the same AdSense dialog.
+  Future<void> showRewardedAsync([BuildContext? context]) =>
+      showRoundEndAd(context);
+
   dynamic createBannerAd() => null;
 }
 

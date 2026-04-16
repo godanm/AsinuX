@@ -90,8 +90,10 @@ class _GameScreenState extends State<GameScreen> {
 
   Future<bool> _confirmExit(BuildContext context) async {
     // If the round/game is already over, skip the forfeit dialog entirely.
+    // trickEnd alone doesn't mean the round is over — only when donkeyId is set.
     final phase = _lastState?.phase;
-    final isOver = phase == GamePhase.gameOver || phase == GamePhase.trickEnd;
+    final isOver = phase == GamePhase.gameOver ||
+        (phase == GamePhase.trickEnd && _lastState?.donkeyId != null);
     if (isOver || _iHaveFinished) {
       await _exitGame();
       return false;
@@ -125,6 +127,7 @@ class _GameScreenState extends State<GameScreen> {
       ),
     );
     if (confirmed == true) {
+      await AdMobService.instance.showInterstitialAsync(context);
       await _exitGame();
     }
     return false;
@@ -379,7 +382,7 @@ class _GameScreenState extends State<GameScreen> {
             HapticFeedback.heavyImpact();
             Future.delayed(const Duration(milliseconds: 200), HapticFeedback.heavyImpact);
           });
-          return _buildRoundEndScreen(state);
+          return _buildRoundEndScreen(context, state);
         }
 
         if (_iEscaped) return _buildEscapedScreen(state);
@@ -579,7 +582,7 @@ class _GameScreenState extends State<GameScreen> {
 
   // ── Round end screen ─────────────────────────────────────────
 
-  Widget _buildRoundEndScreen(GameState state) {
+  Widget _buildRoundEndScreen(BuildContext context, GameState state) {
     final donkey = state.donkeyId != null
         ? state.players[state.donkeyId]
         : null;
@@ -685,7 +688,7 @@ class _GameScreenState extends State<GameScreen> {
                       if (_isHost(state))
                         ElevatedButton(
                           onPressed: () async {
-                            AdMobService.instance.showRoundEndAd();
+                            await AdMobService.instance.showRewardedAsync(context);
                             await FirebaseService.instance.startNextRound(state);
                           },
                           style: ElevatedButton.styleFrom(

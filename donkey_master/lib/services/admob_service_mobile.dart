@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -23,7 +24,7 @@ class AdMobService {
         : 'ca-app-pub-9287774769346149/2135665202';
   }
 
-  // Standard interstitial — fallback when rewarded isn't loaded
+  // Standard interstitial — shown when player quits mid-game
   static String get interstitialAdUnitId {
     if (kDebugMode) {
       return Platform.isAndroid
@@ -35,12 +36,12 @@ class AdMobService {
         : 'ca-app-pub-9287774769346149/2985712449';
   }
 
-  // Rewarded interstitial — higher eCPM video ad shown after each round
+  // Rewarded interstitial — shown at round end / game win
   static String get rewardedInterstitialAdUnitId {
     if (kDebugMode) {
       return Platform.isAndroid
-          ? 'ca-app-pub-3940256099942544/5354046379'  // test rewarded interstitial Android
-          : 'ca-app-pub-3940256099942544/6978759866'; // test rewarded interstitial iOS
+          ? 'ca-app-pub-3940256099942544/5354046379'
+          : 'ca-app-pub-3940256099942544/6978759866';
     }
     return Platform.isAndroid
         ? 'ca-app-pub-9287774769346149/6714019132'
@@ -59,32 +60,21 @@ class AdMobService {
     _loadRewarded();
   }
 
-  // ── Standard interstitial ────────────────────────────────────
+  // ── Loaders ──────────────────────────────────────────────────
 
   void _loadInterstitial() {
+    debugPrint('[AdMob] loading interstitial (${kDebugMode ? "TEST" : "LIVE"}) $interstitialAdUnitId');
     InterstitialAd.load(
       adUnitId: interstitialAdUnitId,
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
+          debugPrint('[AdMob] interstitial loaded ✓');
           _interstitialAd = ad;
           _isInterstitialReady = true;
-          ad.fullScreenContentCallback = FullScreenContentCallback(
-            onAdDismissedFullScreenContent: (ad) {
-              ad.dispose();
-              _interstitialAd = null;
-              _isInterstitialReady = false;
-              _loadInterstitial();
-            },
-            onAdFailedToShowFullScreenContent: (ad, error) {
-              ad.dispose();
-              _interstitialAd = null;
-              _isInterstitialReady = false;
-              _loadInterstitial();
-            },
-          );
         },
-        onAdFailedToLoad: (_) {
+        onAdFailedToLoad: (error) {
+          debugPrint('[AdMob] interstitial FAILED TO LOAD: ${error.code} ${error.message} domain=${error.domain}');
           _isInterstitialReady = false;
           Future.delayed(const Duration(minutes: 1), _loadInterstitial);
         },
@@ -92,40 +82,19 @@ class AdMobService {
     );
   }
 
-  void showInterstitial([BuildContext? context]) {
-    if (_isInterstitialReady && _interstitialAd != null) {
-      _interstitialAd!.show();
-    }
-  }
-
-  // ── Rewarded interstitial (video — higher payout) ────────────
-
   void _loadRewarded() {
+    debugPrint('[AdMob] loading rewarded interstitial (${kDebugMode ? "TEST" : "LIVE"}) $rewardedInterstitialAdUnitId');
     RewardedInterstitialAd.load(
       adUnitId: rewardedInterstitialAdUnitId,
       request: const AdRequest(),
       rewardedInterstitialAdLoadCallback: RewardedInterstitialAdLoadCallback(
         onAdLoaded: (ad) {
+          debugPrint('[AdMob] rewarded interstitial loaded ✓');
           _rewardedAd = ad;
           _isRewardedReady = true;
-          ad.fullScreenContentCallback = FullScreenContentCallback(
-            onAdDismissedFullScreenContent: (ad) {
-              ad.dispose();
-              _rewardedAd = null;
-              _isRewardedReady = false;
-              _loadRewarded();
-            },
-            onAdFailedToShowFullScreenContent: (ad, error) {
-              ad.dispose();
-              _rewardedAd = null;
-              _isRewardedReady = false;
-              _loadRewarded();
-              // Fallback to standard interstitial
-              showInterstitial();
-            },
-          );
         },
-        onAdFailedToLoad: (_) {
+        onAdFailedToLoad: (error) {
+          debugPrint('[AdMob] rewarded FAILED TO LOAD: ${error.code} ${error.message} domain=${error.domain}');
           _isRewardedReady = false;
           Future.delayed(const Duration(minutes: 2), _loadRewarded);
         },
@@ -133,20 +102,75 @@ class AdMobService {
     );
   }
 
-  /// Show a rewarded interstitial video ad after a round.
-  /// Falls back to standard interstitial if video isn't ready.
+  // ── Show methods (awaitable — complete when ad is dismissed) ──
+
+  /// Show standard interstitial. Used when player quits mid-game.
+  /// Completes when the ad is dismissed (or immediately if no ad is ready).
   /// [context] is accepted for API compatibility with the web stub but ignored.
-  void showRoundEndAd([BuildContext? context]) {
+  Future<void> showInterstitialAsync([BuildContext? context]) async {
+    debugPrint('[AdMob] showInterstitialAsync — ready=$_isInterstitialReady');
+    if (!_isInterstitialReady || _interstitialAd == null) return;
+
+    final completer = Completer<void>();
+    _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        debugPrint('[AdMob] interstitial dismissed');
+        ad.dispose();
+        _interstitialAd = null;
+        _isInterstitialReady = false;
+        _loadInterstitial();
+        if (!completer.isCompleted) completer.complete();
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        debugPrint('[AdMob] interstitial FAILED TO SHOW: ${error.code} ${error.message}');
+        ad.dispose();
+        _interstitialAd = null;
+        _isInterstitialReady = false;
+        _loadInterstitial();
+        if (!completer.isCompleted) completer.complete();
+      },
+    );
+    _interstitialAd!.show();
+    await completer.future;
+  }
+
+  /// Show rewarded interstitial. Used at round end / game win.
+  /// Falls back to standard interstitial if rewarded isn't ready.
+  /// Completes when the ad is dismissed (or immediately if no ad is ready).
+  /// [context] is accepted for API compatibility with the web stub but ignored.
+  Future<void> showRewardedAsync([BuildContext? context]) async {
+    debugPrint('[AdMob] showRewardedAsync — rewarded=$_isRewardedReady interstitial=$_isInterstitialReady');
     if (_isRewardedReady && _rewardedAd != null) {
-      _rewardedAd!.show(
-        onUserEarnedReward: (_, __) {
-          // No in-app reward needed — ad impression is the goal
+      final completer = Completer<void>();
+      _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (ad) {
+          debugPrint('[AdMob] rewarded dismissed');
+          ad.dispose();
+          _rewardedAd = null;
+          _isRewardedReady = false;
+          _loadRewarded();
+          if (!completer.isCompleted) completer.complete();
+        },
+        onAdFailedToShowFullScreenContent: (ad, error) {
+          debugPrint('[AdMob] rewarded FAILED TO SHOW: ${error.code} ${error.message}');
+          ad.dispose();
+          _rewardedAd = null;
+          _isRewardedReady = false;
+          _loadRewarded();
+          if (!completer.isCompleted) completer.complete();
         },
       );
+      _rewardedAd!.show(onUserEarnedReward: (_, __) {});
+      await completer.future;
     } else {
-      showInterstitial();
+      await showInterstitialAsync();
     }
   }
+
+  // ── Legacy fire-and-forget aliases ───────────────────────────
+
+  void showInterstitial([BuildContext? context]) => showInterstitialAsync();
+  void showRoundEndAd([BuildContext? context]) => showRewardedAsync();
 
   BannerAd createBannerAd() => BannerAd(
         adUnitId: bannerAdUnitId,

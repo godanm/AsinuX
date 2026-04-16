@@ -23,19 +23,26 @@ class ResultsScreen extends StatefulWidget {
 }
 
 class _ResultsScreenState extends State<ResultsScreen> {
+  bool _navigatedAway = false;
+
   @override
   void initState() {
     super.initState();
-    // Show interstitial as soon as the results screen is visible.
-    // Using postFrameCallback ensures the screen is rendered before the ad
-    // overlays it (avoids timing issues on Android; shows dialog on web).
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) AdMobService.instance.showRoundEndAd(context);
+    // Show rewarded ad as soon as results screen is visible; navigate home
+    // after it's dismissed. postFrameCallback ensures screen is rendered first.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await AdMobService.instance.showRewardedAsync(context);
+      _goHome();
     });
-    // Leave room when viewing results
-    Future.delayed(const Duration(seconds: 10), () {
-      if (mounted) _leaveAndGoHome();
-    });
+    // Safety net: go home if ad never shows or takes too long
+    Future.delayed(const Duration(seconds: 15), _goHome);
+  }
+
+  void _goHome() {
+    if (_navigatedAway) return;
+    _navigatedAway = true;
+    if (mounted) _leaveAndGoHome();
   }
 
   Future<void> _leaveAndGoHome() async {
