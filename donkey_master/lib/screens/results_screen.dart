@@ -33,10 +33,12 @@ class _ResultsScreenState extends State<ResultsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       await AdMobService.instance.showRewardedAsync(context);
+      // Brief pause so player can read results before being taken home
+      await Future.delayed(const Duration(seconds: 3));
       _goHome();
     });
     // Safety net: go home if ad never shows or takes too long
-    Future.delayed(const Duration(seconds: 15), _goHome);
+    Future.delayed(const Duration(seconds: 20), _goHome);
   }
 
   void _goHome() {

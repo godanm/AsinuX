@@ -689,6 +689,7 @@ class _GameScreenState extends State<GameScreen> {
                         ElevatedButton(
                           onPressed: () async {
                             await AdMobService.instance.showRewardedAsync(context);
+                            await Future.delayed(const Duration(seconds: 2));
                             await FirebaseService.instance.startNextRound(state);
                           },
                           style: ElevatedButton.styleFrom(
