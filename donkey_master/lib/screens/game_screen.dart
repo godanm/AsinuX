@@ -38,6 +38,7 @@ class _GameScreenState extends State<GameScreen> {
   final Set<String> _announcedEscapees = {};
   bool _iEscaped = false;
   bool _iHaveFinished = false; // stays true even when watching after escape
+  bool _roundEndAdFired = false; // prevents duplicate ad per round
 
   // Trick fly-out animation state
   Map<String, PlayingCard> _outgoingCards = {};
@@ -223,7 +224,20 @@ class _GameScreenState extends State<GameScreen> {
     if (state.roundNumber != (_lastState?.roundNumber ?? 0) ||
         state.finishOrder.isEmpty) {
       _announcedEscapees.clear();
+      _roundEndAdFired = false;
       if (_iEscaped) setState(() => _iEscaped = false);
+    }
+
+    // Show rewarded ad the moment the round fully completes (donkey determined).
+    // Fired from _onStateChange so context is always valid and mounted.
+    // Guard prevents it firing again if the same state arrives multiple times.
+    if (state.phase == GamePhase.trickEnd &&
+        state.donkeyId != null &&
+        !_roundEndAdFired) {
+      _roundEndAdFired = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) AdMobService.instance.showRewardedAsync(context);
+      });
     }
 
     // Human host starts next trick when bots aren't running
@@ -688,8 +702,6 @@ class _GameScreenState extends State<GameScreen> {
                       if (_isHost(state))
                         ElevatedButton(
                           onPressed: () async {
-                            await AdMobService.instance.showRewardedAsync(context);
-                            await Future.delayed(const Duration(seconds: 2));
                             await FirebaseService.instance.startNextRound(state);
                           },
                           style: ElevatedButton.styleFrom(

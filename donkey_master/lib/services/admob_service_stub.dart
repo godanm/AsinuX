@@ -31,6 +31,7 @@ class AdMobService {
     if (context == null || !context.mounted) return;
     await showDialog<void>(
       context: context,
+      useRootNavigator: true,
       barrierDismissible: false,
       barrierColor: Colors.black87,
       builder: (_) => const _WebInterstitialDialog(),
