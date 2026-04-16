@@ -295,6 +295,10 @@ class BotService {
   int _chooseMedium(Player bot, GameState state) {
     final hand = bot.hand;
     final phase = _gamePhase(state);
+    final opponentIds = state.activePlayers
+        .where((p) => p.id != bot.id && p.hand.isNotEmpty)
+        .map((p) => p.id)
+        .toList();
 
     // ── Leading ──────────────────────────────────────────────────
     if (state.currentSuit == null) {
@@ -302,10 +306,6 @@ class BotService {
         // Dump Aces/Kings first — but only in suits where nobody is known void.
         // Leading into a known void means the bot picks up its own card back
         // (it holds the highest lead-suit card), causing an infinite loop.
-        final opponentIds = state.activePlayers
-            .where((p) => p.id != bot.id)
-            .map((p) => p.id)
-            .toList();
         int bestIdx = -1;
         int bestRank = -1;
         for (int i = 0; i < hand.length; i++) {
@@ -319,10 +319,26 @@ class BotService {
         if (bestIdx >= 0) return bestIdx;
         // All suits have known voids — fall through to safe default below.
       }
-      // Mid/Late (or early with all suits voided): play lowest card to stay safe.
-      return hand.indexed
-          .reduce((a, b) => a.$2.rank.index < b.$2.rank.index ? a : b)
-          .$1;
+      // Mid/Late (or early with all suits voided):
+      // Play the lowest card in the suit with the FEWEST known voids.
+      // Never just play the globally-lowest card — that card might be in the
+      // worst suit (all opponents void), causing a guaranteed self-pickup loop.
+      int fewestVoids = opponentIds.length + 1;
+      for (int i = 0; i < hand.length; i++) {
+        final v = _memory.knownVoidCount(opponentIds, hand[i].suit.index);
+        if (v < fewestVoids) fewestVoids = v;
+      }
+      // Among cards in the safest suit(s), play the lowest rank.
+      int bestIdx = 0;
+      int bestRank = hand[0].rank.index + 1; // start high
+      for (int i = 0; i < hand.length; i++) {
+        final v = _memory.knownVoidCount(opponentIds, hand[i].suit.index);
+        if (v == fewestVoids && hand[i].rank.index < bestRank) {
+          bestRank = hand[i].rank.index;
+          bestIdx = i;
+        }
+      }
+      return bestIdx;
     }
 
     final suit = state.currentSuit!;
@@ -465,13 +481,23 @@ class BotService {
       final card = hand[i];
       final s = card.suit.index;
       final topPenalty = _memory.isTopCard(card) ? 30.0 : 0.0;
-      final voidRisk = _memory.knownVoidCount(opponentIds, s) * 10.0;
+      final voids = _memory.knownVoidCount(opponentIds, s);
+      final voidRisk = voids * 10.0;
       final dangerRisk = _memory.suitDanger(s) * 20.0;
+
+      // Guaranteed-pickup penalty: if this card is the top card of its suit
+      // AND all active opponents are known void, leading it means 100% pickup.
+      // Make this essentially unplayable unless there is truly no better option.
+      final guaranteedPickup = _memory.isTopCard(card) &&
+          opponentIds.isNotEmpty &&
+          voids >= opponentIds.length;
+      final pickupPenalty = guaranteedPickup ? 200.0 : 0.0;
+
       // Late: prefer low rank (stay safe). Early/Mid: prefer high rank (dump big cards).
       final rankBase = phase == _Phase.late
           ? (12 - card.rank.index).toDouble()
           : card.rank.index.toDouble();
-      final score = rankBase + topPenalty + voidRisk + dangerRisk;
+      final score = rankBase + topPenalty + voidRisk + dangerRisk + pickupPenalty;
 
       if (score < bestScore) { bestScore = score; bestIdx = i; }
     }
@@ -505,9 +531,30 @@ class BotService {
       return safe.first;
     }
 
-    // No safe card — play the lowest to minimise pickup pile size.
-    final sorted = List<int>.from(matching)
-      ..sort((a, b) => hand[a].rank.index.compareTo(hand[b].rank.index));
+    // No safe card — we WILL be the highest lead-suit player.
+    // Check if pickup is inevitable: are all players still to play void in this suit?
+    // If so, nobody else will follow, and we will pick up regardless of which card
+    // we play. In that case, dump the HIGHEST matching card to minimise hand danger.
+    final playedIds = state.playedCards.keys.toSet();
+    final stillToPlay = state.playerOrder.where((id) {
+      if (id == bot.id) return false;
+      if (playedIds.contains(id)) return false;
+      final p = state.players[id];
+      return p != null && !p.isEliminated && p.hand.isNotEmpty;
+    }).toList();
+
+    final allRemainingVoid = stillToPlay.isNotEmpty &&
+        stillToPlay.every((id) => _memory.isVoidIn(id, leadSuit));
+
+    final sorted = List<int>.from(matching);
+    if (allRemainingVoid) {
+      // Pickup is unavoidable — dump highest to get rid of the most dangerous card.
+      sorted.sort((a, b) => hand[b].rank.index.compareTo(hand[a].rank.index));
+      _log('${bot.name} FORCED PICKUP — dumping highest ${hand[sorted.first].rank.name}♠ (all others void)');
+    } else {
+      // Minimise pickup pile by playing lowest.
+      sorted.sort((a, b) => hand[a].rank.index.compareTo(hand[b].rank.index));
+    }
     return sorted.first;
   }
 
