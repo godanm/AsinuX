@@ -45,7 +45,7 @@ class AuthService {
   Future<String> getOrCreateDisplayName() async {
     final prefs = await SharedPreferences.getInstance();
     final stored = prefs.getString('playerName');
-    if (stored != null && stored.isNotEmpty) return stored;
+    if (stored != null && stored.isNotEmpty) return stored.replaceAll('_', ' ');
     final adjectives = ['Swift', 'Clever', 'Lucky', 'Bold', 'Sly', 'Witty'];
     final nouns = ['Donkey', 'Fox', 'Bear', 'Wolf', 'Eagle', 'Lion'];
     final name =
@@ -56,12 +56,13 @@ class AuthService {
   }
 
   Future<void> saveDisplayName(String name) async {
+    final clean = name.replaceAll('_', ' ').trim();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('playerName', name);
+    await prefs.setString('playerName', clean);
     // Also persist to Firebase so leaderboard can show real display names
     final user = _auth.currentUser;
     if (user != null) {
-      await FirebaseDatabase.instance.ref('stats/${user.uid}/displayName').set(name);
+      await FirebaseDatabase.instance.ref('stats/${user.uid}/displayName').set(clean);
     }
   }
 

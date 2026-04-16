@@ -1007,7 +1007,7 @@ class _OpponentCard extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            player.name.split('_').first, // show just first name part
+            player.name.replaceAll('_', ' '),
             style: TextStyle(
               color: escaped ? Colors.green.shade300 : Colors.white,
               fontSize: 9,
@@ -1093,7 +1093,7 @@ class _CenterTable extends StatelessWidget {
         final id = order[i];
         final card = played[id];
         final isMe = id == myId;
-        final playerName = isMe ? 'You' : (state.players[id]?.name.split(' ').last ?? '');
+        final playerName = isMe ? 'You' : (state.players[id]?.name.replaceAll('_', ' ') ?? '');
         final slotColor = _slotColors[i % _slotColors.length];
         final isCut = card != null &&
             state.currentSuit != null &&
