@@ -20,6 +20,19 @@
       ".read": "auth != null",
       ".write": "auth != null"
     },
+    "rummy_rooms": {
+      ".read": "auth != null",
+      ".indexOn": ["status"],
+      "$roomId": {
+        ".write": "auth != null"
+      }
+    },
+    "rummy_games": {
+      "$roomId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
     "gamelogs": {
       "$roomId": {
         ".read": false,

@@ -10,6 +10,7 @@ import '../widgets/how_to_play_overlay.dart';
 import '../widgets/feedback_sheet.dart';
 import '../widgets/player_avatar.dart';
 import 'matchmaking_screen.dart';
+import 'rummy_matchmaking_screen.dart';
 import 'stats_screen.dart';
 // import 'leaderboard_screen.dart'; // TODO: re-enable with leaderboard
 
@@ -240,7 +241,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
 
                       // ── Logo block ─────────────────────────────
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 4),
                       ShaderMask(
                         shaderCallback: (bounds) => const LinearGradient(
                           colors: [Color(0xFFE63946), Color(0xFFFF6B6B), Color(0xFFFFD700)],
@@ -266,7 +267,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ).animate().fadeIn(delay: 300.ms),
 
-                      const Spacer(),
+                      const SizedBox(height: 16),
 
                       // ── Quick stats strip ──────────────────────
                       if (_stats.roundsPlayed > 0)
@@ -284,95 +285,44 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ).animate().fadeIn(delay: 400.ms),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
 
-                      // ── Play button ────────────────────────────
+                      // ── Game cards ─────────────────────────────
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: GestureDetector(
-                          onTap: _nameLoaded ? _startMatch : null,
-                          child: Container(
-                            width: double.infinity,
-                            height: 140,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(28),
-                              gradient: const LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [Color(0xFF5c0a1a), Color(0xFF2a0010), Color(0xFF1a000a)],
-                                stops: [0.0, 0.5, 1.0],
-                              ),
-                              border: Border.all(color: const Color(0xFFE63946).withValues(alpha: 0.5), width: 1.5),
-                              boxShadow: [
-                                BoxShadow(color: const Color(0xFFE63946).withValues(alpha: 0.3), blurRadius: 32, spreadRadius: 4),
-                                BoxShadow(color: Colors.black.withValues(alpha: 0.4), blurRadius: 12),
-                              ],
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _GameCard(
+                                emoji: '🃏',
+                                title: 'KAZHUTHA',
+                                subtitle: 'Trick-taking · 4 players',
+                                accentColor: const Color(0xFFE63946),
+                                gradientColors: const [Color(0xFF5c0a1a), Color(0xFF2a0010)],
+                                suits: const ['♠', '♥', '♣', '♦'],
+                                enabled: _nameLoaded,
+                                comingSoon: false,
+                                onTap: _startMatch,
+                              ).animate().fadeIn(delay: 500.ms, duration: 500.ms).slideY(begin: 0.1),
                             ),
-                            child: Stack(
-                              children: [
-                                // Left suit icons
-                                Positioned(
-                                  left: 16, top: 0, bottom: 0,
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text('♠', style: TextStyle(fontSize: 28, color: Colors.white.withValues(alpha: 0.6))),
-                                      Text('♣', style: TextStyle(fontSize: 22, color: Colors.white.withValues(alpha: 0.35))),
-                                    ],
-                                  ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _GameCard(
+                                emoji: '🀄',
+                                title: 'RUMMY',
+                                subtitle: '13-card · 2–6 players',
+                                accentColor: const Color(0xFF1565C0),
+                                gradientColors: const [Color(0xFF0a1a4a), Color(0xFF050d26)],
+                                suits: const ['🂡', '🂱', '🃁', '🃑'],
+                                enabled: _nameLoaded,
+                                comingSoon: false,
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => RummyMatchmakingScreen(playerName: _playerName)),
                                 ),
-                                // Right suit icons
-                                Positioned(
-                                  right: 16, top: 0, bottom: 0,
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text('♥', style: TextStyle(fontSize: 28, color: const Color(0xFFE63946).withValues(alpha: 0.7))),
-                                      Text('♦', style: TextStyle(fontSize: 22, color: const Color(0xFFE63946).withValues(alpha: 0.4))),
-                                    ],
-                                  ),
-                                ),
-                                // Center
-                                Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 12),
-                                        decoration: BoxDecoration(
-                                          gradient: const LinearGradient(
-                                            colors: [Color(0xFFE63946), Color(0xFFc0182a)],
-                                            begin: Alignment.topCenter,
-                                            end: Alignment.bottomCenter,
-                                          ),
-                                          borderRadius: BorderRadius.circular(50),
-                                          boxShadow: [
-                                            BoxShadow(color: const Color(0xFFE63946).withValues(alpha: 0.6), blurRadius: 20, spreadRadius: 1),
-                                          ],
-                                        ),
-                                        child: const Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(Icons.play_arrow_rounded, color: Colors.white, size: 20),
-                                            SizedBox(width: 6),
-                                            Text(
-                                              'PLAY NOW',
-                                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 17, letterSpacing: 2),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        'Matchmaking with 3 players',
-                                        style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 11, letterSpacing: 0.5),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                              ).animate().fadeIn(delay: 650.ms, duration: 500.ms).slideY(begin: 0.1),
                             ),
-                          ).animate().fadeIn(delay: 500.ms, duration: 500.ms).slideY(begin: 0.1),
+                          ],
                         ),
                       ),
 
@@ -658,6 +608,186 @@ class _SettingsSheetState extends State<_SettingsSheet> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Game card ─────────────────────────────────────────────────────────────────
+
+class _GameCard extends StatelessWidget {
+  final String emoji;
+  final String title;
+  final String subtitle;
+  final Color accentColor;
+  final List<Color> gradientColors;
+  final List<String> suits;
+  final bool enabled;
+  final bool comingSoon;
+  final VoidCallback onTap;
+
+  const _GameCard({
+    required this.emoji,
+    required this.title,
+    required this.subtitle,
+    required this.accentColor,
+    required this.gradientColors,
+    required this.suits,
+    required this.enabled,
+    required this.comingSoon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final canTap = enabled && !comingSoon;
+
+    return GestureDetector(
+      onTap: canTap ? onTap : null,
+      child: Opacity(
+        opacity: comingSoon ? 0.6 : 1.0,
+        child: Container(
+          height: 160,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: gradientColors,
+            ),
+            border: Border.all(
+              color: accentColor.withValues(alpha: comingSoon ? 0.25 : 0.5),
+              width: 1.5,
+            ),
+            boxShadow: comingSoon
+                ? null
+                : [
+                    BoxShadow(
+                      color: accentColor.withValues(alpha: 0.25),
+                      blurRadius: 24,
+                      spreadRadius: 2,
+                    ),
+                  ],
+          ),
+          child: Stack(
+            children: [
+              // Background suit watermarks
+              Positioned(
+                bottom: -8, right: 4,
+                child: Text(
+                  suits[0],
+                  style: TextStyle(
+                    fontSize: 64,
+                    color: accentColor.withValues(alpha: 0.08),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: -4, left: 4,
+                child: Text(
+                  suits[1],
+                  style: TextStyle(
+                    fontSize: 40,
+                    color: accentColor.withValues(alpha: 0.06),
+                  ),
+                ),
+              ),
+
+              // Content
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(emoji, style: const TextStyle(fontSize: 32)),
+                    const Spacer(),
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: comingSoon
+                            ? Colors.white.withValues(alpha: 0.5)
+                            : Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.35),
+                        fontSize: 10,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    // CTA row
+                    if (comingSoon)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.15)),
+                        ),
+                        child: Text(
+                          'COMING SOON',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.45),
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 7),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              accentColor,
+                              accentColor.withValues(alpha: 0.75)
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: accentColor.withValues(alpha: 0.45),
+                              blurRadius: 10,
+                            ),
+                          ],
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.play_arrow_rounded,
+                                color: Colors.white, size: 14),
+                            SizedBox(width: 4),
+                            Text(
+                              'PLAY NOW',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

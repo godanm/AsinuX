@@ -1386,28 +1386,9 @@ class _MyHand extends StatefulWidget {
 }
 
 class _MyHandState extends State<_MyHand> {
-  int? _selectedIdx;
-
-  @override
-  void didUpdateWidget(_MyHand oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (!widget.isMyTurn || widget.iHavePlayed) {
-      if (_selectedIdx != null) setState(() => _selectedIdx = null);
-    } else if (_selectedIdx != null) {
-      final hand = widget.player?.hand ?? [];
-      if (_selectedIdx! >= hand.length) setState(() => _selectedIdx = null);
-    }
-  }
-
   void _onCardTap(int globalIdx, bool suitValid) {
     if (!suitValid || widget.busy || !widget.isMyTurn || widget.iHavePlayed) return;
-    if (_selectedIdx == globalIdx) {
-      // Second tap on the same card → play it
-      setState(() => _selectedIdx = null);
-      widget.onPlayCard(globalIdx);
-    } else {
-      setState(() => _selectedIdx = globalIdx);
-    }
+    widget.onPlayCard(globalIdx);
   }
 
   @override
@@ -1441,8 +1422,6 @@ class _MyHandState extends State<_MyHand> {
       statusText = '✓ Played — waiting...';
     } else if (!widget.isMyTurn) {
       statusText = 'Waiting...';
-    } else if (_selectedIdx != null) {
-      statusText = 'Tap card again to play  ·  × to cancel';
     } else if (widget.isLeader) {
       statusText = 'TAP any card to lead';
     } else {
@@ -1502,19 +1481,9 @@ class _MyHandState extends State<_MyHand> {
                   suitValid = !hasMatch || suit.index == widget.currentSuit;
                 }
 
-                // Render selected card last so it appears on top
                 final orderedEntries = List<MapEntry<int, MapEntry<int, PlayingCard>>>.from(
                   cards.asMap().entries,
                 );
-                if (_selectedIdx != null) {
-                  final selLocal = orderedEntries.indexWhere(
-                    (e) => e.value.key == _selectedIdx,
-                  );
-                  if (selLocal >= 0) {
-                    final sel = orderedEntries.removeAt(selLocal);
-                    orderedEntries.add(sel);
-                  }
-                }
 
                 return Expanded(
                   child: Padding(
@@ -1572,8 +1541,6 @@ class _MyHandState extends State<_MyHand> {
                                     final stackIdx = entry.key;
                                     final globalIdx = entry.value.key;
                                     final card = entry.value.value;
-                                    final isSelected = _selectedIdx == globalIdx;
-
                                     return Positioned(
                                       top: stackIdx * offset,
                                       left: 0,
@@ -1582,99 +1549,40 @@ class _MyHandState extends State<_MyHand> {
                                         onTap: (suitValid && !widget.busy)
                                             ? () => _onCardTap(globalIdx, suitValid)
                                             : null,
-                                        child: TweenAnimationBuilder<double>(
-                                          tween: Tween(begin: 0.0, end: isSelected ? -30.0 : 0.0),
-                                          duration: const Duration(milliseconds: 160),
-                                          curve: Curves.easeOut,
-                                          builder: (_, dy, child) =>
-                                              Transform.translate(offset: Offset(0, dy), child: child),
-                                          child: Stack(
-                                            clipBehavior: Clip.none,
-                                            children: [
-                                              Opacity(
-                                                opacity: canPlayAny && !suitValid ? 0.3 : 1.0,
-                                                child: AnimatedScale(
-                                                  scale: (suitValid && widget.busy) ? 0.85 : 1.0,
-                                                  duration: const Duration(milliseconds: 150),
-                                                  child: AnimatedContainer(
-                                                    duration: const Duration(milliseconds: 160),
-                                                    height: cardH,
-                                                    decoration: BoxDecoration(
-                                                      borderRadius: BorderRadius.circular(8),
-                                                      border: isSelected
-                                                          ? Border.all(
-                                                              color: const Color(0xFF4CAF50),
-                                                              width: 2.5,
-                                                            )
-                                                          : null,
-                                                      boxShadow: isSelected
-                                                          ? [
-                                                              BoxShadow(
-                                                                color: const Color(0xFF4CAF50)
-                                                                    .withValues(alpha: 0.55),
-                                                                blurRadius: 12,
-                                                                spreadRadius: 2,
-                                                              )
-                                                            ]
-                                                          : suitValid
-                                                              ? [
-                                                                  BoxShadow(
-                                                                    color: const Color(0xFFE63946)
-                                                                        .withValues(alpha: 0.25),
-                                                                    blurRadius: 4,
-                                                                    spreadRadius: 1,
-                                                                  )
-                                                                ]
-                                                              : [
-                                                                  BoxShadow(
-                                                                    color: Colors.black
-                                                                        .withValues(alpha: 0.3),
-                                                                    blurRadius: 3,
-                                                                    offset: const Offset(0, 1),
-                                                                  )
-                                                                ],
-                                                    ),
-                                                    child: CardWidget(
-                                                      card: card,
-                                                      width: double.infinity,
-                                                      height: cardH,
-                                                    ),
-                                                  ),
-                                                ),
+                                        child: Opacity(
+                                          opacity: canPlayAny && !suitValid ? 0.3 : 1.0,
+                                          child: AnimatedScale(
+                                            scale: (suitValid && widget.busy) ? 0.85 : 1.0,
+                                            duration: const Duration(milliseconds: 150),
+                                            child: AnimatedContainer(
+                                              duration: const Duration(milliseconds: 160),
+                                              height: cardH,
+                                              decoration: BoxDecoration(
+                                                borderRadius: BorderRadius.circular(8),
+                                                boxShadow: suitValid
+                                                    ? [
+                                                        BoxShadow(
+                                                          color: const Color(0xFFE63946)
+                                                              .withValues(alpha: 0.25),
+                                                          blurRadius: 4,
+                                                          spreadRadius: 1,
+                                                        )
+                                                      ]
+                                                    : [
+                                                        BoxShadow(
+                                                          color: Colors.black
+                                                              .withValues(alpha: 0.3),
+                                                          blurRadius: 3,
+                                                          offset: const Offset(0, 1),
+                                                        )
+                                                      ],
                                               ),
-                                              // × badge — only on the selected card
-                                              if (isSelected)
-                                                Positioned(
-                                                  top: -8,
-                                                  right: -8,
-                                                  child: GestureDetector(
-                                                    onTap: () => setState(() => _selectedIdx = null),
-                                                    child: Container(
-                                                      width: 22,
-                                                      height: 22,
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.red.shade700,
-                                                        shape: BoxShape.circle,
-                                                        border: Border.all(
-                                                          color: Colors.white,
-                                                          width: 1.5,
-                                                        ),
-                                                        boxShadow: [
-                                                          BoxShadow(
-                                                            color: Colors.black.withValues(alpha: 0.4),
-                                                            blurRadius: 4,
-                                                          ),
-                                                        ],
-                                                      ),
-                                                      child: const Icon(
-                                                        Icons.close,
-                                                        color: Colors.white,
-                                                        size: 13,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                            ],
+                                              child: CardWidget(
+                                                card: card,
+                                                width: double.infinity,
+                                                height: cardH,
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),

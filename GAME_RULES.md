@@ -1,8 +1,12 @@
-# AsinuX (Kazhutha) — Complete Game Logic
+# AsinuX — Complete Game Rules
+
+---
+
+# KAZHUTHA
 
 ## What Kind of Game Is This?
 
-AsinuX is a **trick-taking card game** for 4 players. The goal is simple: **empty your hand before everyone else**. The last player still holding cards at the end of a round is the **Donkey** — they get eliminated. The game runs as a tournament across multiple rounds until only one player is left standing.
+Kazhutha is a **trick-taking card game** for 4 players. The goal is simple: **empty your hand before everyone else**. The last player still holding cards at the end of a round is the **Donkey** — they get eliminated. The game runs as a tournament across multiple rounds until only one player is left standing.
 
 ---
 
@@ -148,3 +152,176 @@ Hard bots have **memory** — they track every card played and remember which pl
 | Your hand is empty | You've escaped — safe for this round |
 | Last one with cards | You're the Donkey — eliminated |
 | New round | Cards re-dealt, Ace of Spades leads first |
+
+---
+---
+
+# RUMMY (13-Card Indian Rummy)
+
+## What Kind of Game Is This?
+
+Rummy is a **draw-and-discard card game** for 2, 4, or 6 players. The goal is to **arrange all 13 cards in your hand into valid melds** (sequences and sets) and declare before anyone else. Players take turns drawing a card and discarding one, building toward a valid declaration.
+
+---
+
+## The Setup
+
+- **Two standard 52-card decks** (104 cards) plus **2 printed Jokers** = 106 cards total
+- 2, 4, or 6 players, each dealt **13 cards**
+- One card is turned face-up from the remaining deck — its **rank** becomes the **Wild Joker rank** for this game (e.g. if a 7 is turned, all 7s of any suit act as wild jokers)
+- Remaining cards form the **closed deck** (face-down draw pile)
+- The turned-up wild joker card goes to the **open deck** (face-up discard pile)
+
+---
+
+## The Two Joker Types
+
+### Printed Joker
+The card with the Joker face (★). There are 2 in the deck. Worth **0 points** always.
+
+### Wild Joker
+Any card whose rank matches the randomly chosen wild joker rank. There are 4 per deck (8 total in the 2-deck game). Worth **0 points** when used as a joker.
+
+Both joker types can **substitute for any card** in a meld.
+
+---
+
+## How a Turn Works
+
+Play moves clockwise. On your turn you must:
+
+1. **Draw** — pick one card from either:
+   - The **closed deck** (face-down; you get a mystery card)
+   - The **open deck** (face-up; you can see what you're taking)
+
+2. **Discard** — tap any one card from your hand (now 14 cards) to send it to the top of the open deck
+
+Your hand returns to 13 cards. The next player's turn begins.
+
+**Exception — Declare**: instead of discarding at step 2, you may declare if your hand is fully melded (see Declaration below).
+
+---
+
+## Melds — What You're Building
+
+A meld is a group of 3 or more cards that form either a **sequence** or a **set**.
+
+### Sequence (Run)
+Three or more cards of the **same suit** in **consecutive rank order**.
+
+Valid: `5♥ 6♥ 7♥` or `Q♠ K♠ A♠` or `3♦ 4♦ 5♦ 6♦`
+
+Jokers can fill gaps:
+- `5♥ [JKR] 7♥` — joker substitutes for 6♥ ✓
+- `[JKR] 9♣ 10♣` — joker substitutes for 8♣ ✓
+
+**Pure Sequence**: a sequence with **no jokers at all**. You need at least one. Examples: `4♠ 5♠ 6♠` ✓
+
+**Impure Sequence**: a sequence where one or more jokers substitute for missing cards.
+
+### Set (Group)
+Three or four cards of the **same rank** from **different suits**.
+
+Valid: `7♠ 7♥ 7♦` or `K♠ K♥ K♦ K♣`
+
+- Duplicate suits are **not allowed**: `7♠ 7♠ 7♥` is invalid
+- Sets can contain jokers: `J♠ J♥ [JKR]` — joker substitutes for J♣ or J♦ ✓
+
+---
+
+## Declaration
+
+To win the round you must declare. You can declare **instead of discarding** on your turn (you must have drawn first, so you'll have 14 cards).
+
+Arrange all 14 cards into groups (melds + 1 discard). A valid declaration requires:
+
+1. **Exactly 13 cards** across all melds (14th card goes to discard as normal)
+2. **All melds are valid** — every group must be a valid sequence or set
+3. **At least 1 pure sequence** (a sequence with no jokers)
+4. **At least 2 sequences total** (pure + impure, or 2 pure)
+
+If all four conditions are met → you win the round with **0 penalty points**.
+
+### Invalid Declaration
+If you declare but your melds don't meet all four conditions, you receive an **80-point penalty** and the game continues without you.
+
+---
+
+## Dropping
+
+At any point on your turn, you may choose to **drop** instead of playing:
+
+| When you drop | Penalty |
+|---|---|
+| **First drop** — before you draw (draw phase) | 20 points |
+| **Middle drop** — after you draw, before you discard (discard phase) | 40 points |
+
+After dropping you leave the game immediately. If all remaining players drop, the last one standing wins.
+
+---
+
+## Scoring
+
+The **winner** scores **0 points**.
+
+All other players score **penalty points** equal to their **deadwood** — the total point value of cards in their hand that are NOT part of any valid meld. Penalty is capped at **80 points**.
+
+### Card Point Values
+
+| Card | Points |
+|---|---|
+| Ace | 10 |
+| King, Queen, Jack | 10 each |
+| 2 – 10 | Face value (2 = 2 pts, 9 = 9 pts, etc.) |
+| Printed Joker | 0 |
+| Wild Joker (used as joker) | 0 |
+
+---
+
+## Bot Behaviour
+
+Bots fill any empty seats so the table is always full. They play automatically with human-like timing (1.8–2.4 second delays).
+
+### Draw decision
+- Always takes from the open deck if the top card:
+  - Is any joker (printed or wild)
+  - Shares a rank with a card in hand (set potential)
+  - Shares a suit and is within 2 ranks of a card in hand (sequence potential)
+- Otherwise draws from the closed deck
+
+### Discard decision
+Each card is scored by how connected it is to the rest of the hand:
+- **+3** per adjacent same-suit card (rank ±1) — direct sequence neighbour
+- **+1** per near same-suit card (rank ±2) — joker-bridgeable gap
+- **+2** per same-rank different-suit card — set partner
+
+The card with the **lowest connection score** is discarded. Among ties, the **highest-point** card goes first. Jokers are never discarded.
+
+---
+
+## Strategy Tips
+
+1. **Build a pure sequence first** — it's the hardest requirement to meet and you can't declare without one. Prioritise forming it early, even before setting up sets
+2. **Watch the open deck** — taking from it reveals your hand to opponents. Only pick up if the card meaningfully improves a partial meld
+3. **Don't hold high cards** — unmelded Aces, Kings, Queens and Jacks each cost 10 points. Drop them early if they're not fitting into sequences
+4. **Jokers are gold** — never discard a joker. They unlock impure sequences and plug gaps in sets, directly reducing your deadwood
+5. **Track discards** — the open deck shows what opponents are throwing away. If someone discards 7♥ and you're building a 7s set, don't count on getting the 7♦ next
+6. **Know when to drop** — if your hand is a mess early, a 20-point first drop beats the 80-point cap from a failed declaration later
+
+---
+
+## Quick Reference
+
+| Term | Meaning |
+|---|---|
+| Closed deck | Face-down draw pile |
+| Open deck | Face-up discard pile |
+| Wild joker | Cards matching the randomly chosen rank — act as any card |
+| Printed joker | The ★ joker cards — act as any card |
+| Pure sequence | Run of 3+ same-suit consecutive cards, no jokers |
+| Impure sequence | Run of 3+ same-suit consecutive cards, with joker(s) |
+| Set | 3–4 same-rank cards from different suits |
+| Deadwood | Unmelded cards in hand — their points are your penalty |
+| First drop | Leave before drawing — 20 point penalty |
+| Middle drop | Leave after drawing — 40 point penalty |
+| Invalid declare | Failed declaration — 80 point penalty |
