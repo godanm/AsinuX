@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 
 enum _FeedbackType { bug, suggestion, other }
@@ -48,6 +50,9 @@ class _FeedbackSheetState extends State<FeedbackSheet> {
         'type': label,
         'message': msg,
         'timestamp': ServerValue.timestamp,
+        'uid': FirebaseAuth.instance.currentUser?.uid ?? 'unknown',
+        'platform': kIsWeb ? 'web' : defaultTargetPlatform.name.toLowerCase(),
+        'version': const String.fromEnvironment('APP_VERSION', defaultValue: ''),
       });
 
       if (!mounted) return;

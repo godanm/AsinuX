@@ -32,7 +32,7 @@ flutter analyze
 
 ```bash
 # Generate release AAB (for Play Store upload)
-flutter build appbundle --release
+flutter build appbundle --release --dart-define=APP_VERSION=$(grep '^version:' pubspec.yaml | awk '{print $2}')
 
 # Output path:
 # build/app/outputs/bundle/release/app-release.aab
@@ -151,7 +151,7 @@ Then run: `flutter build web --release --dart-define=APP_VERSION=$(grep '^versio
 
 | Task | Command |
 |------|---------|
-| Build AAB | `flutter build appbundle --release` |
+| Build AAB | `flutter build appbundle --release --dart-define=APP_VERSION=$(grep '^version:' pubspec.yaml \| awk '{print $2}')` |
 | Deploy web | `flutter build web --release --dart-define=APP_VERSION=$(grep '^version:' pubspec.yaml \| awk '{print $2}') && firebase deploy --only hosting` |
 | Run on Chrome | `flutter run -d chrome` |
 | Run on Android | `flutter run -d android` |

@@ -103,6 +103,82 @@ class FirebaseService {
         await _roomRef(roomId).child('hostId').set(newHost);
         await _roomRef(roomId).child('players/$newHost/isHost').set(true);
       }
+
+      // Fix turn/leader state so the game doesn't stall after the player leaves.
+      // Without this, currentTurn/currentLeader remain set to the removed player's
+      // ID, bots see a null player and return early, and the game locks up.
+      if (state.phase == GamePhase.playing || state.phase == GamePhase.trickEnd) {
+        // Find the player who comes next after the leaving player in rotation.
+        // Using rotation order (not just newOrder.first) keeps the "who leads next"
+        // semantics correct — the player right after the leaver inherits their role.
+        final afterLeaving = [
+          ...state.playerOrder
+              .skipWhile((id) => id != playerId)
+              .skip(1),
+          ...state.playerOrder
+              .takeWhile((id) => id != playerId),
+        ].where((id) => newOrder.contains(id)).toList();
+
+        final nextValidPlayer = afterLeaving.firstWhere(
+          (id) {
+            final p = state.players[id];
+            return p != null && !p.isEliminated && p.hand.isNotEmpty;
+          },
+          orElse: () => newOrder.firstWhere(
+            (id) {
+              final p = state.players[id];
+              return p != null && !p.isEliminated && p.hand.isNotEmpty;
+            },
+            orElse: () => newOrder.isNotEmpty ? newOrder.first : '',
+          ),
+        );
+
+        if (nextValidPlayer.isNotEmpty) {
+          // Transfer leadership when the leaving player was the designated leader.
+          if (state.currentLeader == playerId) {
+            await _roomRef(roomId).child('currentLeader').set(nextValidPlayer);
+            // For trickEnd, also fix currentTurn so startNextTrick picks correctly.
+            if (state.phase == GamePhase.trickEnd) {
+              await _roomRef(roomId).child('currentTurn').set(nextValidPlayer);
+            }
+          }
+
+          // Advance currentTurn if it was the leaving player's turn to play.
+          if (state.phase == GamePhase.playing && state.currentTurn == playerId) {
+            final played = state.playedCards.keys.toSet();
+            final stillNeedToPlay = afterLeaving.where((id) {
+              if (played.contains(id)) return false;
+              final p = state.players[id];
+              return p != null && !p.isEliminated && p.hand.isNotEmpty;
+            }).toList();
+
+            if (stillNeedToPlay.isNotEmpty) {
+              // Others still need to play — advance to the next in rotation.
+              await _roomRef(roomId).child('currentTurn').set(stillNeedToPlay.first);
+            } else if (state.currentSuit != null && state.playedCards.isNotEmpty) {
+              // All remaining players have already played — resolve the trick now,
+              // treating the leaving player as having forfeited their turn.
+              final mergedPlayers = Map<String, Player>.from(state.players)
+                ..remove(playerId);
+              final mergedState = state.copyWith(
+                playerOrder: newOrder,
+                players: mergedPlayers,
+              );
+              await _resolveTrick(
+                mergedState,
+                Map<String, PlayingCard>.from(state.playedCards),
+                List<String>.from(state.finishOrder),
+                mergedPlayers,
+                state.currentSuit!,
+              );
+            } else {
+              // No cards played yet — transfer both leader and turn.
+              await _roomRef(roomId).child('currentLeader').set(nextValidPlayer);
+              await _roomRef(roomId).child('currentTurn').set(nextValidPlayer);
+            }
+          }
+        }
+      }
     }
   }
 

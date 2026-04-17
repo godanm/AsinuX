@@ -46,6 +46,8 @@ class _GameScreenState extends State<GameScreen> {
   String? _outgoingWinnerId;
   bool _outgoingIsCut = false;
   List<String> _outgoingOrder = [];
+  // -1 = me, 0 = left opponent, 1 = center opponent, 2 = right opponent
+  int _outgoingWinnerSlot = -1;
   Timer? _outgoingTimer;
 
   @override
@@ -172,11 +174,20 @@ class _GameScreenState extends State<GameScreen> {
       // For a cut the cutter becomes the next leader
       final effectiveId = winnerId ?? state.currentLeader;
       _outgoingTimer?.cancel();
+      // Determine which opponent slot the winner occupies (left=0, center=1, right=2)
+      // so the fly-out can aim cards at the right position.
+      final opponents = state.activePlayers
+          .where((p) => p.id != widget.playerId)
+          .toList();
+      final winnerSlot = effectiveId == widget.playerId
+          ? -1
+          : opponents.indexWhere((p) => p.id == effectiveId);
       setState(() {
         _outgoingCards = Map.from(prev.playedCards);
         _outgoingOrder = List.from(prev.playerOrder);
         _outgoingWinnerId = effectiveId;
         _outgoingIsCut = isCut;
+        _outgoingWinnerSlot = winnerSlot;
       });
       _outgoingTimer = Timer(const Duration(milliseconds: 750), () {
         if (mounted) setState(() => _outgoingCards = {});
@@ -231,15 +242,18 @@ class _GameScreenState extends State<GameScreen> {
       if (_iEscaped) setState(() => _iEscaped = false);
     }
 
-    // Show rewarded ad the moment the round fully completes (donkey determined).
-    // Fired from _onStateChange so context is always valid and mounted.
+    // Show rewarded ad after the round fully completes (donkey determined).
+    // 3-second delay lets the round-end screen animations play before the ad appears.
     // Guard prevents it firing again if the same state arrives multiple times.
     if (state.phase == GamePhase.trickEnd &&
         state.donkeyId != null &&
         !_roundEndAdFired) {
       _roundEndAdFired = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) AdMobService.instance.showRewardedAsync(context);
+        if (!mounted) return;
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted) AdMobService.instance.showRewardedAsync(context);
+        });
       });
     }
 
@@ -380,18 +394,21 @@ class _GameScreenState extends State<GameScreen> {
           _gameOverAdFired = true;
           WidgetsBinding.instance.addPostFrameCallback((_) async {
             if (!mounted) return;
-            final ctx = context;
+            // 3-second pause so the player can see the final game state
+            // before the ad appears (prevents the jarring "game is exiting" feel).
+            await Future.delayed(const Duration(seconds: 3));
+            if (!mounted) return;
             // Top-2 finishers get rewarded ad; 3rd place and donkey get interstitial
             final finishIndex = state.finishOrder.indexOf(widget.playerId);
             final isTopTwo = finishIndex >= 0 && finishIndex < 2;
             if (isTopTwo) {
-              await AdMobService.instance.showRewardedAsync(ctx);
+              await AdMobService.instance.showRewardedAsync(context);
             } else {
-              await AdMobService.instance.showInterstitialAsync(ctx);
+              await AdMobService.instance.showInterstitialAsync(context);
             }
             if (!mounted) return;
             Navigator.pushReplacement(
-              ctx,
+              context,
               MaterialPageRoute(
                 builder: (_) => ResultsScreen(
                   state: state,
@@ -552,6 +569,14 @@ class _GameScreenState extends State<GameScreen> {
               ),
             ),
 
+            // Turn banner — shows whose turn it is (opponents only)
+            _TurnBanner(
+              currentTurn: state.currentTurn,
+              myId: widget.playerId,
+              players: state.players,
+              phase: state.phase,
+            ),
+
             // Center table — sits between opponents and hand, never overlaps either
             Expanded(
               child: Stack(
@@ -576,6 +601,7 @@ class _GameScreenState extends State<GameScreen> {
                         winnerId: _outgoingWinnerId,
                         isCut: _outgoingIsCut,
                         myId: widget.playerId,
+                        winnerSlot: _outgoingWinnerSlot,
                       ),
                     ),
                   if (trickEnded)
@@ -621,12 +647,11 @@ class _GameScreenState extends State<GameScreen> {
         child: Column(
           children: [
             Expanded(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
                       // Dramatic donkey — zooms in from nothing, bounces, then shakes
                       Text(
                         iAmDonkey ? '🫏' : '🎉',
@@ -745,7 +770,6 @@ class _GameScreenState extends State<GameScreen> {
                     ],
                   ),
                 ),
-              ),
             ),
             const AdBannerWidget(),
           ],
@@ -868,6 +892,74 @@ class _TopInfoBar extends StatelessWidget {
   }
 }
 
+// ── Turn banner ───────────────────────────────────────────────────────────────
+
+class _TurnBanner extends StatelessWidget {
+  final String? currentTurn;
+  final String myId;
+  final Map<String, Player> players;
+  final GamePhase phase;
+
+  const _TurnBanner({
+    required this.currentTurn,
+    required this.myId,
+    required this.players,
+    required this.phase,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isOpponentTurn = phase == GamePhase.playing &&
+        currentTurn != null &&
+        currentTurn != myId;
+
+    final name = isOpponentTurn
+        ? (players[currentTurn]?.name.replaceAll('_', ' ') ?? '')
+        : '';
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      height: isOpponentTurn ? 28 : 0,
+      color: const Color(0xFF1a000e),
+      child: isOpponentTurn
+          ? Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF176),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFFF176).withValues(alpha: 0.8),
+                        blurRadius: 6,
+                      ),
+                    ],
+                  ),
+                )
+                    .animate(onPlay: (c) => c.repeat(reverse: true))
+                    .scaleXY(begin: 0.6, end: 1.0, duration: 500.ms),
+                const SizedBox(width: 8),
+                Text(
+                  '$name is playing…',
+                  style: const TextStyle(
+                    color: Color(0xFFFFF176),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            )
+          : const SizedBox.shrink(),
+    );
+  }
+}
+
+// ── Opponents layout ──────────────────────────────────────────────────────────
+
 class _OpponentsLayout extends StatelessWidget {
   final List<Player> players;
   final String? currentTurn;
@@ -941,13 +1033,16 @@ class _OpponentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final thinking = isTheirTurn && !hasPlayed && !escaped;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
         color: escaped
             ? Colors.green.shade900.withValues(alpha: 0.35)
-            : Colors.black.withValues(alpha: 0.35),
+            : thinking
+                ? const Color(0xFFE63946).withValues(alpha: 0.18)
+                : Colors.black.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: escaped
@@ -959,6 +1054,9 @@ class _OpponentCard extends StatelessWidget {
                       : Colors.white.withValues(alpha: 0.1),
           width: escaped || isTheirTurn || isCut ? 2 : 1,
         ),
+        boxShadow: thinking
+            ? [BoxShadow(color: const Color(0xFFE63946).withValues(alpha: 0.4), blurRadius: 8, spreadRadius: 1)]
+            : null,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1022,11 +1120,26 @@ class _OpponentCard extends StatelessWidget {
           Text(
             player.name.replaceAll('_', ' '),
             style: TextStyle(
-              color: escaped ? Colors.green.shade300 : Colors.white,
+              color: escaped
+                  ? Colors.green.shade300
+                  : thinking
+                      ? const Color(0xFFE63946)
+                      : Colors.white,
               fontSize: 9,
-              fontWeight: FontWeight.w600,
+              fontWeight: thinking ? FontWeight.w900 : FontWeight.w600,
             ),
           ),
+          if (thinking)
+            Text(
+              'Thinking…',
+              style: const TextStyle(
+                color: Color(0xFFFFF176), // bright yellow — pops on dark bg
+                fontSize: 8,
+                fontWeight: FontWeight.w700,
+              ),
+            )
+                .animate(onPlay: (c) => c.repeat(reverse: true))
+                .fadeIn(duration: 400.ms, curve: Curves.easeInOut),
           if (escaped)
             Padding(
               padding: const EdgeInsets.only(top: 2),
@@ -1249,7 +1362,7 @@ class _MyInfoBar extends StatelessWidget {
   }
 }
 
-class _MyHand extends StatelessWidget {
+class _MyHand extends StatefulWidget {
   final Player? player;
   final bool isMyTurn;
   final int? currentSuit;
@@ -1269,8 +1382,37 @@ class _MyHand extends StatelessWidget {
   });
 
   @override
+  State<_MyHand> createState() => _MyHandState();
+}
+
+class _MyHandState extends State<_MyHand> {
+  int? _selectedIdx;
+
+  @override
+  void didUpdateWidget(_MyHand oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.isMyTurn || widget.iHavePlayed) {
+      if (_selectedIdx != null) setState(() => _selectedIdx = null);
+    } else if (_selectedIdx != null) {
+      final hand = widget.player?.hand ?? [];
+      if (_selectedIdx! >= hand.length) setState(() => _selectedIdx = null);
+    }
+  }
+
+  void _onCardTap(int globalIdx, bool suitValid) {
+    if (!suitValid || widget.busy || !widget.isMyTurn || widget.iHavePlayed) return;
+    if (_selectedIdx == globalIdx) {
+      // Second tap on the same card → play it
+      setState(() => _selectedIdx = null);
+      widget.onPlayCard(globalIdx);
+    } else {
+      setState(() => _selectedIdx = globalIdx);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final hand = player?.hand ?? [];
+    final hand = widget.player?.hand ?? [];
     if (hand.isEmpty) {
       return Container(
         height: 200,
@@ -1281,201 +1423,275 @@ class _MyHand extends StatelessWidget {
       );
     }
 
-    // Group cards by suit: ♠ ♥ ♦ ♣
     final suitOrder = [Suit.spades, Suit.hearts, Suit.diamonds, Suit.clubs];
     final bySuit = <Suit, List<MapEntry<int, PlayingCard>>>{};
     for (final s in suitOrder) { bySuit[s] = []; }
     for (final entry in hand.asMap().entries) {
       bySuit[entry.value.suit]!.add(entry);
     }
-    // Sort low→high: index 0 = 2 (top/peeking), last = Ace (bottom/fully visible)
+    // Sort low→high within each suit
     for (final list in bySuit.values) {
       list.sort((a, b) => a.value.rank.index.compareTo(b.value.rank.index));
     }
 
-    final bool canPlayAny = isMyTurn && !iHavePlayed;
+    final bool canPlayAny = widget.isMyTurn && !widget.iHavePlayed;
 
     String statusText;
-    if (iHavePlayed) {
+    if (widget.iHavePlayed) {
       statusText = '✓ Played — waiting...';
-    } else if (!isMyTurn) {
+    } else if (!widget.isMyTurn) {
       statusText = 'Waiting...';
-    } else if (isLeader) {
+    } else if (_selectedIdx != null) {
+      statusText = 'Tap card again to play  ·  × to cancel';
+    } else if (widget.isLeader) {
       statusText = 'TAP any card to lead';
     } else {
-      final suit = currentSuit != null ? Suit.values[currentSuit!] : null;
-      final hasMatch = suit != null && GameLogic.hasMatchingSuit(hand, currentSuit!);
+      final suit = widget.currentSuit != null ? Suit.values[widget.currentSuit!] : null;
+      final hasMatch = suit != null && GameLogic.hasMatchingSuit(hand, widget.currentSuit!);
       statusText = hasMatch
           ? 'TAP a ${suit.name} card'
           : 'No ${suit?.name ?? ''} — TAP any card to cut';
     }
 
     const double cardH = 90.0;
-    const double peekH = 26.0; // enough to show rank+suit at top of each card
+    const double peekH = 26.0;
 
     return LayoutBuilder(builder: (context, constraints) {
-    // Clamp column height so the hand never overflows on small screens.
-    // Reserve ~90px for top bar + ~50px for ad + ~70px for info bar + status text.
-    final screenH = MediaQuery.of(context).size.height;
-    final colHeight = (screenH * 0.30).clamp(130.0, 220.0);
+      final screenH = MediaQuery.of(context).size.height;
+      final colHeight = (screenH * 0.30).clamp(130.0, 220.0);
 
-    return Container(
-      color: const Color(0xFF5a1a30),
-      padding: const EdgeInsets.fromLTRB(6, 6, 6, 8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Text(
-              statusText,
-              style: TextStyle(
-                color: canPlayAny ? Colors.white : Colors.white.withValues(alpha: 0.35),
-                fontSize: 13,
-                fontWeight: canPlayAny ? FontWeight.bold : FontWeight.normal,
+      return Container(
+        color: const Color(0xFF5a1a30),
+        padding: const EdgeInsets.fromLTRB(6, 6, 6, 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Text(
+                statusText,
+                style: TextStyle(
+                  color: canPlayAny ? Colors.white : Colors.white.withValues(alpha: 0.35),
+                  fontSize: 13,
+                  fontWeight: canPlayAny ? FontWeight.bold : FontWeight.normal,
+                ),
               ),
             ),
-          ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: suitOrder.map((suit) {
-              final cards = bySuit[suit]!;
-              final isRed = suit == Suit.hearts || suit == Suit.diamonds;
-              final suitSymbol = switch (suit) {
-                Suit.spades => '♠',
-                Suit.hearts => '♥',
-                Suit.diamonds => '♦',
-                Suit.clubs => '♣',
-              };
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: suitOrder.map((suit) {
+                final cards = bySuit[suit]!;
+                final isRed = suit == Suit.hearts || suit == Suit.diamonds;
+                final suitSymbol = switch (suit) {
+                  Suit.spades => '♠',
+                  Suit.hearts => '♥',
+                  Suit.diamonds => '♦',
+                  Suit.clubs => '♣',
+                };
 
-              final count = cards.length;
-              // Each peeking card shows exactly peekH pixels (rank+suit visible)
-              // Bottom card is fully shown — so total = peekH*(n-1) + cardH
-              final double offset = count <= 1 ? 0 : peekH;
+                final count = cards.length;
+                final double offset = count <= 1 ? 0 : peekH;
 
-              bool suitValid;
-              if (!canPlayAny) {
-                suitValid = false;
-              } else if (isLeader || currentSuit == null) {
-                suitValid = true;
-              } else {
-                final hasMatch = GameLogic.hasMatchingSuit(hand, currentSuit!);
-                suitValid = !hasMatch || suit.index == currentSuit;
-              }
+                bool suitValid;
+                if (!canPlayAny) {
+                  suitValid = false;
+                } else if (widget.isLeader || widget.currentSuit == null) {
+                  suitValid = true;
+                } else {
+                  final hasMatch = GameLogic.hasMatchingSuit(hand, widget.currentSuit!);
+                  suitValid = !hasMatch || suit.index == widget.currentSuit;
+                }
 
-              return Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 3),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Suit header pill — flashes when this suit is playable
-                      Builder(builder: (context) {
-                        final pill = Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: suitValid && canPlayAny
-                                ? (isRed ? Colors.red.shade600 : Colors.blueGrey.shade700)
-                                : Colors.white.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
+                // Render selected card last so it appears on top
+                final orderedEntries = List<MapEntry<int, MapEntry<int, PlayingCard>>>.from(
+                  cards.asMap().entries,
+                );
+                if (_selectedIdx != null) {
+                  final selLocal = orderedEntries.indexWhere(
+                    (e) => e.value.key == _selectedIdx,
+                  );
+                  if (selLocal >= 0) {
+                    final sel = orderedEntries.removeAt(selLocal);
+                    orderedEntries.add(sel);
+                  }
+                }
+
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 3),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Suit header pill
+                        Builder(builder: (context) {
+                          final pill = Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
                               color: suitValid && canPlayAny
-                                  ? Colors.white.withValues(alpha: 0.4)
-                                  : Colors.white.withValues(alpha: 0.2),
-                              width: 1,
+                                  ? (isRed ? Colors.red.shade600 : Colors.blueGrey.shade700)
+                                  : Colors.white.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: suitValid && canPlayAny
+                                    ? Colors.white.withValues(alpha: 0.4)
+                                    : Colors.white.withValues(alpha: 0.2),
+                                width: 1,
+                              ),
                             ),
-                          ),
-                          child: Text(
-                            '$suitSymbol ${cards.length}',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: isRed ? Colors.red.shade100 : Colors.white,
+                            child: Text(
+                              '$suitSymbol ${cards.length}',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: isRed ? Colors.red.shade100 : Colors.white,
+                              ),
                             ),
-                          ),
-                        );
-                        if (suitValid && canPlayAny) {
-                          return pill
-                              .animate(onPlay: (c) => c.repeat(reverse: true))
-                              .fadeIn(duration: 600.ms)
-                              .then()
-                              .fadeOut(duration: 600.ms);
-                        }
-                        return pill;
-                      }),
-                      const SizedBox(height: 4),
-                      SizedBox(
-                        height: colHeight,
-                        child: cards.isEmpty
-                            ? Container(
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.white10),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              )
-                            : Stack(
-                                children: cards.asMap().entries.map((entry) {
-                                  final stackIdx = entry.key;
-                                  final globalIdx = entry.value.key;
-                                  final card = entry.value.value;
+                          );
+                          if (suitValid && canPlayAny) {
+                            return pill
+                                .animate(onPlay: (c) => c.repeat(reverse: true))
+                                .fadeIn(duration: 600.ms)
+                                .then()
+                                .fadeOut(duration: 600.ms);
+                          }
+                          return pill;
+                        }),
+                        const SizedBox(height: 4),
+                        SizedBox(
+                          height: colHeight,
+                          child: cards.isEmpty
+                              ? Container(
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.white10),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                )
+                              : Stack(
+                                  clipBehavior: Clip.none,
+                                  children: orderedEntries.map((entry) {
+                                    final stackIdx = entry.key;
+                                    final globalIdx = entry.value.key;
+                                    final card = entry.value.value;
+                                    final isSelected = _selectedIdx == globalIdx;
 
-                                  return Positioned(
-                                    top: stackIdx * offset,
-                                    left: 0,
-                                    right: 0,
-                                    child: GestureDetector(
-                                      onTap: (suitValid && !busy)
-                                          ? () => onPlayCard(globalIdx)
-                                          : null,
-                                      child: Opacity(
-                                        opacity: canPlayAny && !suitValid ? 0.3 : 1.0,
-                                        child: AnimatedScale(
-                                          scale: (suitValid && busy) ? 0.85 : 1.0,
-                                          duration: const Duration(milliseconds: 150),
-                                          child: Container(
-                                          height: cardH,
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(8),
-                                            boxShadow: suitValid
-                                                ? [
-                                                    BoxShadow(
-                                                      color: const Color(0xFFE63946)
-                                                          .withValues(alpha: 0.25),
-                                                      blurRadius: 4,
-                                                      spreadRadius: 1,
-                                                    )
-                                                  ]
-                                                : [
-                                                    BoxShadow(
-                                                      color: Colors.black.withValues(alpha: 0.3),
-                                                      blurRadius: 3,
-                                                      offset: const Offset(0, 1),
-                                                    )
-                                                  ],
-                                          ),
-                                          child: CardWidget(
-                                            card: card,
-                                            width: double.infinity,
-                                            height: cardH,
+                                    return Positioned(
+                                      top: stackIdx * offset,
+                                      left: 0,
+                                      right: 0,
+                                      child: GestureDetector(
+                                        onTap: (suitValid && !widget.busy)
+                                            ? () => _onCardTap(globalIdx, suitValid)
+                                            : null,
+                                        child: TweenAnimationBuilder<double>(
+                                          tween: Tween(begin: 0.0, end: isSelected ? -30.0 : 0.0),
+                                          duration: const Duration(milliseconds: 160),
+                                          curve: Curves.easeOut,
+                                          builder: (_, dy, child) =>
+                                              Transform.translate(offset: Offset(0, dy), child: child),
+                                          child: Stack(
+                                            clipBehavior: Clip.none,
+                                            children: [
+                                              Opacity(
+                                                opacity: canPlayAny && !suitValid ? 0.3 : 1.0,
+                                                child: AnimatedScale(
+                                                  scale: (suitValid && widget.busy) ? 0.85 : 1.0,
+                                                  duration: const Duration(milliseconds: 150),
+                                                  child: AnimatedContainer(
+                                                    duration: const Duration(milliseconds: 160),
+                                                    height: cardH,
+                                                    decoration: BoxDecoration(
+                                                      borderRadius: BorderRadius.circular(8),
+                                                      border: isSelected
+                                                          ? Border.all(
+                                                              color: const Color(0xFF4CAF50),
+                                                              width: 2.5,
+                                                            )
+                                                          : null,
+                                                      boxShadow: isSelected
+                                                          ? [
+                                                              BoxShadow(
+                                                                color: const Color(0xFF4CAF50)
+                                                                    .withValues(alpha: 0.55),
+                                                                blurRadius: 12,
+                                                                spreadRadius: 2,
+                                                              )
+                                                            ]
+                                                          : suitValid
+                                                              ? [
+                                                                  BoxShadow(
+                                                                    color: const Color(0xFFE63946)
+                                                                        .withValues(alpha: 0.25),
+                                                                    blurRadius: 4,
+                                                                    spreadRadius: 1,
+                                                                  )
+                                                                ]
+                                                              : [
+                                                                  BoxShadow(
+                                                                    color: Colors.black
+                                                                        .withValues(alpha: 0.3),
+                                                                    blurRadius: 3,
+                                                                    offset: const Offset(0, 1),
+                                                                  )
+                                                                ],
+                                                    ),
+                                                    child: CardWidget(
+                                                      card: card,
+                                                      width: double.infinity,
+                                                      height: cardH,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                              // × badge — only on the selected card
+                                              if (isSelected)
+                                                Positioned(
+                                                  top: -8,
+                                                  right: -8,
+                                                  child: GestureDetector(
+                                                    onTap: () => setState(() => _selectedIdx = null),
+                                                    child: Container(
+                                                      width: 22,
+                                                      height: 22,
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.red.shade700,
+                                                        shape: BoxShape.circle,
+                                                        border: Border.all(
+                                                          color: Colors.white,
+                                                          width: 1.5,
+                                                        ),
+                                                        boxShadow: [
+                                                          BoxShadow(
+                                                            color: Colors.black.withValues(alpha: 0.4),
+                                                            blurRadius: 4,
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      child: const Icon(
+                                                        Icons.close,
+                                                        color: Colors.white,
+                                                        size: 13,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  ),
-                                  );
-                                }).toList(),
-                              ),
-                      ),
-                    ],
+                                    );
+                                  }).toList(),
+                                ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-    }); // LayoutBuilder
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      );
+    });
   }
 }
 
@@ -1704,6 +1920,8 @@ class _TrickFlyOut extends StatelessWidget {
   final String? winnerId;
   final bool isCut;
   final String myId;
+  // -1 = me (bottom), 0 = left opp, 1 = center opp, 2 = right opp
+  final int winnerSlot;
 
   const _TrickFlyOut({
     required this.cards,
@@ -1711,13 +1929,12 @@ class _TrickFlyOut extends StatelessWidget {
     required this.winnerId,
     required this.isCut,
     required this.myId,
+    required this.winnerSlot,
   });
 
   @override
   Widget build(BuildContext context) {
-    final winnerIsMe = winnerId == myId;
-    // Positive dy = toward bottom (local player), negative = toward top (opponent)
-    final dy = winnerIsMe ? 200.0 : -200.0;
+    final winnerIsMe = winnerSlot == -1;
     final cutColor = Colors.red.shade700;
 
     final ordered = playerOrder
@@ -1725,82 +1942,94 @@ class _TrickFlyOut extends StatelessWidget {
         .map((id) => MapEntry(id, cards[id]!))
         .toList();
 
-    final cardWrap = Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      alignment: WrapAlignment.center,
-      children: ordered.asMap().entries.map((entry) {
-        final i = entry.key;
-        final e = entry.value;
-        final card = e.value;
-        // For cut: converge cards toward center-x as they fly to the recipient.
-        // Small offset so cards don't all stack exactly — gives a "dealt into
-        // a hand" look rather than a single-point collapse.
-        final targetDx = isCut ? (i - (ordered.length - 1) / 2) * 8.0 : 0.0;
+    return LayoutBuilder(builder: (context, constraints) {
+      final w = constraints.maxWidth;
 
-        return Container(
-          decoration: isCut
-              ? BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: cutColor.withValues(alpha: 0.8), width: 2),
-                  boxShadow: [
-                    BoxShadow(color: cutColor.withValues(alpha: 0.5), blurRadius: 12, spreadRadius: 2),
-                  ],
-                )
-              : null,
-          child: CardWidget(card: card, width: 58, height: 82),
-        )
-            .animate()
-            .then(delay: 100.ms) // brief pause — player sees cards before they fly
-            .move(
-              begin: Offset.zero,
-              end: Offset(targetDx, dy),
-              duration: 480.ms,
-              curve: Curves.easeIn,
-            )
-            .scaleXY(
-              // Shrink as cards fly away — perspective "going into someone's hand"
-              begin: 1.0,
-              end: isCut ? 0.25 : 1.0,
-              duration: 480.ms,
-              curve: Curves.easeIn,
-            )
-            .fadeOut(duration: 280.ms, delay: 250.ms);
-      }).toList(),
-    );
+      // Target position relative to the center of the table.
+      // dy: positive = down toward me, negative = up toward opponents.
+      // dx: left/right to aim at the correct opponent slot.
+      double baseDx = 0;
+      double baseDy;
+      if (winnerIsMe) {
+        baseDy = 220;
+      } else {
+        baseDy = -220;
+        if (winnerSlot == 0) baseDx = -(w / 2 - 65); // left opponent
+        if (winnerSlot == 2) baseDx = (w / 2 - 65);  // right opponent
+        // slot 1 (center): baseDx stays 0
+      }
 
-    if (!isCut) return IgnorePointer(child: cardWrap);
+      final cardWrap = Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        alignment: WrapAlignment.center,
+        children: ordered.asMap().entries.map((entry) {
+          final i = entry.key;
+          final card = entry.value.value;
+          // Small fan spread so cards don't collapse to a single point
+          final spreadDx = (i - (ordered.length - 1) / 2) * 8.0;
 
-    // On a cut: wrap cards in a column with a "VETTU! 🫏" label
-    // pointing toward the recipient so it's clear who gets punished.
-    final vettuLabel = Text(
-      'VETTU! 🫏',
-      style: TextStyle(
-        color: cutColor,
-        fontSize: 16,
-        fontWeight: FontWeight.w900,
-        letterSpacing: 2,
-        shadows: [Shadow(color: cutColor.withValues(alpha: 0.6), blurRadius: 8)],
-      ),
-    )
-        .animate()
-        .fadeIn(duration: 120.ms)
-        .scaleXY(begin: 1.3, end: 1.0, duration: 200.ms, curve: Curves.easeOut)
-        .then(delay: 350.ms)
-        .fadeOut(duration: 250.ms);
+          return Container(
+            decoration: isCut
+                ? BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: cutColor.withValues(alpha: 0.8), width: 2),
+                    boxShadow: [
+                      BoxShadow(color: cutColor.withValues(alpha: 0.5), blurRadius: 12, spreadRadius: 2),
+                    ],
+                  )
+                : null,
+            child: CardWidget(card: card, width: 58, height: 82),
+          )
+              .animate()
+              .then(delay: 100.ms)
+              .move(
+                begin: Offset.zero,
+                end: Offset(baseDx + spreadDx, baseDy),
+                duration: 480.ms,
+                curve: Curves.easeIn,
+              )
+              .scaleXY(
+                begin: 1.0,
+                end: 0.25,
+                duration: 480.ms,
+                curve: Curves.easeIn,
+              )
+              .fadeOut(duration: 280.ms, delay: 250.ms);
+        }).toList(),
+      );
 
-    return IgnorePointer(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (!winnerIsMe) vettuLabel, // opponent picks up: label above cards
-          const SizedBox(height: 6),
-          cardWrap,
-          const SizedBox(height: 6),
-          if (winnerIsMe) vettuLabel,  // I pick up: label below cards
-        ],
-      ),
-    );
+      if (!isCut) return IgnorePointer(child: cardWrap);
+
+      final vettuLabel = Text(
+        'VETTU! 🫏',
+        style: TextStyle(
+          color: cutColor,
+          fontSize: 16,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 2,
+          shadows: [Shadow(color: cutColor.withValues(alpha: 0.6), blurRadius: 8)],
+        ),
+      )
+          .animate()
+          .fadeIn(duration: 120.ms)
+          .scaleXY(begin: 1.3, end: 1.0, duration: 200.ms, curve: Curves.easeOut)
+          .then(delay: 350.ms)
+          .fadeOut(duration: 250.ms);
+
+      return IgnorePointer(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!winnerIsMe) vettuLabel,
+            const SizedBox(height: 6),
+            cardWrap,
+            const SizedBox(height: 6),
+            if (winnerIsMe) vettuLabel,
+          ],
+        ),
+      );
+    });
   }
 }
 

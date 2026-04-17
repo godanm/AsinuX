@@ -154,8 +154,8 @@ class BotService {
   // ── Delay by difficulty ──────────────────────────────────────
 
   Duration _thinkTime() => switch (_difficulty) {
-        BotDifficulty.medium => Duration(milliseconds: 1000 + _random.nextInt(3000)),
-        BotDifficulty.hard   => Duration(milliseconds: 500 + _random.nextInt(1500)),
+        BotDifficulty.medium => Duration(milliseconds: 800 + _random.nextInt(2200)),  // 0.8–3s  feels human
+        BotDifficulty.hard   => Duration(milliseconds: 2500 + _random.nextInt(2500)), // 2.5–5s  feels calculating
       };
 
   // ── State handler ────────────────────────────────────────────

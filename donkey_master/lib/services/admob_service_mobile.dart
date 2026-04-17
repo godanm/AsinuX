@@ -50,9 +50,11 @@ class AdMobService {
 
   InterstitialAd? _interstitialAd;
   bool _isInterstitialReady = false;
+  Completer<void>? _interstitialLoadCompleter;
 
   RewardedInterstitialAd? _rewardedAd;
   bool _isRewardedReady = false;
+  Completer<void>? _rewardedLoadCompleter;
 
   Future<void> initialize() async {
     await MobileAds.instance.initialize();
@@ -63,6 +65,7 @@ class AdMobService {
   // ── Loaders ──────────────────────────────────────────────────
 
   void _loadInterstitial() {
+    _interstitialLoadCompleter = Completer<void>();
     debugPrint('[AdMob] loading interstitial (${kDebugMode ? "TEST" : "LIVE"}) $interstitialAdUnitId');
     InterstitialAd.load(
       adUnitId: interstitialAdUnitId,
@@ -72,10 +75,14 @@ class AdMobService {
           debugPrint('[AdMob] interstitial loaded ✓');
           _interstitialAd = ad;
           _isInterstitialReady = true;
+          _interstitialLoadCompleter?.complete();
+          _interstitialLoadCompleter = null;
         },
         onAdFailedToLoad: (error) {
           debugPrint('[AdMob] interstitial FAILED TO LOAD: ${error.code} ${error.message} domain=${error.domain}');
           _isInterstitialReady = false;
+          _interstitialLoadCompleter?.complete();
+          _interstitialLoadCompleter = null;
           Future.delayed(const Duration(minutes: 1), _loadInterstitial);
         },
       ),
@@ -83,6 +90,7 @@ class AdMobService {
   }
 
   void _loadRewarded() {
+    _rewardedLoadCompleter = Completer<void>();
     debugPrint('[AdMob] loading rewarded interstitial (${kDebugMode ? "TEST" : "LIVE"}) $rewardedInterstitialAdUnitId');
     RewardedInterstitialAd.load(
       adUnitId: rewardedInterstitialAdUnitId,
@@ -92,10 +100,14 @@ class AdMobService {
           debugPrint('[AdMob] rewarded interstitial loaded ✓');
           _rewardedAd = ad;
           _isRewardedReady = true;
+          _rewardedLoadCompleter?.complete();
+          _rewardedLoadCompleter = null;
         },
         onAdFailedToLoad: (error) {
           debugPrint('[AdMob] rewarded FAILED TO LOAD: ${error.code} ${error.message} domain=${error.domain}');
           _isRewardedReady = false;
+          _rewardedLoadCompleter?.complete();
+          _rewardedLoadCompleter = null;
           Future.delayed(const Duration(minutes: 2), _loadRewarded);
         },
       ),
@@ -104,12 +116,27 @@ class AdMobService {
 
   // ── Show methods (awaitable — complete when ad is dismissed) ──
 
-  /// Show standard interstitial. Used when player quits mid-game.
-  /// Completes when the ad is dismissed (or immediately if no ad is ready).
-  /// [context] is accepted for API compatibility with the web stub but ignored.
+  /// Show standard interstitial.
+  /// If the ad is still loading, waits up to [_kAdLoadTimeout] for it to finish
+  /// before giving up — prevents silent skips when a game ends right after a
+  /// previous ad triggered a reload.
   Future<void> showInterstitialAsync([BuildContext? context]) async {
     debugPrint('[AdMob] showInterstitialAsync — ready=$_isInterstitialReady');
-    if (!_isInterstitialReady || _interstitialAd == null) return;
+    if (!_isInterstitialReady || _interstitialAd == null) {
+      // Wait for an in-flight load rather than silently giving up
+      final pending = _interstitialLoadCompleter;
+      if (pending != null && !pending.isCompleted) {
+        debugPrint('[AdMob] interstitial not ready — waiting for load…');
+        await pending.future.timeout(
+          const Duration(seconds: 5),
+          onTimeout: () {},
+        );
+      }
+      if (!_isInterstitialReady || _interstitialAd == null) {
+        debugPrint('[AdMob] interstitial still not ready after wait — skipping');
+        return;
+      }
+    }
 
     final completer = Completer<void>();
     _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
@@ -134,12 +161,23 @@ class AdMobService {
     await completer.future;
   }
 
-  /// Show rewarded interstitial. Used at round end / game win.
-  /// Falls back to standard interstitial if rewarded isn't ready.
-  /// Completes when the ad is dismissed (or immediately if no ad is ready).
-  /// [context] is accepted for API compatibility with the web stub but ignored.
+  /// Show rewarded interstitial. Falls back to standard interstitial if not ready.
+  /// Also waits for in-flight loads before giving up.
   Future<void> showRewardedAsync([BuildContext? context]) async {
     debugPrint('[AdMob] showRewardedAsync — rewarded=$_isRewardedReady interstitial=$_isInterstitialReady');
+
+    // Wait for rewarded to finish loading if it isn't ready yet
+    if (!_isRewardedReady || _rewardedAd == null) {
+      final pending = _rewardedLoadCompleter;
+      if (pending != null && !pending.isCompleted) {
+        debugPrint('[AdMob] rewarded not ready — waiting for load…');
+        await pending.future.timeout(
+          const Duration(seconds: 5),
+          onTimeout: () {},
+        );
+      }
+    }
+
     if (_isRewardedReady && _rewardedAd != null) {
       final completer = Completer<void>();
       _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
@@ -160,9 +198,10 @@ class AdMobService {
           if (!completer.isCompleted) completer.complete();
         },
       );
-      _rewardedAd!.show(onUserEarnedReward: (_, __) {});
+      _rewardedAd!.show(onUserEarnedReward: (ad, reward) {});
       await completer.future;
     } else {
+      // Rewarded unavailable — fall back to interstitial
       await showInterstitialAsync();
     }
   }
