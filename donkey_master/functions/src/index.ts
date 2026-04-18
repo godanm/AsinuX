@@ -3,7 +3,9 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { logger } from "firebase-functions";
 
-admin.initializeApp();
+admin.initializeApp({
+  databaseURL: "https://asinux-89da0-default-rtdb.firebaseio.com",
+});
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

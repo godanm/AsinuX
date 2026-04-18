@@ -276,35 +276,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       // ── Bottom group: stats + game cards ──────────
                       Column(
                         children: [
-                          // ── Quick stats strip ──────────────────────
-                          if (_stats.roundsPlayed > 0) ...[
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 24),
-                              child: Row(
-                                children: [
-                                  // Centered over Kazhutha card
-                                  Expanded(
-                                    child: Center(
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          _QuickStat(label: 'Rounds', value: '${_stats.roundsPlayed}'),
-                                          _QuickStatDivider(),
-                                          _QuickStat(label: 'Escaped', value: '${_stats.escapeCount}', color: Colors.greenAccent.shade400),
-                                          _QuickStatDivider(),
-                                          _QuickStat(label: 'Donkey', value: '${_stats.donkeyCount}', color: Colors.redAccent),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12), // matches game cards gap
-                                  const Expanded(child: SizedBox()),
-                                ],
-                              ),
-                            ).animate().fadeIn(delay: 400.ms),
-                            const SizedBox(height: 10),
-                          ],
-
                           // ── Game cards ─────────────────────────────
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -394,38 +365,6 @@ class _SuitWatermarks extends StatelessWidget {
           child: Text('♣', style: TextStyle(fontSize: 90, color: Colors.white.withValues(alpha: 0.03))),
         ),
       ],
-    );
-  }
-}
-
-// ── Quick stat pill ───────────────────────────────────────────────────────────
-
-class _QuickStat extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-
-  const _QuickStat({required this.label, required this.value, this.color = Colors.white});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(value, style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 2),
-        Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 10, letterSpacing: 1)),
-      ],
-    );
-  }
-}
-
-class _QuickStatDivider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 1, height: 28,
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      color: Colors.white.withValues(alpha: 0.1),
     );
   }
 }

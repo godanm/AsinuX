@@ -27,6 +27,7 @@ class _RummyLobbyScreenState extends State<RummyLobbyScreen> {
   StreamSubscription<Map<String, dynamic>?>? _sub;
   Map<String, dynamic> _room = {};
   bool _leaving = false;
+  bool _starting = false;
 
   @override
   void initState() {
@@ -89,8 +90,11 @@ class _RummyLobbyScreenState extends State<RummyLobbyScreen> {
     final playerList = _players.values
         .map((p) => Map<String, dynamic>.from(p as Map))
         .toList()
-      ..sort((a, b) =>
-          ((a['joinedAt'] ?? 0) as int).compareTo((b['joinedAt'] ?? 0) as int));
+      ..sort((a, b) {
+          final aTs = (a['joinedAt'] as num?)?.toInt() ?? 0;
+          final bTs = (b['joinedAt'] as num?)?.toInt() ?? 0;
+          return aTs.compareTo(bTs);
+        });
 
     final waiting = widget.maxPlayers - playerList.length;
 
@@ -230,7 +234,7 @@ class _RummyLobbyScreenState extends State<RummyLobbyScreen> {
                         width: double.infinity,
                         height: 52,
                         child: ElevatedButton(
-                          onPressed: _isFull ? _startGame : null,
+                          onPressed: _isFull && !_starting ? _startGame : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF1565C0),
                             disabledBackgroundColor:
@@ -239,7 +243,7 @@ class _RummyLobbyScreenState extends State<RummyLobbyScreen> {
                                 borderRadius: BorderRadius.circular(16)),
                           ),
                           child: Text(
-                            _isFull ? 'START GAME' : 'WAITING FOR PLAYERS…',
+                            _starting ? 'STARTING…' : _isFull ? 'START GAME' : 'WAITING FOR PLAYERS…',
                             style: TextStyle(
                               color: _isFull
                                   ? Colors.white
@@ -267,10 +271,25 @@ class _RummyLobbyScreenState extends State<RummyLobbyScreen> {
   }
 
   Future<void> _startGame() async {
-    // Turn order and player names are determined server-side by the
-    // dealRummyGame Cloud Function from the room data — no need to pass them.
-    await RummyService.instance.startGame(roomId: widget.roomId);
-    // Navigation is handled by _onRoomUpdate when status → 'started'
+    setState(() => _starting = true);
+    try {
+      await RummyService.instance.startGame(roomId: widget.roomId);
+      // Navigation is handled by _onRoomUpdate when status → 'started'
+    } catch (e, st) {
+      debugPrint('[Rummy] startGame error: $e\n$st');
+      if (mounted) {
+        setState(() => _starting = false);
+        final trace = st.toString().split('\n').take(4).join('\n');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: SelectableText('$e\n$trace',
+                style: const TextStyle(fontSize: 10, fontFamily: 'monospace')),
+            backgroundColor: Colors.red.shade900,
+            duration: const Duration(seconds: 60),
+          ),
+        );
+      }
+    }
   }
 }
 

@@ -220,9 +220,15 @@ class RummyService {
 
   Future<void> startGame({required String roomId}) async {
     debugPrint('[Rummy] startGame — calling dealRummyGame CF for $roomId');
-    final callable =
-        FirebaseFunctions.instance.httpsCallable('dealRummyGame');
-    await callable.call({'roomId': roomId});
+    try {
+      final callable =
+          FirebaseFunctions.instance.httpsCallable('dealRummyGame');
+      final result = await callable.call({'roomId': roomId});
+      debugPrint('[Rummy] startGame CF returned: ${result.data}');
+    } catch (e, st) {
+      debugPrint('[Rummy] startGame CF threw: $e\n$st');
+      rethrow;
+    }
     // Status → 'started' and all hands are written atomically by the CF.
     // Lobby screens navigate when they observe the status change.
   }
