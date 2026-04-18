@@ -76,6 +76,20 @@
       }
     },
 
+    // ── 28 rooms ──────────────────────────────────────────────────────────────
+    "game28_rooms": {
+      "$roomId": {
+        ".read":  "auth != null && root.child('game28_rooms').child($roomId).child('players').child(auth.uid).exists()",
+        ".write": "auth != null && (root.child('game28_rooms').child($roomId).child('players').child(auth.uid).exists() || newData.child('players').child(auth.uid).exists())"
+      }
+    },
+
+    // ── 28 room code lookup ───────────────────────────────────────────────────
+    "game28_codes": {
+      ".read":  "auth != null",
+      ".write": "auth != null"
+    },
+
     // ── Game logs ─────────────────────────────────────────────────────────────
     "gamelogs": {
       "$roomId": {
