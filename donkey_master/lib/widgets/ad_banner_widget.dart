@@ -12,19 +12,27 @@ class AdBannerWidget extends StatefulWidget {
 
 class _AdBannerWidgetState extends State<AdBannerWidget> {
   dynamic _ad;
+  AdSize? _adSize;
   bool _loaded = false;
+  bool _loadStarted = false;
 
   @override
-  void initState() {
-    super.initState();
-    if (!kIsWeb) _loadAd();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!kIsWeb && !_loadStarted) {
+      _loadStarted = true;
+      _loadAd();
+    }
   }
 
-  void _loadAd() async {
+  Future<void> _loadAd() async {
     try {
-      final ad = AdMobService.instance.createBannerAd();
+      final width = MediaQuery.of(context).size.width.truncate();
+      final adSize = await AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(width);
+      if (adSize == null || !mounted) return;
+      final ad = AdMobService.instance.createBannerAd(adSize);
       await ad.load();
-      if (mounted) setState(() { _ad = ad; _loaded = true; });
+      if (mounted) setState(() { _ad = ad; _adSize = adSize; _loaded = true; });
     } catch (_) {}
   }
 
@@ -39,9 +47,13 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
     // ── Web: placeholder until real AdSense script is wired ──────
     if (kIsWeb) return const _WebAdPlaceholder();
 
-    // ── Android/iOS: AdMob banner ─────────────────────────────────
-    if (!_loaded || _ad == null) return const SizedBox.shrink();
-    return SizedBox(height: 50, child: AdWidget(ad: _ad));
+    // ── Android/iOS: AdMob adaptive banner ───────────────────────
+    if (!_loaded || _ad == null || _adSize == null) return const SizedBox.shrink();
+    return SizedBox(
+      width: _adSize!.width.toDouble(),
+      height: _adSize!.height.toDouble(),
+      child: AdWidget(ad: _ad),
+    );
   }
 }
 

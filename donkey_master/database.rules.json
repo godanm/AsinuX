@@ -2,10 +2,6 @@
   "rules": {
 
     // ── Kazhutha rooms ────────────────────────────────────────────────────────
-    // Read/write only if the authenticated user is present in this room's
-    // players map. Creation is allowed when the author includes themselves in
-    // the newData players map (bootstrap case). Joining is allowed via a
-    // child rule that lets a player write only their own seat.
     "rooms": {
       "$roomId": {
         ".read":  "auth != null && root.child('rooms').child($roomId).child('players').child(auth.uid).exists()",
@@ -19,18 +15,12 @@
     },
 
     // ── Room code lookup ──────────────────────────────────────────────────────
-    // Any authenticated user may read a code to look up its roomId, and write
-    // one when creating a room. Short-lived; removed when the room starts.
     "roomCodes": {
       ".read":  "auth != null",
       ".write": "auth != null"
     },
 
     // ── Player stats & leaderboard ────────────────────────────────────────────
-    // Leaderboard requires collection-level read (orderByChild totalPoints).
-    // Writes are restricted: a real player may only update their own record;
-    // NPC bot records (npc_*) may be written by any authenticated client
-    // (the host writes on behalf of bots).
     "stats": {
       ".read": "auth != null",
       "$uid": {
@@ -39,11 +29,6 @@
     },
 
     // ── Matchmaking ───────────────────────────────────────────────────────────
-    // The queue is a public lobby — any authenticated player must read it to
-    // find opponents. Each user may only write / delete their own queue entry,
-    // except the `roomId` sub-field which any authenticated host can set to
-    // notify a matched player. The `creating` lock is claimed/released by
-    // whoever is running the matchmaking transaction.
     "matchmaking": {
       ".read": "auth != null",
       "queue": {
@@ -60,11 +45,6 @@
     },
 
     // ── Rummy lobby rooms ─────────────────────────────────────────────────────
-    // Collection-level read is needed so that findAvailableRoom can query by
-    // status. This node contains only metadata (player list, handSizes, turn
-    // order) — actual card hands are in rummy_games. Write is restricted to
-    // players already in the room or to the creator (newData bootstrap).
-    // Joining is allowed via the child player-slot rule.
     "rummy_rooms": {
       ".read":    "auth != null",
       ".indexOn": ["status"],
@@ -79,8 +59,6 @@
     },
 
     // ── Rummy game state (shared, no hand data) ───────────────────────────────
-    // Contains phase, turnOrder, openDeck, closedDeck, playersMeta, scores.
-    // Card hands are NOT stored here — they live in rummy_hands (see below).
     "rummy_games": {
       "$roomId": {
         ".read":  "auth != null && root.child('rummy_rooms').child($roomId).child('players').child(auth.uid).exists()",
@@ -89,12 +67,6 @@
     },
 
     // ── Per-player private hands ──────────────────────────────────────────────
-    // Written exclusively by Cloud Functions (Admin SDK, bypasses rules).
-    // Read/write for clients:
-    //   • A human player may only access their own slot (auth.uid == $playerId).
-    //   • Bot slots (bot_*) may be read/written by the room host so the host
-    //     client can play bot moves on their behalf.
-    // This means no player can ever read another human player's hand.
     "rummy_hands": {
       "$roomId": {
         "$playerId": {
@@ -105,13 +77,14 @@
     },
 
     // ── Game logs ─────────────────────────────────────────────────────────────
-    // Write-only audit trail. No client ever reads this; server-side review
-    // only. Write restricted to authenticated users (room may already be torn
-    // down by the time the final log entry is written).
     "gamelogs": {
       "$roomId": {
         ".read":  false,
-        ".write": "auth != null"
+        ".write": "auth != null",
+        "events": {
+          // Fix: Allows the cleanup script to filter/sort by timestamp
+          ".indexOn": "ts"
+        }
       }
     }
 

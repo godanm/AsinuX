@@ -211,9 +211,9 @@ class AdMobService {
   void showInterstitial([BuildContext? context]) => showInterstitialAsync();
   void showRoundEndAd([BuildContext? context]) => showRewardedAsync();
 
-  BannerAd createBannerAd() => BannerAd(
+  BannerAd createBannerAd(AdSize size) => BannerAd(
         adUnitId: bannerAdUnitId,
-        size: AdSize.banner,
+        size: size,
         request: const AdRequest(),
         listener: const BannerAdListener(),
       );

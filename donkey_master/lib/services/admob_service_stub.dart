@@ -44,7 +44,7 @@ class AdMobService {
   Future<void> showRewardedAsync([BuildContext? context]) =>
       showRoundEndAd(context);
 
-  dynamic createBannerAd() => null;
+  dynamic createBannerAd([dynamic size]) => null;
 }
 
 // ── Web interstitial dialog ───────────────────────────────────────────────────

@@ -130,7 +130,7 @@ packages:
     source: hosted
     version: "5.8.2"
   cloud_functions_web:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: cloud_functions_web
       sha256: "7756b6a6cf16016dc4c8631c88b31b81156b129c40914a84021216a841c0b3d8"
