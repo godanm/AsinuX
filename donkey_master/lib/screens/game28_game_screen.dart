@@ -32,6 +32,8 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
   int? _selectedTrump; // index during trump selection
   bool _trickEndHandled = false;
   Timer? _trickEndTimer;
+  Timer? _reviewTimer;
+  int _reviewCountdown = 8;
 
   @override
   void initState() {
@@ -47,6 +49,7 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
     AdMobService.instance.suppressAppOpenAd = false;
     _sub?.cancel();
     _trickEndTimer?.cancel();
+    _reviewTimer?.cancel();
     Game28BotService.instance.stop();
     super.dispose();
   }
@@ -60,6 +63,22 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
     }
     final prev = _state;
     setState(() => _state = state);
+
+    // Start card-review countdown (auto-advances to bidding)
+    if (state.phase == Game28Phase.cardReview &&
+        prev?.phase != Game28Phase.cardReview) {
+      _reviewTimer?.cancel();
+      _reviewCountdown = 8;
+      _reviewTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+        if (!mounted) { t.cancel(); return; }
+        if (_reviewCountdown <= 1) {
+          t.cancel();
+          Game28Service.instance.confirmCardReview(_state!);
+        } else {
+          setState(() => _reviewCountdown--);
+        }
+      });
+    }
 
     // Auto-advance trickEnd for human leader
     if (state.phase == Game28Phase.trickEnd &&
@@ -127,6 +146,16 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
 
   Widget _buildPhase(Game28State state) {
     switch (state.phase) {
+      case Game28Phase.cardReview:
+        return _CardReviewView(
+          state: state,
+          playerId: widget.playerId,
+          countdown: _reviewCountdown,
+          onReady: () {
+            _reviewTimer?.cancel();
+            Game28Service.instance.confirmCardReview(state);
+          },
+        );
       case Game28Phase.bidding:
         return _BiddingView(
           state: state,
@@ -174,6 +203,277 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
             child: CircularProgressIndicator(color: _kGold));
     }
   }
+}
+
+// ── Card review view ──────────────────────────────────────────────────────────
+
+class _CardReviewView extends StatelessWidget {
+  final Game28State state;
+  final String playerId;
+  final int countdown;
+  final VoidCallback onReady;
+
+  const _CardReviewView({
+    required this.state,
+    required this.playerId,
+    required this.countdown,
+    required this.onReady,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hand = state.players[playerId]?.hand ?? [];
+    final reviewCards = hand.take(4).toList();
+    final hiddenCount = (hand.length - 4).clamp(0, 4);
+
+    return Column(
+      children: [
+        // ── Header ──────────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+          child: Row(
+            children: [
+              const Text('REVIEW HAND',
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 3,
+                      color: Colors.white54)),
+              const Spacer(),
+              _tag('ROUND ${state.roundNumber}', _kGold),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // ── Info pill ───────────────────────────────────────────────
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: _kGold.withValues(alpha: 0.07),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: _kGold.withValues(alpha: 0.2)),
+          ),
+          child: Row(
+            children: [
+              const Text('⚡', style: TextStyle(fontSize: 16)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'These 4 cards determine your bid. The remaining 4 are hidden until played.',
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.white.withValues(alpha: 0.6)),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        // ── Section labels ──────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            children: [
+              Expanded(
+                child: Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8, height: 8,
+                        decoration: const BoxDecoration(
+                            shape: BoxShape.circle, color: _kGold),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text('BID CARDS',
+                          style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.5,
+                              color: _kGold)),
+                    ],
+                  ),
+                ),
+              ),
+              Container(width: 1.5, height: 16, color: Colors.white12),
+              Expanded(
+                child: Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8, height: 8,
+                        decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.2)),
+                      ),
+                      const SizedBox(width: 6),
+                      Text('HIDDEN',
+                          style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.5,
+                              color: Colors.white.withValues(alpha: 0.3))),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 10),
+
+        // ── Cards ──────────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            children: [
+              // Face-up: first 4
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: _kGold.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: _kGold.withValues(alpha: 0.25)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _kGold.withValues(alpha: 0.08),
+                        blurRadius: 12,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: reviewCards
+                        .map((c) => CardWidget(card: c, width: 54, height: 76))
+                        .toList(),
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 10),
+
+              // Face-down: remaining 4
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.03),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: List.generate(
+                      hiddenCount,
+                      (_) => const CardBackWidget(width: 54, height: 76),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // ── Point summary ───────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: _ReviewPointSummary(cards: reviewCards),
+        ),
+
+        const Spacer(),
+
+        // ── Ready button with countdown ─────────────────────────────
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: _FilledBtn(
+            'START BIDDING${countdown > 0 ? '  ($countdown)' : ''}',
+            onReady,
+            color: _kGold,
+            textColor: Colors.black,
+          ),
+        ),
+
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+}
+
+class _ReviewPointSummary extends StatelessWidget {
+  final List<PlayingCard> cards;
+  const _ReviewPointSummary({required this.cards});
+
+  @override
+  Widget build(BuildContext context) {
+    final total = cards.fold(0, (s, c) => s + cardPoints28(c.rank));
+    final jacks = cards.where((c) => c.rank == Rank.jack).length;
+    final nines = cards.where((c) => c.rank == Rank.nine).length;
+    final aces  = cards.where((c) => c.rank == Rank.ace).length;
+    final tens  = cards.where((c) => c.rank == Rank.ten).length;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: Row(
+        children: [
+          Text(
+            'Visible pts: $total / 28',
+            style: TextStyle(
+                fontSize: 11,
+                color: Colors.white.withValues(alpha: 0.5)),
+          ),
+          const Spacer(),
+          if (jacks > 0) _PtBadge('J×$jacks', _kGold),
+          if (nines > 0) _PtBadge('9×$nines', _kTeamA),
+          if (aces  > 0) _PtBadge('A×$aces', Colors.greenAccent),
+          if (tens  > 0) _PtBadge('10×$tens', Colors.greenAccent),
+          if (total == 0)
+            Text('No point cards visible',
+                style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.white.withValues(alpha: 0.3))),
+        ],
+      ),
+    );
+  }
+}
+
+class _PtBadge extends StatelessWidget {
+  final String label;
+  final Color color;
+  const _PtBadge(this.label, this.color);
+
+  @override
+  Widget build(BuildContext context) => Container(
+        margin: const EdgeInsets.only(left: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(5),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Text(label,
+            style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w800,
+                color: color)),
+      );
 }
 
 // ── Bidding view ──────────────────────────────────────────────────────────────
@@ -613,112 +913,110 @@ class _GameTableView extends StatelessWidget {
         // ── Score strip ────────────────────────────────────────────
         _ScoreStrip(state: state, playerId: playerId),
 
-        // ── Trump + trick counter ───────────────────────────────────
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _TrumpPill(
-                trumpSuit: state.trumpSuit,
-                revealed: state.trumpRevealed,
-                isBidWinner: state.bidWinnerId == playerId,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Trick ${state.trickNumber} / 8',
-                style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.white.withValues(alpha: 0.4)),
-              ),
-            ],
-          ),
-        ),
-
         // ── Table ──────────────────────────────────────────────────
         Expanded(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Top seat
-              _OpponentSeat(
-                player: top,
-                isMyTurn: state.currentTurn == top.id,
-                isTrickEnd: isTrickEnd,
-              ),
-              const SizedBox(height: 8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                // Top opponent
+                _OpponentSeat(
+                  player: top,
+                  isMyTurn: state.currentTurn == top.id,
+                  isTrickEnd: isTrickEnd,
+                ),
 
-              // Middle row: left, trick, right
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _OpponentSeat(
-                    player: left,
-                    isMyTurn: state.currentTurn == left.id,
-                    isTrickEnd: isTrickEnd,
-                    horizontal: true,
-                  ),
-                  const SizedBox(width: 12),
-                  _TrickArea(
-                    state: state,
-                    orderedSeats: reordered,
-                  ),
-                  const SizedBox(width: 12),
-                  _OpponentSeat(
-                    player: right,
-                    isMyTurn: state.currentTurn == right.id,
-                    isTrickEnd: isTrickEnd,
-                    horizontal: true,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              // Lead suit indicator
-              if (state.leadSuit != null)
+                // Middle row: left, trick table, right
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text('LEAD ',
-                        style: TextStyle(
-                            fontSize: 9,
-                            letterSpacing: 1.5,
-                            color: Colors.white.withValues(alpha: 0.3))),
-                    Text(
-                      _suitSymbol(Suit.values[state.leadSuit!]),
-                      style: TextStyle(
-                          fontSize: 20,
-                          color: _suitIsRed(Suit.values[state.leadSuit!])
-                              ? const Color(0xFFD32F2F)
-                              : Colors.white),
+                    _OpponentSeat(
+                      player: left,
+                      isMyTurn: state.currentTurn == left.id,
+                      isTrickEnd: isTrickEnd,
+                      horizontal: true,
+                    ),
+                    _TrickArea(
+                      state: state,
+                      orderedSeats: reordered,
+                    ),
+                    _OpponentSeat(
+                      player: right,
+                      isMyTurn: state.currentTurn == right.id,
+                      isTrickEnd: isTrickEnd,
+                      horizontal: true,
                     ),
                   ],
                 ),
-            ],
+
+                // Info bar: trump + lead suit + turn pill
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _TrumpPill(
+                      trumpSuit: state.trumpSuit,
+                      revealed: state.trumpRevealed,
+                      isBidWinner: state.bidWinnerId == playerId,
+                    ),
+                    if (state.leadSuit != null) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white24),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('LEAD ',
+                                style: TextStyle(
+                                    fontSize: 9,
+                                    letterSpacing: 1.5,
+                                    color: Colors.white.withValues(alpha: 0.4))),
+                            Text(
+                              _suitSymbol(Suit.values[state.leadSuit!]),
+                              style: TextStyle(
+                                  fontSize: 18,
+                                  color: _suitIsRed(Suit.values[state.leadSuit!])
+                                      ? const Color(0xFFD32F2F)
+                                      : Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    if (myTurn && !isTrickEnd) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: _kGold.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(20),
+                          border:
+                              Border.all(color: _kGold.withValues(alpha: 0.45)),
+                        ),
+                        child: const Text('YOUR TURN',
+                            style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w900,
+                                color: _kGold,
+                                letterSpacing: 1.2)),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
 
-        // ── My turn banner ─────────────────────────────────────────
-        if (myTurn && !isTrickEnd)
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            decoration: BoxDecoration(
-              color: _kGold.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: _kGold.withValues(alpha: 0.3)),
-            ),
-            child: const Center(
-              child: Text('YOUR TURN — tap a card',
-                  style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: _kGold,
-                      letterSpacing: 1)),
-            ),
-          ),
-
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
 
         // ── My hand ────────────────────────────────────────────────
         _MyHand(
@@ -750,7 +1048,7 @@ class _RoundEndView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bidTeam = state.bidWinnerTeam!;
-    final bidTeamPts = state.teamTrickPoints['$bidTeam'] ?? 0;
+    final bidTeamPts = state.teamTrickPoints['t$bidTeam'] ?? 0;
     final bidMet = bidTeamPts >= state.currentBid;
     final myTeam = state.players[playerId]!.teamIndex;
     final iWon = bidMet ? myTeam == bidTeam : myTeam != bidTeam;
@@ -812,7 +1110,7 @@ class _RoundEndView extends StatelessWidget {
           const SizedBox(height: 6),
           _ScoreCard(
             label: 'Team A',
-            pts: state.teamTrickPoints['0'] ?? 0,
+            pts: state.teamTrickPoints['t0'] ?? 0,
             color: _kTeamA,
             badge: bidTeam == 0 ? 'BID TEAM' : null,
             bid: bidTeam == 0 ? state.currentBid : null,
@@ -820,7 +1118,7 @@ class _RoundEndView extends StatelessWidget {
           const SizedBox(height: 6),
           _ScoreCard(
             label: 'Team B',
-            pts: state.teamTrickPoints['1'] ?? 0,
+            pts: state.teamTrickPoints['t1'] ?? 0,
             color: _kTeamB,
             badge: bidTeam == 1 ? 'BID TEAM' : null,
             bid: bidTeam == 1 ? state.currentBid : null,
@@ -833,14 +1131,14 @@ class _RoundEndView extends StatelessWidget {
           const SizedBox(height: 6),
           _ScoreCard(
             label: 'Team A',
-            pts: state.teamGamePoints['0'] ?? 0,
+            pts: state.teamGamePoints['t0'] ?? 0,
             color: _kTeamA,
             total: state.targetScore,
           ),
           const SizedBox(height: 6),
           _ScoreCard(
             label: 'Team B',
-            pts: state.teamGamePoints['1'] ?? 0,
+            pts: state.teamGamePoints['t1'] ?? 0,
             color: _kTeamB,
             total: state.targetScore,
           ),
@@ -872,8 +1170,8 @@ class _GameOverView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pts0 = state.teamGamePoints['0'] ?? 0;
-    final pts1 = state.teamGamePoints['1'] ?? 0;
+    final pts0 = state.teamGamePoints['t0'] ?? 0;
+    final pts1 = state.teamGamePoints['t1'] ?? 0;
     final winTeam = pts0 >= state.targetScore ? 0 : 1;
     final myTeam = state.players[playerId]!.teamIndex;
     final iWon = myTeam == winTeam;
@@ -997,10 +1295,10 @@ class _ScoreStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pts0 = state.teamTrickPoints['0'] ?? 0;
-    final pts1 = state.teamTrickPoints['1'] ?? 0;
-    final game0 = state.teamGamePoints['0'] ?? 0;
-    final game1 = state.teamGamePoints['1'] ?? 0;
+    final pts0 = state.teamTrickPoints['t0'] ?? 0;
+    final pts1 = state.teamTrickPoints['t1'] ?? 0;
+    final game0 = state.teamGamePoints['t0'] ?? 0;
+    final game1 = state.teamGamePoints['t1'] ?? 0;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
@@ -1021,6 +1319,10 @@ class _ScoreStrip extends StatelessWidget {
                         fontSize: 15,
                         fontWeight: FontWeight.w900,
                         color: _kGold)),
+                Text('T${state.trickNumber}/8',
+                    style: TextStyle(
+                        fontSize: 9,
+                        color: Colors.white.withValues(alpha: 0.25))),
               ],
             ),
           ),
@@ -1164,57 +1466,126 @@ class _TrickArea extends StatelessWidget {
       Alignment.centerLeft,
     ];
 
+    final isTrickEnd = state.phase == Game28Phase.trickEnd;
+
     return SizedBox(
-      width: 180,
-      height: 180,
+      width: 224,
+      height: 224,
       child: Stack(
         children: [
-          // Circular border
+          // Table surface — radial gradient with outer glow
           Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.03),
+              gradient: RadialGradient(
+                colors: [
+                  const Color(0xFF1e0f38),
+                  const Color(0xFF0d0618),
+                ],
+                stops: const [0.0, 1.0],
+              ),
               border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.08)),
+                color: Colors.white.withValues(alpha: 0.12),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF7c3aff).withValues(alpha: 0.18),
+                  blurRadius: 28,
+                  spreadRadius: 2,
+                ),
+              ],
             ),
           ),
+          // Inner ring
+          Center(
+            child: Container(
+              width: 160,
+              height: 160,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.04),
+                ),
+              ),
+            ),
+          ),
+          // Trick number watermark (visible when table is empty)
+          if (state.currentTrick.isEmpty)
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${state.trickNumber}',
+                    style: TextStyle(
+                        fontSize: 44,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white.withValues(alpha: 0.07)),
+                  ),
+                  Text(
+                    'OF 8',
+                    style: TextStyle(
+                        fontSize: 9,
+                        letterSpacing: 2.5,
+                        color: Colors.white.withValues(alpha: 0.05)),
+                  ),
+                ],
+              ),
+            ),
           // Cards
           for (int i = 0; i < 4; i++)
             if (state.currentTrick.containsKey(orderedSeats[i]))
               Align(
                 alignment: positions[i],
                 child: Padding(
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(12),
                   child: CardWidget(
                     card: state.currentTrick[orderedSeats[i]]!,
-                    width: 44,
-                    height: 62,
+                    width: 52,
+                    height: 72,
                   ),
                 ),
               ),
-          // Empty slot for me when it's my turn
+          // My empty slot when it's my turn
           if (!state.currentTrick.containsKey(orderedSeats[0]) &&
-              state.currentTurn == orderedSeats[0])
+              state.currentTurn == orderedSeats[0] &&
+              !isTrickEnd)
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 14),
+                padding: const EdgeInsets.only(bottom: 12),
                 child: Container(
-                  width: 44,
-                  height: 62,
+                  width: 52,
+                  height: 72,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(7),
                     border: Border.all(
-                        color: _kGold.withValues(alpha: 0.5),
-                        width: 1.5),
+                        color: _kGold.withValues(alpha: 0.65),
+                        width: 2),
+                    color: _kGold.withValues(alpha: 0.06),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _kGold.withValues(alpha: 0.2),
+                        blurRadius: 12,
+                      ),
+                    ],
                   ),
                   child: Center(
                     child: Text('▲',
                         style: TextStyle(
-                            fontSize: 10,
-                            color: _kGold.withValues(alpha: 0.6))),
+                            fontSize: 13,
+                            color: _kGold.withValues(alpha: 0.75))),
                   ),
                 ),
+              ),
+            ),
+          // Trick end — dim overlay
+          if (isTrickEnd)
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.black.withValues(alpha: 0.25),
               ),
             ),
         ],

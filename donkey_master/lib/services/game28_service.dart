@@ -103,7 +103,7 @@ class Game28Service {
     // Bidding starts with player at seat 0 (host)
     final firstBidder = order[0];
     await _ref(state.roomId).update({
-      'phase': Game28Phase.bidding.index,
+      'phase': Game28Phase.cardReview.index,
       'roundNumber': state.roundNumber + 1,
       'trickNumber': 1,
       'currentBid': 13,
@@ -118,10 +118,19 @@ class Game28Service {
       'leadSuit': null,
       'leadPlayer': null,
       'currentTurn': null,
-      'teamTrickPoints': {'0': 0, '1': 0},
+      'teamTrickPoints': {'t0': 0, 't1': 0},
       'players': updatedPlayers.map((k, v) => MapEntry(k, v.toMap())),
     });
     debugPrint('[28] startGame — round ${state.roundNumber + 1}');
+  }
+
+  // ── Card review → bidding ─────────────────────────────────────────────────
+
+  Future<void> confirmCardReview(Game28State state) async {
+    if (state.phase != Game28Phase.cardReview) return;
+    await _ref(state.roomId).update({
+      'phase': Game28Phase.bidding.index,
+    });
   }
 
   // ── Bidding ───────────────────────────────────────────────────────────────
@@ -331,8 +340,8 @@ class Game28Service {
         trick.values.fold(0, (sum, c) => sum + cardPoints28(c.rank));
 
     final newTrickPoints = Map<String, int>.from(state.teamTrickPoints);
-    newTrickPoints['$winnerTeam'] =
-        (newTrickPoints['$winnerTeam'] ?? 0) + trickPts;
+    newTrickPoints['t$winnerTeam'] =
+        (newTrickPoints['t$winnerTeam'] ?? 0) + trickPts;
 
     debugPrint(
         '[28] trick ${state.trickNumber} won by $winnerId (team $winnerTeam, +$trickPts pts)');
@@ -359,15 +368,15 @@ class Game28Service {
     Map<String, PlayingCard> lastTrick,
   ) async {
     final bidTeam = state.bidWinnerTeam!;
-    final bidTeamPts = finalTrickPoints['$bidTeam'] ?? 0;
+    final bidTeamPts = finalTrickPoints['t$bidTeam'] ?? 0;
     final bidMet = bidTeamPts >= state.currentBid;
 
     final newGamePoints = Map<String, int>.from(state.teamGamePoints);
     if (bidMet) {
-      newGamePoints['$bidTeam'] = (newGamePoints['$bidTeam'] ?? 0) + 1;
+      newGamePoints['t$bidTeam'] = (newGamePoints['t$bidTeam'] ?? 0) + 1;
     } else {
       final otherTeam = 1 - bidTeam;
-      newGamePoints['$otherTeam'] = (newGamePoints['$otherTeam'] ?? 0) + 1;
+      newGamePoints['t$otherTeam'] = (newGamePoints['t$otherTeam'] ?? 0) + 1;
     }
 
     debugPrint('[28] round ${state.roundNumber} end — bid=$bidMet '

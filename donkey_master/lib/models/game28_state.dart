@@ -2,6 +2,7 @@ import '../models/card_model.dart';
 
 enum Game28Phase {
   waiting,
+  cardReview,     // players see their first 4 cards before bidding
   bidding,
   trumpSelection,
   playing,
@@ -83,7 +84,7 @@ class Game28Player {
         name: map['name'] as String? ?? 'Player',
         isBot: map['isBot'] as bool? ?? false,
         isHost: map['isHost'] as bool? ?? false,
-        seatIndex: map['seatIndex'] as int? ?? 0,
+        seatIndex: (map['seatIndex'] as num?)?.toInt() ?? 0,
         hand: (map['hand'] as List<dynamic>? ?? [])
             .map((c) => PlayingCard.fromMap(c as Map<dynamic, dynamic>))
             .toList(),
@@ -145,8 +146,8 @@ class Game28State {
     this.leadPlayer,
     this.currentTurn,
     this.trickNumber = 1,
-    this.teamTrickPoints = const {'0': 0, '1': 0},
-    this.teamGamePoints = const {'0': 0, '1': 0},
+    this.teamTrickPoints = const {'t0': 0, 't1': 0},
+    this.teamGamePoints = const {'t0': 0, 't1': 0},
     this.roundNumber = 0,
     this.targetScore = 6,
   });
@@ -244,7 +245,7 @@ class Game28State {
     return Game28State(
       roomId: map['roomId'] as String? ?? '',
       roomCode: map['roomCode'] as String? ?? '',
-      phase: Game28Phase.values[map['phase'] as int? ?? 0],
+      phase: Game28Phase.values[(map['phase'] as num?)?.toInt() ?? 0],
       hostId: map['hostId'] as String?,
       players: ((map['players'] as Map<dynamic, dynamic>?) ?? {}).map(
         (k, v) => MapEntry(
@@ -255,36 +256,36 @@ class Game28State {
       playerOrder: (map['playerOrder'] as List<dynamic>? ?? [])
           .map((e) => e.toString())
           .toList(),
-      currentBid: map['currentBid'] as int? ?? 13,
+      currentBid: (map['currentBid'] as num?)?.toInt() ?? 13,
       currentBidder: map['currentBidder'] as String?,
       biddingTurn: map['biddingTurn'] as String?,
       passedPlayers: (map['passedPlayers'] as List<dynamic>? ?? [])
           .map((e) => e.toString())
           .toList(),
-      trumpSuit: map['trumpSuit'] as int?,
+      trumpSuit: (map['trumpSuit'] as num?)?.toInt(),
       trumpRevealed: map['trumpRevealed'] as bool? ?? false,
       bidWinnerId: map['bidWinnerId'] as String?,
-      bidWinnerTeam: map['bidWinnerTeam'] as int?,
+      bidWinnerTeam: (map['bidWinnerTeam'] as num?)?.toInt(),
       currentTrick: ((map['currentTrick'] as Map<dynamic, dynamic>?) ?? {}).map(
         (k, v) => MapEntry(
           k.toString(),
           PlayingCard.fromMap(v as Map<dynamic, dynamic>),
         ),
       ),
-      leadSuit: map['leadSuit'] as int?,
+      leadSuit: (map['leadSuit'] as num?)?.toInt(),
       leadPlayer: map['leadPlayer'] as String?,
       currentTurn: map['currentTurn'] as String?,
-      trickNumber: map['trickNumber'] as int? ?? 1,
+      trickNumber: (map['trickNumber'] as num?)?.toInt() ?? 1,
       teamTrickPoints: {
-        '0': trickPts['0'] as int? ?? 0,
-        '1': trickPts['1'] as int? ?? 0,
+        't0': (trickPts['t0'] as num?)?.toInt() ?? 0,
+        't1': (trickPts['t1'] as num?)?.toInt() ?? 0,
       },
       teamGamePoints: {
-        '0': gamePts['0'] as int? ?? 0,
-        '1': gamePts['1'] as int? ?? 0,
+        't0': (gamePts['t0'] as num?)?.toInt() ?? 0,
+        't1': (gamePts['t1'] as num?)?.toInt() ?? 0,
       },
-      roundNumber: map['roundNumber'] as int? ?? 0,
-      targetScore: map['targetScore'] as int? ?? 6,
+      roundNumber: (map['roundNumber'] as num?)?.toInt() ?? 0,
+      targetScore: (map['targetScore'] as num?)?.toInt() ?? 6,
     );
   }
 }
