@@ -11,6 +11,7 @@ import '../widgets/feedback_sheet.dart';
 import '../widgets/player_avatar.dart';
 import 'matchmaking_screen.dart';
 import 'rummy_matchmaking_screen.dart';
+import 'game28_matchmaking_screen.dart';
 import 'stats_screen.dart';
 // import 'leaderboard_screen.dart'; // TODO: re-enable with leaderboard
 
@@ -320,13 +321,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                   child: _GameCard(
                                     emoji: '🎴',
                                     title: '28',
-                                    subtitle: 'Trick-taking · 4 players',
+                                    subtitle: 'Trick-taking · Teams · 4 players',
                                     accentColor: const Color(0xFF00C853),
                                     gradientColors: const [Color(0xFF005C26), Color(0xFF002d13)],
                                     suits: const ['♠', '♣', '♥', '♦'],
-                                    enabled: false,
-                                    comingSoon: true,
-                                    onTap: () {},
+                                    enabled: _nameLoaded,
+                                    comingSoon: false,
+                                    onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (_) => Game28MatchmakingScreen(playerName: _playerName)),
+                                    ),
                                   ).animate().fadeIn(delay: 640.ms, duration: 500.ms).slideY(begin: 0.1),
                                 ),
                                 const SizedBox(width: 12),
