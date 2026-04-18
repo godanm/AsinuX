@@ -237,114 +237,119 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-                // ── Scrollable content ────────────────────────────
+                // ── Scrollable content, vertically centred ────────
                 Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      children: [
-                        // ── Logo block ──────────────────────────────
-                        const SizedBox(height: 8),
-                        ShaderMask(
-                          shaderCallback: (bounds) => const LinearGradient(
-                            colors: [Color(0xFFE63946), Color(0xFFFF6B6B), Color(0xFFFFD700)],
-                            stops: [0.0, 0.6, 1.0],
-                          ).createShader(bounds),
-                          child: const Text(
-                            'AsinuX',
-                            style: TextStyle(
-                              fontSize: 58,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 6,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.15),
-                        Text(
-                          '— THE CARD GAME —',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w400,
-                            letterSpacing: 8,
-                            color: Colors.white.withValues(alpha: 0.35),
-                          ),
-                        ).animate().fadeIn(delay: 300.ms),
-
-                        const SizedBox(height: 20),
-
-                        // ── Row 1: live games ───────────────────────
-                        Row(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) => SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Expanded(
-                              child: _GameCard(
-                                emoji: '🃏',
-                                title: 'KAZHUTHA',
-                                subtitle: 'Trick-taking · 4 players',
-                                accentColor: const Color(0xFFE63946),
-                                gradientColors: const [Color(0xFF5c0a1a), Color(0xFF2a0010)],
-                                suits: const ['♠', '♥', '♣', '♦'],
-                                enabled: _nameLoaded,
-                                comingSoon: false,
-                                onTap: _startMatch,
-                              ).animate().fadeIn(delay: 400.ms, duration: 500.ms).slideY(begin: 0.1),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _GameCard(
-                                emoji: '🀄',
-                                title: 'RUMMY',
-                                subtitle: '13-card · 2–6 players',
-                                accentColor: const Color(0xFF1565C0),
-                                gradientColors: const [Color(0xFF0a1a4a), Color(0xFF050d26)],
-                                suits: const ['🂡', '🂱', '🃁', '🃑'],
-                                enabled: _nameLoaded,
-                                comingSoon: false,
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => RummyMatchmakingScreen(playerName: _playerName)),
+                            // ── Logo block ────────────────────────────
+                            ShaderMask(
+                              shaderCallback: (bounds) => const LinearGradient(
+                                colors: [Color(0xFFE63946), Color(0xFFFF6B6B), Color(0xFFFFD700)],
+                                stops: [0.0, 0.6, 1.0],
+                              ).createShader(bounds),
+                              child: const Text(
+                                'AsinuX',
+                                style: TextStyle(
+                                  fontSize: 58,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 6,
+                                  color: Colors.white,
                                 ),
-                              ).animate().fadeIn(delay: 520.ms, duration: 500.ms).slideY(begin: 0.1),
+                              ),
+                            ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.15),
+                            Text(
+                              '— THE CARD GAME —',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w400,
+                                letterSpacing: 8,
+                                color: Colors.white.withValues(alpha: 0.35),
+                              ),
+                            ).animate().fadeIn(delay: 300.ms),
+
+                            const SizedBox(height: 20),
+
+                            // ── Row 1: live games ─────────────────────
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _GameCard(
+                                    emoji: '🃏',
+                                    title: 'KAZHUTHA',
+                                    subtitle: 'Trick-taking · 4 players',
+                                    accentColor: const Color(0xFFE63946),
+                                    gradientColors: const [Color(0xFF5c0a1a), Color(0xFF2a0010)],
+                                    suits: const ['♠', '♥', '♣', '♦'],
+                                    enabled: _nameLoaded,
+                                    comingSoon: false,
+                                    onTap: _startMatch,
+                                  ).animate().fadeIn(delay: 400.ms, duration: 500.ms).slideY(begin: 0.1),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _GameCard(
+                                    emoji: '🀄',
+                                    title: 'RUMMY',
+                                    subtitle: '13-card · 2–6 players',
+                                    accentColor: const Color(0xFF1565C0),
+                                    gradientColors: const [Color(0xFF0a1a4a), Color(0xFF050d26)],
+                                    suits: const ['🂡', '🂱', '🃁', '🃑'],
+                                    enabled: _nameLoaded,
+                                    comingSoon: false,
+                                    onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (_) => RummyMatchmakingScreen(playerName: _playerName)),
+                                    ),
+                                  ).animate().fadeIn(delay: 520.ms, duration: 500.ms).slideY(begin: 0.1),
+                                ),
+                              ],
                             ),
+
+                            const SizedBox(height: 12),
+
+                            // ── Row 2: coming soon ────────────────────
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _GameCard(
+                                    emoji: '🎴',
+                                    title: '28',
+                                    subtitle: 'Trick-taking · 4 players',
+                                    accentColor: const Color(0xFFFF6D00),
+                                    gradientColors: const [Color(0xFF2d1400), Color(0xFF140800)],
+                                    suits: const ['♠', '♣', '♥', '♦'],
+                                    enabled: false,
+                                    comingSoon: true,
+                                    onTap: () {},
+                                  ).animate().fadeIn(delay: 640.ms, duration: 500.ms).slideY(begin: 0.1),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _GameCard(
+                                    emoji: '🌹',
+                                    title: 'TEEN PATTI',
+                                    subtitle: '3-card poker · 2–6 players',
+                                    accentColor: const Color(0xFFE91E63),
+                                    gradientColors: const [Color(0xFF2d0014), Color(0xFF14000a)],
+                                    suits: const ['♠', '♣', '♥', '♦'],
+                                    enabled: false,
+                                    comingSoon: true,
+                                    onTap: () {},
+                                  ).animate().fadeIn(delay: 760.ms, duration: 500.ms).slideY(begin: 0.1),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 16),
                           ],
                         ),
-
-                        const SizedBox(height: 12),
-
-                        // ── Row 2: coming soon ──────────────────────
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _GameCard(
-                                emoji: '🎴',
-                                title: '28',
-                                subtitle: 'Trick-taking · 4 players',
-                                accentColor: const Color(0xFF00897B),
-                                gradientColors: const [Color(0xFF003d35), Color(0xFF001a16)],
-                                suits: const ['♠', '♣', '♥', '♦'],
-                                enabled: false,
-                                comingSoon: true,
-                                onTap: () {},
-                              ).animate().fadeIn(delay: 640.ms, duration: 500.ms).slideY(begin: 0.1),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _GameCard(
-                                emoji: '♟️',
-                                title: 'TEEN PATTI',
-                                subtitle: '3-card poker · 2–6 players',
-                                accentColor: const Color(0xFF7B1FA2),
-                                gradientColors: const [Color(0xFF2d0a45), Color(0xFF150520)],
-                                suits: const ['♠', '♣', '♥', '♦'],
-                                enabled: false,
-                                comingSoon: true,
-                                onTap: () {},
-                              ).animate().fadeIn(delay: 760.ms, duration: 500.ms).slideY(begin: 0.1),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 24),
-                      ],
+                      ),
                     ),
                   ),
                 ),
