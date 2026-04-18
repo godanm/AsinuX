@@ -23,6 +23,9 @@ class AdMobService {
 
   Future<void> initialize() async {}
 
+  bool suppressAppOpenAd = false;
+  Future<void> showAppOpenAd() async {}
+
   void showInterstitial([BuildContext? context]) => showRoundEndAd(context);
 
   /// Shows a full-screen interstitial overlay.
