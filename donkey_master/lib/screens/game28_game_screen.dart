@@ -32,8 +32,8 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
   int? _selectedTrump; // index during trump selection
   bool _trickEndHandled = false;
   Timer? _trickEndTimer;
-  Timer? _reviewTimer;
-  int _reviewCountdown = 8;
+  bool _showTrumpReveal = false;
+  Timer? _trumpRevealTimer;
 
   @override
   void initState() {
@@ -49,7 +49,7 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
     AdMobService.instance.suppressAppOpenAd = false;
     _sub?.cancel();
     _trickEndTimer?.cancel();
-    _reviewTimer?.cancel();
+    _trumpRevealTimer?.cancel();
     Game28BotService.instance.stop();
     super.dispose();
   }
@@ -64,19 +64,14 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
     final prev = _state;
     setState(() => _state = state);
 
-    // Start card-review countdown (auto-advances to bidding)
-    if (state.phase == Game28Phase.cardReview &&
-        prev?.phase != Game28Phase.cardReview) {
-      _reviewTimer?.cancel();
-      _reviewCountdown = 8;
-      _reviewTimer = Timer.periodic(const Duration(seconds: 1), (t) {
-        if (!mounted) { t.cancel(); return; }
-        if (_reviewCountdown <= 1) {
-          t.cancel();
-          Game28Service.instance.confirmCardReview(_state!);
-        } else {
-          setState(() => _reviewCountdown--);
-        }
+    // Trump reveal notification
+    if (!(prev?.trumpRevealed ?? false) &&
+        state.trumpRevealed &&
+        state.trumpSuit != null) {
+      _trumpRevealTimer?.cancel();
+      setState(() => _showTrumpReveal = true);
+      _trumpRevealTimer = Timer(const Duration(seconds: 3), () {
+        if (mounted) setState(() => _showTrumpReveal = false);
       });
     }
 
@@ -139,23 +134,21 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
       },
       child: Scaffold(
         backgroundColor: _kBg,
-        body: SafeArea(child: _buildPhase(state)),
+        body: SafeArea(
+          child: Stack(
+            children: [
+              _buildPhase(state),
+              if (_showTrumpReveal && state.trumpSuit != null)
+                _TrumpRevealBanner(suit: Suit.values[state.trumpSuit!]),
+            ],
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildPhase(Game28State state) {
     switch (state.phase) {
-      case Game28Phase.cardReview:
-        return _CardReviewView(
-          state: state,
-          playerId: widget.playerId,
-          countdown: _reviewCountdown,
-          onReady: () {
-            _reviewTimer?.cancel();
-            Game28Service.instance.confirmCardReview(state);
-          },
-        );
       case Game28Phase.bidding:
         return _BiddingView(
           state: state,
@@ -205,250 +198,72 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
   }
 }
 
-// ── Card review view ──────────────────────────────────────────────────────────
+// ── Trump reveal banner ───────────────────────────────────────────────────────
 
-class _CardReviewView extends StatelessWidget {
-  final Game28State state;
-  final String playerId;
-  final int countdown;
-  final VoidCallback onReady;
-
-  const _CardReviewView({
-    required this.state,
-    required this.playerId,
-    required this.countdown,
-    required this.onReady,
-  });
+class _TrumpRevealBanner extends StatelessWidget {
+  final Suit suit;
+  const _TrumpRevealBanner({required this.suit});
 
   @override
   Widget build(BuildContext context) {
-    final hand = state.players[playerId]?.hand ?? [];
-    final reviewCards = hand.take(4).toList();
-    final hiddenCount = (hand.length - 4).clamp(0, 4);
-
-    return Column(
-      children: [
-        // ── Header ──────────────────────────────────────────────────
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-          child: Row(
-            children: [
-              const Text('REVIEW HAND',
-                  style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 3,
-                      color: Colors.white54)),
-              const Spacer(),
-              _tag('ROUND ${state.roundNumber}', _kGold),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // ── Info pill ───────────────────────────────────────────────
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 20),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+    final isRed = suit == Suit.hearts || suit == Suit.diamonds;
+    final suitColor = isRed ? const Color(0xFFEF5350) : Colors.white;
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: IgnorePointer(
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           decoration: BoxDecoration(
-            color: _kGold.withValues(alpha: 0.07),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: _kGold.withValues(alpha: 0.2)),
+            color: const Color(0xFF1a0a2e),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: suitColor.withValues(alpha: 0.6), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: suitColor.withValues(alpha: 0.35),
+                blurRadius: 24,
+                spreadRadius: 2,
+              ),
+            ],
           ),
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text('⚡', style: TextStyle(fontSize: 16)),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'These 4 cards determine your bid. The remaining 4 are hidden until played.',
-                  style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.white.withValues(alpha: 0.6)),
-                ),
+              Text(
+                _suitSymbol(suit),
+                style: TextStyle(fontSize: 32, color: suitColor),
+              ),
+              const SizedBox(width: 14),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'TRUMP REVEALED',
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 2,
+                        color: suitColor),
+                  ),
+                  Text(
+                    '${suit.name[0].toUpperCase()}${suit.name.substring(1)} is now the trump suit',
+                    style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.white.withValues(alpha: 0.55)),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 14),
+              Text(
+                _suitSymbol(suit),
+                style: TextStyle(fontSize: 32, color: suitColor),
               ),
             ],
           ),
         ),
-
-        const SizedBox(height: 20),
-
-        // ── Section labels ──────────────────────────────────────────
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
-            children: [
-              Expanded(
-                child: Center(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 8, height: 8,
-                        decoration: const BoxDecoration(
-                            shape: BoxShape.circle, color: _kGold),
-                      ),
-                      const SizedBox(width: 6),
-                      const Text('BID CARDS',
-                          style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1.5,
-                              color: _kGold)),
-                    ],
-                  ),
-                ),
-              ),
-              Container(width: 1.5, height: 16, color: Colors.white12),
-              Expanded(
-                child: Center(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 8, height: 8,
-                        decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withValues(alpha: 0.2)),
-                      ),
-                      const SizedBox(width: 6),
-                      Text('HIDDEN',
-                          style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1.5,
-                              color: Colors.white.withValues(alpha: 0.3))),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 10),
-
-        // ── Cards ──────────────────────────────────────────────────
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Row(
-            children: [
-              // Face-up: first 4
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: _kGold.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: _kGold.withValues(alpha: 0.25)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: _kGold.withValues(alpha: 0.08),
-                        blurRadius: 12,
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: reviewCards
-                        .map((c) => CardWidget(card: c, width: 54, height: 76))
-                        .toList(),
-                  ),
-                ),
-              ),
-
-              const SizedBox(width: 10),
-
-              // Face-down: remaining 4
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.03),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: List.generate(
-                      hiddenCount,
-                      (_) => const CardBackWidget(width: 54, height: 76),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // ── Point summary ───────────────────────────────────────────
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: _ReviewPointSummary(cards: reviewCards),
-        ),
-
-        const Spacer(),
-
-        // ── Ready button with countdown ─────────────────────────────
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: _FilledBtn(
-            'START BIDDING${countdown > 0 ? '  ($countdown)' : ''}',
-            onReady,
-            color: _kGold,
-            textColor: Colors.black,
-          ),
-        ),
-
-        const SizedBox(height: 24),
-      ],
-    );
-  }
-}
-
-class _ReviewPointSummary extends StatelessWidget {
-  final List<PlayingCard> cards;
-  const _ReviewPointSummary({required this.cards});
-
-  @override
-  Widget build(BuildContext context) {
-    final total = cards.fold(0, (s, c) => s + cardPoints28(c.rank));
-    final jacks = cards.where((c) => c.rank == Rank.jack).length;
-    final nines = cards.where((c) => c.rank == Rank.nine).length;
-    final aces  = cards.where((c) => c.rank == Rank.ace).length;
-    final tens  = cards.where((c) => c.rank == Rank.ten).length;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white12),
-      ),
-      child: Row(
-        children: [
-          Text(
-            'Visible pts: $total / 28',
-            style: TextStyle(
-                fontSize: 11,
-                color: Colors.white.withValues(alpha: 0.5)),
-          ),
-          const Spacer(),
-          if (jacks > 0) _PtBadge('J×$jacks', _kGold),
-          if (nines > 0) _PtBadge('9×$nines', _kTeamA),
-          if (aces  > 0) _PtBadge('A×$aces', Colors.greenAccent),
-          if (tens  > 0) _PtBadge('10×$tens', Colors.greenAccent),
-          if (total == 0)
-            Text('No point cards visible',
-                style: TextStyle(
-                    fontSize: 10,
-                    color: Colors.white.withValues(alpha: 0.3))),
-        ],
       ),
     );
   }
@@ -526,7 +341,71 @@ class _BiddingView extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: 10),
+
+        // ── Bid cards (first 4 of hand) ───────────────────────────────
+        Builder(builder: (_) {
+          final hand = state.players[playerId]?.hand ?? [];
+          final bidCards = hand.take(4).toList();
+          final total = bidCards.fold(0, (s, c) => s + cardPoints28(c.rank));
+          final jacks = bidCards.where((c) => c.rank == Rank.jack).length;
+          final nines = bidCards.where((c) => c.rank == Rank.nine).length;
+          final aces  = bidCards.where((c) => c.rank == Rank.ace).length;
+          final tens  = bidCards.where((c) => c.rank == Rank.ten).length;
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('YOUR BID CARDS',
+                    style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.5,
+                        color: _kGold.withValues(alpha: 0.7))),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: _kGold.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: _kGold.withValues(alpha: 0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      ...bidCards.map((c) => Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: CardWidget(card: c, width: 50, height: 70),
+                          )),
+                      const Spacer(),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text('$total pts visible',
+                              style: TextStyle(
+                                  fontSize: 10,
+                                  color: total > 0 ? _kGold : Colors.white38)),
+                          const SizedBox(height: 4),
+                          Wrap(
+                            spacing: 4,
+                            children: [
+                              if (jacks > 0) _PtBadge('J×$jacks', _kGold),
+                              if (nines > 0) _PtBadge('9×$nines', _kTeamA),
+                              if (aces  > 0) _PtBadge('A×$aces', Colors.greenAccent),
+                              if (tens  > 0) _PtBadge('10×$tens', Colors.greenAccent),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+
+        const SizedBox(height: 10),
 
         // current bid display
         Container(

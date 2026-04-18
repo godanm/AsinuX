@@ -103,7 +103,7 @@ class Game28Service {
     // Bidding starts with player at seat 0 (host)
     final firstBidder = order[0];
     await _ref(state.roomId).update({
-      'phase': Game28Phase.cardReview.index,
+      'phase': Game28Phase.bidding.index,
       'roundNumber': state.roundNumber + 1,
       'trickNumber': 1,
       'currentBid': 13,
@@ -122,15 +122,6 @@ class Game28Service {
       'players': updatedPlayers.map((k, v) => MapEntry(k, v.toMap())),
     });
     debugPrint('[28] startGame — round ${state.roundNumber + 1}');
-  }
-
-  // ── Card review → bidding ─────────────────────────────────────────────────
-
-  Future<void> confirmCardReview(Game28State state) async {
-    if (state.phase != Game28Phase.cardReview) return;
-    await _ref(state.roomId).update({
-      'phase': Game28Phase.bidding.index,
-    });
   }
 
   // ── Bidding ───────────────────────────────────────────────────────────────
