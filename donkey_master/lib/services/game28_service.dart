@@ -157,6 +157,14 @@ class Game28Service {
     if (bidValue != null) {
       // Validate bid
       if (bidValue <= state.currentBid || bidValue < 14 || bidValue > 28) return;
+      // Partner 20 rule: must bid ≥ 20 to outbid your own partner
+      final holder = state.currentBidder;
+      if (holder != null && holder != playerId) {
+        final holderTeam = state.players[holder]?.teamIndex;
+        final myTeam = state.players[playerId]?.teamIndex;
+        if (holderTeam != null && myTeam != null &&
+            holderTeam == myTeam && bidValue < 20) return;
+      }
 
       // Update current bid holder
       final newPassed = List<String>.from(passed); // keep existing passes

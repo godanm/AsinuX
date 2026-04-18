@@ -496,7 +496,17 @@ class _BiddingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final nextBid = state.currentBid + 1;
+    final myTeam = state.players[playerId]?.teamIndex ?? -1;
+    final holderTeam =
+        state.players[state.currentBidder ?? '']?.teamIndex ?? -1;
+    final partnerHoldsBid = state.currentBidder != null &&
+        state.currentBidder != playerId &&
+        holderTeam == myTeam &&
+        myTeam != -1;
+    // Partner 20 rule: must jump to ≥20 when outbidding your own partner
+    final minBid =
+        (partnerHoldsBid && state.currentBid < 20) ? 20 : state.currentBid + 1;
+
     return Column(
       children: [
         // header
@@ -593,17 +603,33 @@ class _BiddingView extends StatelessWidget {
                       ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: Text(
-                          _displayName(p.name) +
-                              (id == playerId ? ' (you)' : ''),
-                          style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: isCurrentTurn
-                                  ? FontWeight.w700
-                                  : FontWeight.w400,
-                              color: isCurrentTurn
-                                  ? Colors.white
-                                  : Colors.white70),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _displayName(p.name) +
+                                  (id == playerId ? ' (you)' : ''),
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: isCurrentTurn
+                                      ? FontWeight.w700
+                                      : FontWeight.w400,
+                                  color: isCurrentTurn
+                                      ? Colors.white
+                                      : Colors.white70),
+                            ),
+                            if (id != playerId)
+                              Text(
+                                p.teamIndex == myTeam ? 'Partner' : 'Opponent',
+                                style: TextStyle(
+                                    fontSize: 9,
+                                    color: p.teamIndex == myTeam
+                                        ? Colors.greenAccent
+                                            .withValues(alpha: 0.7)
+                                        : _kTeamB.withValues(alpha: 0.6)),
+                              ),
+                          ],
                         ),
                       ),
                       if (isPassed)
@@ -630,25 +656,50 @@ class _BiddingView extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Column(
               children: [
+                // Partner 20 notice
+                if (partnerHoldsBid && state.currentBid < 20)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: _kGold.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: _kGold.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline,
+                            color: _kGold, size: 14),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Partner holds bid — must jump to 20+',
+                          style: TextStyle(
+                              fontSize: 11,
+                              color: _kGold.withValues(alpha: 0.9)),
+                        ),
+                      ],
+                    ),
+                  ),
                 Row(
                   children: [
-                    Expanded(
-                      child: _OutlineBtn('PASS', onPass),
-                    ),
+                    Expanded(child: _OutlineBtn('PASS', onPass)),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: _FilledBtn('BID $nextBid', () => onBid(nextBid),
+                      child: _FilledBtn(
+                          'BID $minBid', () => onBid(minBid),
                           color: _kTeamA),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
-                // Quick-pick higher bids
+                // Quick-pick higher bids (filtered by minBid)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     for (final extra in [2, 3, 4, 5])
-                      if (state.currentBid + extra <= 28)
+                      if (state.currentBid + extra <= 28 &&
+                          state.currentBid + extra > minBid)
                         Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: _SmallBidBtn(

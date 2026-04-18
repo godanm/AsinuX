@@ -66,13 +66,22 @@ class Game28BotService {
       final strength = _handStrength(player.hand);
       final maxBid = _maxBidForStrength(strength);
 
-      if (maxBid > fresh.currentBid) {
-        final bid = min(fresh.currentBid + 1, maxBid);
-        await Game28Service.instance.placeBid(fresh, biddingTurn, bidValue: bid);
-        debugPrint('[28Bot] $biddingTurn bids $bid (strength=$strength)');
+      // Partner 20 rule: must bid ≥ 20 to outbid own partner
+      final holder = fresh.currentBidder;
+      final holderTeam = fresh.players[holder ?? '']?.teamIndex;
+      final partnerHoldsBid = holder != null &&
+          holder != biddingTurn &&
+          holderTeam == player.teamIndex;
+      final minBid = (partnerHoldsBid && fresh.currentBid < 20)
+          ? 20
+          : fresh.currentBid + 1;
+
+      if (maxBid >= minBid) {
+        await Game28Service.instance.placeBid(fresh, biddingTurn, bidValue: minBid);
+        debugPrint('[28Bot] $biddingTurn bids $minBid (strength=$strength)');
       } else {
         await Game28Service.instance.placeBid(fresh, biddingTurn);
-        debugPrint('[28Bot] $biddingTurn passes (strength=$strength, maxBid=$maxBid)');
+        debugPrint('[28Bot] $biddingTurn passes (strength=$strength, maxBid=$maxBid, minBid=$minBid)');
       }
     });
   }
