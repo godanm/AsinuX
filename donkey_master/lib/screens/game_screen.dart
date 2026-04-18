@@ -53,11 +53,13 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void initState() {
     super.initState();
+    AdMobService.instance.suppressAppOpenAd = true;
     _stateStream = FirebaseService.instance.roomStream(widget.roomId);
   }
 
   @override
   void dispose() {
+    AdMobService.instance.suppressAppOpenAd = false;
     _trickTimer?.cancel();
     BotService.instance.stop(); // safety net: stop bots if screen is force-closed
     _outgoingTimer?.cancel();

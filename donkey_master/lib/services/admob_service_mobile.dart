@@ -48,6 +48,19 @@ class AdMobService {
         : 'ca-app-pub-9287774769346149/5400937468';
   }
 
+  // App Open Ad — shown when app is foregrounded
+  static String get appOpenAdUnitId {
+    if (kDebugMode) {
+      return Platform.isAndroid
+          ? 'ca-app-pub-3940256099942544/9257395921'
+          : 'ca-app-pub-3940256099942544/9257395921'; // iOS test ID same for now
+    }
+    // TODO: Replace with real App Open ad unit IDs from AdMob console
+    return Platform.isAndroid
+        ? 'ca-app-pub-9287774769346149/5755022612'
+        : 'ca-app-pub-9287774769346149/REPLACE_IOS_APP_OPEN_ID';
+  }
+
   InterstitialAd? _interstitialAd;
   bool _isInterstitialReady = false;
   Completer<void>? _interstitialLoadCompleter;
@@ -56,10 +69,18 @@ class AdMobService {
   bool _isRewardedReady = false;
   Completer<void>? _rewardedLoadCompleter;
 
+  AppOpenAd? _appOpenAd;
+  bool _isAppOpenReady = false;
+  DateTime? _appOpenLoadTime;
+
+  /// Set to true while inside an active game to suppress the App Open ad.
+  bool suppressAppOpenAd = false;
+
   Future<void> initialize() async {
     await MobileAds.instance.initialize();
     _loadInterstitial();
     _loadRewarded();
+    _loadAppOpen();
   }
 
   // ── Loaders ──────────────────────────────────────────────────
@@ -204,6 +225,63 @@ class AdMobService {
       // Rewarded unavailable — fall back to interstitial
       await showInterstitialAsync();
     }
+  }
+
+  // ── App Open Ad ──────────────────────────────────────────────
+
+  /// App Open ads expire after 4 hours — reload if stale.
+  bool get _isAppOpenValid =>
+      _isAppOpenReady &&
+      _appOpenAd != null &&
+      _appOpenLoadTime != null &&
+      DateTime.now().difference(_appOpenLoadTime!) < const Duration(hours: 4);
+
+  void _loadAppOpen() {
+    AppOpenAd.load(
+      adUnitId: appOpenAdUnitId,
+      request: const AdRequest(),
+      adLoadCallback: AppOpenAdLoadCallback(
+        onAdLoaded: (ad) {
+          debugPrint('[AdMob] app open loaded ✓');
+          _appOpenAd = ad;
+          _isAppOpenReady = true;
+          _appOpenLoadTime = DateTime.now();
+        },
+        onAdFailedToLoad: (error) {
+          debugPrint('[AdMob] app open FAILED: ${error.code} ${error.message}');
+          _isAppOpenReady = false;
+          Future.delayed(const Duration(minutes: 5), _loadAppOpen);
+        },
+      ),
+    );
+  }
+
+  Future<void> showAppOpenAd() async {
+    if (suppressAppOpenAd) return;
+    if (!_isAppOpenValid) {
+      _loadAppOpen();
+      return;
+    }
+    final completer = Completer<void>();
+    _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenReady = false;
+        _loadAppOpen();
+        if (!completer.isCompleted) completer.complete();
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        debugPrint('[AdMob] app open FAILED TO SHOW: ${error.code}');
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenReady = false;
+        _loadAppOpen();
+        if (!completer.isCompleted) completer.complete();
+      },
+    );
+    _appOpenAd!.show();
+    await completer.future;
   }
 
   // ── Legacy fire-and-forget aliases ───────────────────────────

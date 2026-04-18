@@ -325,3 +325,182 @@ The card with the **lowest connection score** is discarded. Among ties, the **hi
 | First drop | Leave before drawing — 20 point penalty |
 | Middle drop | Leave after drawing — 40 point penalty |
 | Invalid declare | Failed declaration — 80 point penalty |
+
+---
+---
+
+# 28 *(Coming Soon)*
+
+## What Kind of Game Is This?
+
+28 is a **trick-taking card game** for exactly 4 players playing in two fixed partnerships (teams of 2). The game is named after the total point value of the cards in play. Players bid for the right to choose the trump suit, then play tricks to score the bid points or prevent the opposing team from scoring.
+
+---
+
+## The Setup
+
+- Uses only 32 cards from a standard 52-card deck: ranks **7, 8, 9, 10, Jack, Queen, King, Ace** of all four suits (♠ ♥ ♦ ♣)
+- Exactly 4 players; fixed partnerships — players seated opposite each other are partners
+- Each player is dealt **8 cards**
+- The trump suit is **hidden** until revealed during play
+
+---
+
+## Card Point Values
+
+Only 8 ranks are used; most have point values:
+
+| Card | Points |
+|---|---|
+| Jack (J) | 3 |
+| 9 | 2 |
+| Ace (A) | 1 |
+| 10 | 1 |
+| King, Queen, 8, 7 | 0 |
+
+Total points in the deck: **28** (hence the name).
+
+---
+
+## Card Rank Within a Suit
+
+For following suit and determining trick winners:
+
+**7 < 8 < 9 < 10 < Jack < Queen < King < Ace**
+
+Trump cards beat all non-trump cards, regardless of rank. Within trump, the same rank order applies.
+
+---
+
+## Bidding
+
+Before the main play, teams bid for the right to name the trump suit.
+
+- Bidding starts at **14** and increases in steps of **1**
+- The **bid value** is the minimum number of points the bidding team must score to win the round
+- The losing team must prevent them from reaching that total
+- The winning bidder's team must choose trump and then score at least as many points as their bid
+
+### How Bidding Works (detail to be finalised during implementation)
+
+- Players take turns raising the bid or passing
+- Once all others pass, the highest bidder wins
+- The winning bidder privately picks the trump suit — it is revealed only when a trump card is first played
+
+---
+
+## How a Round Works
+
+The winning bidder leads the first trick. Play goes clockwise.
+
+### Following Rules
+
+- **If you have the lead suit** → you MUST play a card of that suit
+- **If you don't have the lead suit** → you may play any card (including trump)
+- **Trump reveal**: if the trump suit has not been revealed yet, a player who cannot follow suit may play a trump card — doing so reveals the trump suit to all players. They are not required to play trump if they don't want to reveal it yet; they can play any non-trump card instead
+
+### Winning a Trick
+
+- If no trump was played: highest card of the lead suit wins
+- If trump was played: highest trump wins
+- The trick winner leads the next trick
+- All cards in the trick are collected by the winning team
+
+---
+
+## Scoring
+
+- Count the total point value of cards won by each team across all 8 tricks
+- **Bidding team wins** if they scored ≥ their bid value → they earn 1 point
+- **Bidding team loses** if they scored < their bid value → opposing team earns 1 point
+- A **double** bid can be called (rules to be confirmed during implementation)
+
+---
+
+## Quick Reference
+
+| Situation | What happens |
+|---|---|
+| Lead suit in hand | Must follow suit |
+| No lead suit | Can play any card (including trump) |
+| No lead suit + trump not revealed | Can reveal trump by playing it, or play a non-trump |
+| Trump played | Highest trump wins the trick |
+| No trump played | Highest lead-suit card wins |
+| Bid team scores ≥ bid | Bid team earns 1 point |
+| Bid team scores < bid | Opposing team earns 1 point |
+
+---
+---
+
+# TEEN PATTI *(Coming Soon)*
+
+## What Kind of Game Is This?
+
+Teen Patti (meaning "three cards" in Hindi) is a **3-card poker-style betting game** for 2–6 players. Each player is dealt 3 cards and the goal is to have the best hand — or to bluff opponents into folding. Players bet chips over multiple rounds; the last player standing or the best hand at showdown wins the pot.
+
+---
+
+## The Setup
+
+- Standard 52-card deck (no Jokers)
+- 2 to 6 players
+- Each player starts with a chip stack
+- A fixed **ante** (boot) is collected from each player before each round — this seeds the pot
+- Each player is dealt **3 cards face-down**
+
+---
+
+## Hand Rankings (best to worst)
+
+| Rank | Name | Description |
+|---|---|---|
+| 1 | Trail / Set | Three cards of the same rank — e.g. A-A-A |
+| 2 | Pure Sequence (Straight Flush) | Three consecutive cards of the same suit — e.g. 5♥ 6♥ 7♥ |
+| 3 | Sequence (Straight/Run) | Three consecutive cards of mixed suits — e.g. 5♥ 6♠ 7♦ |
+| 4 | Color (Flush) | Three cards of the same suit, not consecutive — e.g. 2♣ 7♣ K♣ |
+| 5 | Pair | Two cards of the same rank — e.g. Q♠ Q♥ 5♦ |
+| 6 | High Card | None of the above — winner is highest card |
+
+Within the same rank, ties are broken by card value (A high, 2 low — except A-2-3 is the highest straight).
+
+---
+
+## How a Round Works
+
+Play goes clockwise. On each turn, a player must either **bet or fold**.
+
+### Blind vs. Seen
+
+- A player who has **not looked at their cards** is called **blind** — they bet at half the current stake
+- A player who has **seen their cards** is called **seen** (chaal) — they bet at the current or double stake
+- Once you look at your cards you stay "seen" for the rest of the round
+
+### Actions
+
+| Action | Description |
+|---|---|
+| Bet (chaal) | Match or raise the current stake; stay in the round |
+| Fold (pack) | Surrender your cards; forfeit your chips in the pot |
+| Show | Request a showdown with another player (seen players only) |
+| Sideshow | Privately compare hands with the previous player; lower hand must fold (seen players only) |
+
+---
+
+## Winning
+
+The round ends when:
+- All but one player fold → last player wins the pot
+- A show is called → both hands revealed; best hand wins the pot
+
+---
+
+## Quick Reference
+
+| Term | Meaning |
+|---|---|
+| Boot | Mandatory ante collected before cards are dealt |
+| Blind | Playing without looking at your cards |
+| Seen (chaal) | Playing after looking at your cards |
+| Show | Heads-up showdown — both players reveal; best hand wins |
+| Sideshow | Private comparison with previous player; loser must fold |
+| Trail | Three of a kind — best possible hand |

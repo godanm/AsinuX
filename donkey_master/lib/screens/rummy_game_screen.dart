@@ -67,6 +67,7 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
   @override
   void initState() {
     super.initState();
+    AdMobService.instance.suppressAppOpenAd = true;
     _sub = RummyService.instance
         .gameStream(widget.roomId, widget.playerId, widget.botIds)
         .listen(_onStateChange);
@@ -74,6 +75,7 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
 
   @override
   void dispose() {
+    AdMobService.instance.suppressAppOpenAd = false;
     _sub?.cancel();
     super.dispose();
   }
