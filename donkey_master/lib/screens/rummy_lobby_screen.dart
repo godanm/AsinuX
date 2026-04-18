@@ -53,12 +53,16 @@ class _RummyLobbyScreenState extends State<RummyLobbyScreen> {
     // Navigate all players to game screen when host starts
     if (room['status'] == 'started' && mounted) {
       _sub?.cancel();
+      final botIds = _players.keys
+          .where((id) => id.startsWith('bot_'))
+          .toList();
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => RummyGameScreen(
             roomId: widget.roomId,
             playerId: widget.playerId,
             playerName: widget.playerName,
+            botIds: botIds,
           ),
         ),
       );
@@ -263,22 +267,9 @@ class _RummyLobbyScreenState extends State<RummyLobbyScreen> {
   }
 
   Future<void> _startGame() async {
-    final players = _players;
-    final playerNames = {
-      for (final entry in players.entries)
-        entry.key: ((entry.value as Map)['name'] as String)
-    };
-    // Turn order: host first, then others sorted by joinedAt
-    final sorted = players.entries.toList()
-      ..sort((a, b) => ((a.value as Map)['joinedAt'] as int? ?? 0)
-          .compareTo(((b.value as Map)['joinedAt'] as int? ?? 0)));
-    final turnOrder = sorted.map((e) => e.key).toList();
-
-    await RummyService.instance.startGame(
-      roomId: widget.roomId,
-      playerNames: playerNames,
-      turnOrder: turnOrder,
-    );
+    // Turn order and player names are determined server-side by the
+    // dealRummyGame Cloud Function from the room data — no need to pass them.
+    await RummyService.instance.startGame(roomId: widget.roomId);
     // Navigation is handled by _onRoomUpdate when status → 'started'
   }
 }

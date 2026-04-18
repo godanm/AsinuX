@@ -858,7 +858,7 @@ class _TopInfoBar extends StatelessWidget {
           Row(
             children: [
               GestureDetector(
-                onTap: () => showHowToPlay(context),
+                onTap: () => showHowToPlay(context, game: 'kazhutha'),
                 child: Icon(Icons.help_outline_rounded,
                     color: Colors.white.withValues(alpha: 0.5), size: 18),
               ),

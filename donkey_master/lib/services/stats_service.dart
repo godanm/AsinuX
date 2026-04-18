@@ -63,6 +63,36 @@ class PlayerStats {
       };
 }
 
+// ── Rummy stats ───────────────────────────────────────────────────────────────
+
+class RummyStats {
+  final int gamesPlayed;
+  final int wins;
+  final int drops;
+  final int invalidDeclarations;
+  final int totalPenalty;
+
+  const RummyStats({
+    this.gamesPlayed = 0,
+    this.wins = 0,
+    this.drops = 0,
+    this.invalidDeclarations = 0,
+    this.totalPenalty = 0,
+  });
+
+  double get winRate => gamesPlayed == 0 ? 0 : wins / gamesPlayed;
+  double get dropRate => gamesPlayed == 0 ? 0 : drops / gamesPlayed;
+  int get avgPenalty => gamesPlayed == 0 ? 0 : (totalPenalty / gamesPlayed).round();
+
+  factory RummyStats.fromMap(Map<dynamic, dynamic> map) => RummyStats(
+        gamesPlayed: (map['gamesPlayed'] as int?) ?? 0,
+        wins: (map['wins'] as int?) ?? 0,
+        drops: (map['drops'] as int?) ?? 0,
+        invalidDeclarations: (map['invalidDeclarations'] as int?) ?? 0,
+        totalPenalty: (map['totalPenalty'] as int?) ?? 0,
+      );
+}
+
 class LeaderboardEntry {
   final String uid;
   final String name;
@@ -87,6 +117,42 @@ class StatsService {
   final _db = FirebaseDatabase.instance;
 
   DatabaseReference _ref(String uid) => _db.ref('stats/$uid');
+  DatabaseReference _rummyRef(String uid) => _db.ref('stats/$uid/rummy');
+
+  Stream<RummyStats> rummyStatsStream(String uid) {
+    return _rummyRef(uid).onValue.map((event) {
+      if (!event.snapshot.exists) return const RummyStats();
+      return RummyStats.fromMap(event.snapshot.value as Map<dynamic, dynamic>);
+    });
+  }
+
+  Future<RummyStats> getRummyStats(String uid) async {
+    final snap = await _rummyRef(uid).get();
+    if (!snap.exists) return const RummyStats();
+    return RummyStats.fromMap(snap.value as Map<dynamic, dynamic>);
+  }
+
+  /// Record the outcome of a Rummy game for a real player.
+  /// [won]    true if this player declared successfully.
+  /// [dropped] true if this player dropped out.
+  /// [penalty] penalty points this player received (0 for winner).
+  /// [invalidDeclare] true if this player made an invalid declaration.
+  Future<void> recordRummyResult({
+    required String uid,
+    required bool won,
+    required bool dropped,
+    required int penalty,
+    bool invalidDeclare = false,
+  }) async {
+    await _rummyRef(uid).update({
+      'gamesPlayed': ServerValue.increment(1),
+      if (won) 'wins': ServerValue.increment(1),
+      if (dropped) 'drops': ServerValue.increment(1),
+      if (invalidDeclare) 'invalidDeclarations': ServerValue.increment(1),
+      'totalPenalty': ServerValue.increment(penalty),
+    });
+    debugPrint('[StatsService] rummy result for $uid — won=$won dropped=$dropped penalty=$penalty');
+  }
 
   Future<PlayerStats> getStats(String uid) async {
     final snap = await _ref(uid).get();

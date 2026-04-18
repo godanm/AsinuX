@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:math';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
 import '../models/rummy_models.dart';
@@ -18,7 +20,23 @@ class RummyService {
   DatabaseReference _gameRef(String roomId) =>
       _db.ref('rummy_games/$roomId');
 
+  DatabaseReference _handRef(String roomId, String playerId) =>
+      _db.ref('rummy_hands/$roomId/$playerId');
+
   // ── Find or create a waiting room ─────────────────────────────
+  //
+  // Uses a Firebase transaction to atomically claim a seat. This prevents
+  // the TOCTOU race where N clients all see the same "not full" snapshot
+  // and simultaneously join, overcrowding the room.
+  //
+  // Flow:
+  //   1. Query for waiting rooms (read-only, cheap).
+  //   2. For each candidate, run a transaction on the full room node.
+  //      The transaction handler is retried automatically if another
+  //      client commits a write between our read and our write.
+  //   3. If the transaction commits → we have a seat, done.
+  //   4. If every candidate is full by the time we transact → create a
+  //      new room (single writer, no contention).
 
   Future<String> findOrCreateRoom({
     required String playerId,
@@ -26,6 +44,7 @@ class RummyService {
     required int maxPlayers,
   }) async {
     debugPrint('[Rummy] findOrCreateRoom playerId=$playerId maxPlayers=$maxPlayers');
+
     final snap = await _db
         .ref('rummy_rooms')
         .orderByChild('status')
@@ -41,22 +60,22 @@ class RummyService {
       final rooms = Map<String, dynamic>.from(snap.value as Map);
       debugPrint('[Rummy] found ${rooms.length} waiting room(s)');
       for (final entry in rooms.entries) {
+        final roomId = entry.key;
         final room = Map<String, dynamic>.from(entry.value as Map);
-        final players = room['players'] != null
-            ? Map<String, dynamic>.from(room['players'] as Map)
-            : <String, dynamic>{};
-        debugPrint('[Rummy] checking room ${entry.key}: maxPlayers=${room['maxPlayers']} players=${players.length}');
         if (room['maxPlayers'] != maxPlayers) continue;
-        if (players.length >= maxPlayers) continue;
-        debugPrint('[Rummy] joining existing room ${entry.key}');
-        await _joinRoom(
-          roomId: entry.key,
+
+        debugPrint('[Rummy] attempting transactional join of $roomId');
+        final joined = await _tryJoinRoom(
+          roomId: roomId,
           playerId: playerId,
           playerName: playerName,
-          currentCount: players.length,
           maxPlayers: maxPlayers,
         );
-        return entry.key;
+        if (joined) {
+          debugPrint('[Rummy] successfully joined $roomId via transaction');
+          return roomId;
+        }
+        debugPrint('[Rummy] room $roomId was full or gone — trying next');
       }
     }
 
@@ -66,6 +85,47 @@ class RummyService {
       playerName: playerName,
       maxPlayers: maxPlayers,
     );
+  }
+
+  /// Atomically joins [roomId]. Returns true if the seat was claimed,
+  /// false if the room was full, wrong size, or no longer waiting.
+  Future<bool> _tryJoinRoom({
+    required String roomId,
+    required String playerId,
+    required String playerName,
+    required int maxPlayers,
+  }) async {
+    final result = await _roomRef(roomId).runTransaction((data) {
+      if (data == null) return Transaction.abort();
+
+      final room = Map<String, dynamic>.from(data as Map);
+
+      // Re-validate inside the transaction — the snapshot from the query
+      // may already be stale by the time we get here.
+      if (room['status'] != 'waiting') return Transaction.abort();
+      if (room['maxPlayers'] != maxPlayers) return Transaction.abort();
+
+      final players = room['players'] != null
+          ? Map<String, dynamic>.from(room['players'] as Map)
+          : <String, dynamic>{};
+
+      if (players.length >= maxPlayers) return Transaction.abort();
+      if (players.containsKey(playerId)) return Transaction.abort();
+
+      players[playerId] = {
+        'id': playerId,
+        'name': playerName,
+        'isHost': false,
+        'joinedAt': ServerValue.timestamp,
+      };
+
+      room['players'] = players;
+      if (players.length >= maxPlayers) room['status'] = 'ready';
+
+      return Transaction.success(room);
+    });
+
+    return result.committed;
   }
 
   Future<String> _createRoom({
@@ -95,25 +155,6 @@ class RummyService {
     });
     debugPrint('[Rummy] room $roomId created successfully');
     return roomId;
-  }
-
-  Future<void> _joinRoom({
-    required String roomId,
-    required String playerId,
-    required String playerName,
-    required int currentCount,
-    required int maxPlayers,
-  }) async {
-    debugPrint('[Rummy] joining room $roomId ($currentCount/$maxPlayers)');
-    await _roomRef(roomId).child('players/$playerId').set({
-      'id': playerId,
-      'name': playerName,
-      'isHost': false,
-      'joinedAt': ServerValue.timestamp,
-    });
-    if (currentCount + 1 >= maxPlayers) {
-      await _roomRef(roomId).child('status').set('ready');
-    }
   }
 
   // ── Fill remaining seats with bots ────────────────────────────
@@ -170,74 +211,20 @@ class RummyService {
     }
   }
 
-  // ── Start game (called by host) ────────────────────────────────
+  // ── Start game (host triggers server-side deal) ────────────────
+  //
+  // Dealing is done entirely in the `dealRummyGame` Cloud Function so
+  // that no client ever receives the full deck or any other player's
+  // hand. The function writes each hand to rummy_hands/{roomId}/{uid}
+  // using the Admin SDK, which bypasses the per-player read rules.
 
-  Future<void> startGame({
-    required String roomId,
-    required Map<String, String> playerNames, // id → name
-    required List<String> turnOrder,
-  }) async {
-    debugPrint('[Rummy] startGame roomId=$roomId players=${turnOrder.length}');
-
-    // Build and shuffle deck
-    final deck = buildRummyDeck()..shuffle(_rng);
-
-    // Pull wild joker — first card that is NOT a printed joker
-    RummyCard wildJoker = const RummyCard(rank: 0, suit: -1, isPrintedJoker: true);
-    int wildIdx = 0;
-    for (int i = 0; i < deck.length; i++) {
-      if (!deck[i].isPrintedJoker) {
-        wildJoker = deck[i];
-        wildIdx = i;
-        break;
-      }
-    }
-    deck.removeAt(wildIdx);
-
-    // Deal 13 cards to each player
-    final hands = <String, List<RummyCard>>{};
-    for (final id in turnOrder) {
-      hands[id] = deck.sublist(0, 13);
-      deck.removeRange(0, 13);
-    }
-
-    // Flip one card to open deck
-    final firstOpen = deck.removeAt(0);
-
-    // Build player meta map (no hands — stored separately)
-    final playersMeta = {
-      for (final id in turnOrder)
-        id: {
-          'id': id,
-          'name': playerNames[id] ?? id,
-          'handSize': 13,
-          'hasDropped': false,
-        }
-    };
-
-    // Build hands map for Firebase
-    final handsMap = {
-      for (final entry in hands.entries)
-        entry.key: entry.value.map((c) => c.toMap()).toList()
-    };
-
-    // Write game state
-    await _gameRef(roomId).set({
-      'roomId': roomId,
-      'phase': 'draw',
-      'currentTurn': turnOrder.first,
-      'turnOrder': turnOrder,
-      'wildJoker': wildJoker.toMap(),
-      'openDeck': [firstOpen.toMap()],
-      'closedDeck': deck.map((c) => c.toMap()).toList(),
-      'closedDeckCount': deck.length,
-      'players': playersMeta,
-      'hands': handsMap,
-    });
-
-    // Mark room as started so lobby screens navigate
-    await _roomRef(roomId).child('status').set('started');
-    debugPrint('[Rummy] game started — wild joker: $wildJoker');
+  Future<void> startGame({required String roomId}) async {
+    debugPrint('[Rummy] startGame — calling dealRummyGame CF for $roomId');
+    final callable =
+        FirebaseFunctions.instance.httpsCallable('dealRummyGame');
+    await callable.call({'roomId': roomId});
+    // Status → 'started' and all hands are written atomically by the CF.
+    // Lobby screens navigate when they observe the status change.
   }
 
   // ── Draw from closed deck ──────────────────────────────────────
@@ -257,17 +244,24 @@ class RummyService {
     final closedDeck = closedRaw.map((c) => RummyCard.fromMap(c as Map)).toList();
     final drawn = closedDeck.removeAt(0);
 
-    final handRaw = ((data['hands'] as Map)[playerId] as List?)?.cast<dynamic>() ?? [];
-    final hand = handRaw.map((c) => RummyCard.fromMap(c as Map)).toList();
+    // Read hand from private path, not the shared game state
+    final handSnap = await _handRef(roomId, playerId).get();
+    final hand = handSnap.exists
+        ? ((handSnap.value as List).cast<dynamic>())
+            .map((c) => RummyCard.fromMap(c as Map))
+            .toList()
+        : <RummyCard>[];
     hand.add(drawn);
 
-    await _gameRef(roomId).update({
-      'closedDeck': closedDeck.map((c) => c.toMap()).toList(),
-      'closedDeckCount': closedDeck.length,
-      'hands/$playerId': hand.map((c) => c.toMap()).toList(),
-      'players/$playerId/handSize': hand.length,
-      'phase': 'discard',
-    });
+    await Future.wait([
+      _gameRef(roomId).update({
+        'closedDeck': closedDeck.map((c) => c.toMap()).toList(),
+        'closedDeckCount': closedDeck.length,
+        'players/$playerId/handSize': hand.length,
+        'phase': 'discard',
+      }),
+      _handRef(roomId, playerId).set(hand.map((c) => c.toMap()).toList()),
+    ]);
     debugPrint('[Rummy] $playerId drew $drawn from closed deck');
   }
 
@@ -283,18 +277,24 @@ class RummyService {
     if (openRaw.isEmpty) return;
 
     final openDeck = openRaw.map((c) => RummyCard.fromMap(c as Map)).toList();
-    final drawn = openDeck.removeLast(); // top card
+    final drawn = openDeck.removeLast();
 
-    final handRaw = ((data['hands'] as Map)[playerId] as List?)?.cast<dynamic>() ?? [];
-    final hand = handRaw.map((c) => RummyCard.fromMap(c as Map)).toList();
+    final handSnap = await _handRef(roomId, playerId).get();
+    final hand = handSnap.exists
+        ? ((handSnap.value as List).cast<dynamic>())
+            .map((c) => RummyCard.fromMap(c as Map))
+            .toList()
+        : <RummyCard>[];
     hand.add(drawn);
 
-    await _gameRef(roomId).update({
-      'openDeck': openDeck.map((c) => c.toMap()).toList(),
-      'hands/$playerId': hand.map((c) => c.toMap()).toList(),
-      'players/$playerId/handSize': hand.length,
-      'phase': 'discard',
-    });
+    await Future.wait([
+      _gameRef(roomId).update({
+        'openDeck': openDeck.map((c) => c.toMap()).toList(),
+        'players/$playerId/handSize': hand.length,
+        'phase': 'discard',
+      }),
+      _handRef(roomId, playerId).set(hand.map((c) => c.toMap()).toList()),
+    ]);
     debugPrint('[Rummy] $playerId drew $drawn from open deck');
   }
 
@@ -306,8 +306,11 @@ class RummyService {
     if (!snap.exists) return;
     final data = Map<String, dynamic>.from(snap.value as Map);
 
-    final handRaw = ((data['hands'] as Map)[playerId] as List?)?.cast<dynamic>() ?? [];
-    final hand = handRaw.map((c) => RummyCard.fromMap(c as Map)).toList();
+    final handSnap = await _handRef(roomId, playerId).get();
+    if (!handSnap.exists) return;
+    final hand = ((handSnap.value as List).cast<dynamic>())
+        .map((c) => RummyCard.fromMap(c as Map))
+        .toList();
     if (cardIndex >= hand.length) return;
 
     final discarded = hand.removeAt(cardIndex);
@@ -316,19 +319,18 @@ class RummyService {
     final openDeck = openRaw.map((c) => RummyCard.fromMap(c as Map)).toList();
     openDeck.add(discarded);
 
-    // Advance turn
     final turnOrder = (data['turnOrder'] as List).map((e) => e.toString()).toList();
-    final currentIdx = turnOrder.indexOf(playerId);
-    final nextIdx = (currentIdx + 1) % turnOrder.length;
-    final nextPlayer = turnOrder[nextIdx];
+    final nextPlayer = turnOrder[(turnOrder.indexOf(playerId) + 1) % turnOrder.length];
 
-    await _gameRef(roomId).update({
-      'openDeck': openDeck.map((c) => c.toMap()).toList(),
-      'hands/$playerId': hand.map((c) => c.toMap()).toList(),
-      'players/$playerId/handSize': hand.length,
-      'currentTurn': nextPlayer,
-      'phase': 'draw',
-    });
+    await Future.wait([
+      _gameRef(roomId).update({
+        'openDeck': openDeck.map((c) => c.toMap()).toList(),
+        'players/$playerId/handSize': hand.length,
+        'currentTurn': nextPlayer,
+        'phase': 'draw',
+      }),
+      _handRef(roomId, playerId).set(hand.map((c) => c.toMap()).toList()),
+    ]);
     debugPrint('[Rummy] $playerId discarded $discarded — next turn: $nextPlayer');
   }
 
@@ -392,75 +394,109 @@ class RummyService {
   }
 
   // ── Declare game ───────────────────────────────────────────────
+  //
+  // Validation and scoring run in the `declareRummyGame` Cloud Function:
+  //   1. The server re-reads the player's hand from rummy_hands to ensure
+  //      they cannot fabricate cards they don't hold.
+  //   2. Deadwood is calculated from the other players' server-held hands,
+  //      so scores cannot be tampered with client-side.
+  //
+  // Returns null on success, an error string on invalid declaration.
 
-  /// Returns null on success, error string on validation failure.
   Future<String?> declareGame(
     String roomId,
     String playerId,
     List<List<RummyCard>> melds,
   ) async {
-    debugPrint('[Rummy] $playerId declaring');
-    final snap = await _gameRef(roomId).get();
-    if (!snap.exists) return 'Game not found';
-    final data = Map<String, dynamic>.from(snap.value as Map);
-
-    final wildJokerRaw = data['wildJoker'] as Map;
-    final wildRank = (wildJokerRaw['rank'] as num).toInt();
-
-    final error = validateDeclaration(melds, wildRank);
-    if (error != null) {
-      debugPrint('[Rummy] invalid declaration: $error');
-      // 80-point penalty for wrong declaration
-      await _gameRef(roomId).update({'scores/$playerId': 80});
+    debugPrint('[Rummy] $playerId declaring via CF');
+    try {
+      final callable =
+          FirebaseFunctions.instance.httpsCallable('declareRummyGame');
+      final result = await callable.call({
+        'roomId': roomId,
+        'melds': melds
+            .map((meld) => meld.map((c) => c.toMap()).toList())
+            .toList(),
+      });
+      final error = (result.data as Map<dynamic, dynamic>)['error'] as String?;
+      if (error != null) debugPrint('[Rummy] declaration rejected: $error');
       return error;
+    } on FirebaseFunctionsException catch (e) {
+      debugPrint('[Rummy] declareGame CF error: ${e.code} ${e.message}');
+      return e.message ?? 'Declaration failed';
     }
-
-    // Build scores: winner = 0, others = deadwood capped at 80
-    final handsRaw = data['hands'] != null
-        ? Map<String, dynamic>.from(data['hands'] as Map)
-        : <String, dynamic>{};
-
-    final scores = <String, int>{playerId: 0};
-    for (final entry in handsRaw.entries) {
-      if (entry.key == playerId) continue;
-      final cards = (entry.value as List)
-          .map((c) => RummyCard.fromMap(c as Map))
-          .toList();
-      final deadwood = cards.fold(0, (s, c) => s + c.points);
-      scores[entry.key] = deadwood.clamp(0, 80);
-    }
-
-    await _gameRef(roomId).update({
-      'phase': 'gameOver',
-      'winnerId': playerId,
-      'scores': scores,
-    });
-    debugPrint('[Rummy] $playerId declared — scores: $scores');
-    return null;
   }
 
   // ── Game stream ────────────────────────────────────────────────
+  //
+  // Merges two Firebase streams:
+  //   • rummy_games/{roomId}          — shared state (no hand data)
+  //   • rummy_hands/{roomId}/{id}     — own hand + one stream per bot
+  //
+  // Each client only subscribes to their own hand slot.  The host also
+  // subscribes to bot hand slots so it can drive bot moves.
+  // Emits a new RummyGameState whenever either source updates.
 
-  Stream<RummyGameState?> gameStream(String roomId) {
-    return _gameRef(roomId).onValue.map((event) {
-      if (!event.snapshot.exists) return null;
+  Stream<RummyGameState?> gameStream(
+    String roomId,
+    String playerId,
+    List<String> botIds,
+  ) {
+    final controller = StreamController<RummyGameState?>();
+    Map<dynamic, dynamic>? latestGameData;
+    final hands = <String, List<RummyCard>>{};
+    final subs = <StreamSubscription<dynamic>>[];
+
+    List<RummyCard> parseHand(DataSnapshot snap) {
+      if (!snap.exists) return [];
+      return ((snap.value as List).cast<dynamic>())
+          .map((c) => RummyCard.fromMap(c as Map))
+          .toList();
+    }
+
+    void emit() {
+      if (latestGameData == null) return;
       try {
-        final data = Map<dynamic, dynamic>.from(event.snapshot.value as Map);
-        final handsRaw = data['hands'] != null
-            ? Map<String, dynamic>.from(data['hands'] as Map)
-            : <String, dynamic>{};
-        final hands = <String, List<RummyCard>>{};
-        for (final entry in handsRaw.entries) {
-          final cardList = (entry.value as List?)?.cast<dynamic>() ?? [];
-          hands[entry.key] =
-              cardList.map((c) => RummyCard.fromMap(c as Map)).toList();
-        }
-        return RummyGameState.fromMap(roomId, data, hands);
+        controller.add(
+          RummyGameState.fromMap(roomId, latestGameData!, Map.from(hands)),
+        );
       } catch (e) {
-        debugPrint('[Rummy] gameStream parse error: $e');
-        return null;
+        debugPrint('[Rummy] gameStream emit error: $e');
       }
-    });
+    }
+
+    // Shared game state
+    subs.add(_gameRef(roomId).onValue.listen((event) {
+      if (!event.snapshot.exists) {
+        controller.add(null);
+        return;
+      }
+      latestGameData =
+          Map<dynamic, dynamic>.from(event.snapshot.value as Map);
+      emit();
+    }));
+
+    // Own hand (private path)
+    subs.add(_handRef(roomId, playerId).onValue.listen((event) {
+      hands[playerId] = parseHand(event.snapshot);
+      emit();
+    }));
+
+    // Bot hands (host only — rule allows host to read bot_* slots)
+    for (final botId in botIds) {
+      subs.add(_handRef(roomId, botId).onValue.listen((event) {
+        hands[botId] = parseHand(event.snapshot);
+        emit();
+      }));
+    }
+
+    controller.onCancel = () {
+      for (final s in subs) {
+        s.cancel();
+      }
+    };
+
+    return controller.stream;
   }
 
   // ── Room stream ────────────────────────────────────────────────

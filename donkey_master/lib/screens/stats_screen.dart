@@ -22,194 +22,70 @@ class StatsScreen extends StatelessWidget {
         ),
         title: const Text('Your Stats', style: TextStyle(color: Colors.white)),
       ),
-      body: StreamBuilder<PlayerStats>(
-        stream: StatsService.instance.statsStream(uid),
-        builder: (context, snap) {
-          final stats = snap.data ?? const PlayerStats();
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                Center(
-                  child: Column(
-                    children: [
-                      LocalPlayerAvatar(
-                        radius: 40,
-                        playerId: uid,
-                        playerName: playerName,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        playerName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${stats.gamesPlayed} games played',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.4),
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ).animate().fadeIn(duration: 400.ms),
-
-                const SizedBox(height: 32),
-
-                // Big 3 stats
-                Row(
+      body: Column(
+        children: [
+          // ── Compact player header ──────────────────────────────
+          StreamBuilder<PlayerStats>(
+            stream: StatsService.instance.statsStream(uid),
+            builder: (context, snap) {
+              final stats = snap.data ?? const PlayerStats();
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                child: Row(
                   children: [
-                    _BigStat(
-                      label: '1st Place %',
-                      value: '${(stats.roundsPlayed == 0 ? 0 : stats.firstPlaceCount / stats.roundsPlayed * 100).toStringAsFixed(0)}%',
-                      icon: '🏆',
-                      color: const Color(0xFFE63946),
-                    ),
+                    LocalPlayerAvatar(radius: 24, playerId: uid, playerName: playerName),
                     const SizedBox(width: 12),
-                    _BigStat(
-                      label: 'Escape Rate',
-                      value: '${(stats.escapeRate * 100).toStringAsFixed(0)}%',
-                      icon: '🎉',
-                      color: Colors.green.shade400,
-                    ),
-                    const SizedBox(width: 12),
-                    _BigStat(
-                      label: 'Donkey Rate',
-                      value: '${(stats.donkeyRate * 100).toStringAsFixed(0)}%',
-                      icon: '🫏',
-                      color: Colors.redAccent,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(playerName,
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold)),
+                          Text('${stats.totalPoints} pts',
+                              style: TextStyle(
+                                  color: const Color(0xFFFFD700).withValues(alpha: 0.85),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600)),
+                        ],
+                      ),
                     ),
                   ],
-                ).animate().fadeIn(delay: 200.ms, duration: 400.ms),
-
-                const SizedBox(height: 24),
-
-                // Detailed breakdown
-                _SectionTitle('Lifetime Totals'),
-                const SizedBox(height: 12),
-                _StatRow(label: 'Total Points', value: '${stats.totalPoints}', icon: Icons.stars_rounded, color: const Color(0xFFE63946)),
-                _StatRow(label: 'Rounds played', value: '${stats.roundsPlayed}', icon: Icons.casino_outlined),
-                _StatRow(label: 'Times escaped', value: '${stats.escapeCount}', icon: Icons.exit_to_app, color: Colors.green.shade400),
-                _StatRow(label: 'Times the Donkey', value: '${stats.donkeyCount}', icon: Icons.mood_bad, color: Colors.redAccent),
-                _StatRow(label: 'Times finished 1st', value: '${stats.firstPlaceCount}', icon: Icons.emoji_events, color: const Color(0xFFFFD700)),
-
-                const SizedBox(height: 32),
-
-                // Performance bar
-                if (stats.roundsPlayed > 0) ...[
-                  _SectionTitle('Round Breakdown'),
-                  const SizedBox(height: 16),
-                  _BreakdownBar(stats: stats),
-                ],
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _BigStat extends StatelessWidget {
-  final String label;
-  final String value;
-  final String icon;
-  final Color color;
-
-  const _BigStat({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
-        ),
-        child: Column(
-          children: [
-            Text(icon, style: const TextStyle(fontSize: 24)),
-            const SizedBox(height: 6),
-            Text(
-              value,
-              style: TextStyle(
-                color: color,
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.5),
-                fontSize: 11,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StatRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color color;
-
-  const _StatRow({
-    required this.label,
-    required this.value,
-    required this.icon,
-    this.color = Colors.white,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.7),
-                fontSize: 14,
-              ),
-            ),
+                ),
+              ).animate().fadeIn(duration: 300.ms);
+            },
           ),
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
+
+          const Divider(color: Colors.white10, height: 1),
+
+          // ── 2×2 stats grid ────────────────────────────────────
+          Expanded(
+            child: Row(
+              children: [
+                // Left column
+                Expanded(
+                  child: Column(
+                    children: [
+                      Expanded(child: _KazhuthaBlock(uid: uid)),
+                      const _GridDividerH(),
+                      Expanded(child: _ComingSoonBlock(emoji: '🎲', title: 'GAME 3')),
+                    ],
+                  ),
+                ),
+                const _GridDividerV(),
+                // Right column
+                Expanded(
+                  child: Column(
+                    children: [
+                      Expanded(child: _RummyBlock(uid: uid)),
+                      const _GridDividerH(),
+                      Expanded(child: _ComingSoonBlock(emoji: '♟️', title: 'GAME 4')),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -218,92 +94,347 @@ class _StatRow extends StatelessWidget {
   }
 }
 
-class _BreakdownBar extends StatelessWidget {
-  final PlayerStats stats;
-  const _BreakdownBar({required this.stats});
+// ── Kazhutha block ────────────────────────────────────────────────────────────
+
+class _KazhuthaBlock extends StatelessWidget {
+  final String uid;
+  const _KazhuthaBlock({required this.uid});
 
   @override
   Widget build(BuildContext context) {
-    final total = stats.roundsPlayed;
-    final escaped = stats.escapeCount;
-    final donkey = stats.donkeyCount;
-    final neutral = total - escaped - donkey;
+    return StreamBuilder<PlayerStats>(
+      stream: StatsService.instance.statsStream(uid),
+      builder: (context, snap) {
+        final s = snap.data ?? const PlayerStats();
+        return _GameBlock(
+          emoji: '🃏',
+          title: 'KAZHUTHA',
+          accentColor: const Color(0xFFE63946),
+          hasData: s.roundsPlayed > 0,
+          children: [
+            _MiniStat('Rounds', '${s.roundsPlayed}'),
+            _MiniStat('Escaped', '${s.escapeCount}', color: Colors.greenAccent.shade400),
+            _MiniStat('Donkey', '${s.donkeyCount}', color: Colors.redAccent),
+            _MiniStat('1st place', '${s.firstPlaceCount}', color: const Color(0xFFFFD700)),
+            _MiniStat(
+              'Escape rate',
+              '${(s.escapeRate * 100).toStringAsFixed(0)}%',
+              color: Colors.greenAccent.shade400,
+            ),
+            _MiniStat(
+              'Donkey rate',
+              '${(s.donkeyRate * 100).toStringAsFixed(0)}%',
+              color: Colors.redAccent,
+            ),
+            if (s.roundsPlayed > 0) ...[
+              const SizedBox(height: 8),
+              _MiniBar(
+                segments: [
+                  _Seg(s.escapeCount, Colors.green.shade600),
+                  _Seg((s.roundsPlayed - s.escapeCount - s.donkeyCount).clamp(0, s.roundsPlayed), Colors.white24),
+                  _Seg(s.donkeyCount, Colors.redAccent),
+                ],
+                labels: const ['Escaped', 'Played', 'Donkey'],
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
 
-    return Column(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: SizedBox(
-            height: 20,
+// ── Rummy block ───────────────────────────────────────────────────────────────
+
+class _RummyBlock extends StatelessWidget {
+  final String uid;
+  const _RummyBlock({required this.uid});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<RummyStats>(
+      stream: StatsService.instance.rummyStatsStream(uid),
+      builder: (context, snap) {
+        final s = snap.data ?? const RummyStats();
+        return _GameBlock(
+          emoji: '🀄',
+          title: 'RUMMY',
+          accentColor: const Color(0xFF1565C0),
+          hasData: s.gamesPlayed > 0,
+          children: [
+            _MiniStat('Games', '${s.gamesPlayed}'),
+            _MiniStat('Wins', '${s.wins}', color: const Color(0xFF4FC3F7)),
+            _MiniStat('Drops', '${s.drops}', color: Colors.redAccent),
+            _MiniStat('Avg penalty', '${s.avgPenalty} pts', color: Colors.amber),
+            _MiniStat(
+              'Win rate',
+              '${(s.winRate * 100).toStringAsFixed(0)}%',
+              color: const Color(0xFF4FC3F7),
+            ),
+            _MiniStat(
+              'Drop rate',
+              '${(s.dropRate * 100).toStringAsFixed(0)}%',
+              color: Colors.redAccent,
+            ),
+            if (s.gamesPlayed > 0) ...[
+              const SizedBox(height: 8),
+              _MiniBar(
+                segments: [
+                  _Seg(s.wins, const Color(0xFF1565C0)),
+                  _Seg((s.gamesPlayed - s.wins - s.drops).clamp(0, s.gamesPlayed), Colors.white24),
+                  _Seg(s.drops, Colors.redAccent),
+                ],
+                labels: const ['Won', 'Lost', 'Dropped'],
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+// ── Coming soon block ─────────────────────────────────────────────────────────
+
+class _ComingSoonBlock extends StatelessWidget {
+  final String emoji;
+  final String title;
+  const _ComingSoonBlock({required this.emoji, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.white.withValues(alpha: 0.01),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(emoji, style: const TextStyle(fontSize: 14)),
+              const SizedBox(width: 6),
+              Text(
+                title,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ],
+          ),
+          Expanded(
+            child: Center(
+              child: Text(
+                'Coming soon',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Reusable game block ───────────────────────────────────────────────────────
+
+class _GameBlock extends StatelessWidget {
+  final String emoji;
+  final String title;
+  final Color accentColor;
+  final bool hasData;
+  final List<Widget> children;
+
+  const _GameBlock({
+    required this.emoji,
+    required this.title,
+    required this.accentColor,
+    required this.hasData,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: accentColor.withValues(alpha: 0.04),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Block header
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: accentColor.withValues(alpha: 0.25)),
+              ),
+            ),
             child: Row(
               children: [
-                if (escaped > 0)
-                  Expanded(
-                    flex: escaped,
-                    child: Container(color: Colors.green.shade600),
+                Text(emoji, style: const TextStyle(fontSize: 14)),
+                const SizedBox(width: 6),
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: accentColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.5,
                   ),
-                if (neutral > 0)
-                  Expanded(
-                    flex: neutral.clamp(0, total),
-                    child: Container(color: Colors.white24),
+                ),
+              ],
+            ),
+          ),
+
+          // Scrollable stats content
+          Expanded(
+            child: hasData
+                ? SingleChildScrollView(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: children,
+                    ),
+                  )
+                : Center(
+                    child: Text(
+                      'No games yet',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        fontSize: 12,
+                      ),
+                    ),
                   ),
-                if (donkey > 0)
-                  Expanded(
-                    flex: donkey,
-                    child: Container(color: Colors.redAccent),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Mini stat row ─────────────────────────────────────────────────────────────
+
+class _MiniStat extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _MiniStat(this.label, this.value, {this.color = Colors.white});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 7),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.45),
+              fontSize: 12,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Mini breakdown bar ────────────────────────────────────────────────────────
+
+class _Seg {
+  final int count;
+  final Color color;
+  const _Seg(this.count, this.color);
+}
+
+class _MiniBar extends StatelessWidget {
+  final List<_Seg> segments;
+  final List<String> labels;
+  const _MiniBar({required this.segments, required this.labels});
+
+  @override
+  Widget build(BuildContext context) {
+    final total = segments.fold(0, (s, e) => s + e.count);
+    if (total == 0) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: SizedBox(
+            height: 8,
+            child: Row(
+              children: segments
+                  .where((s) => s.count > 0)
+                  .map((s) => Expanded(
+                        flex: s.count,
+                        child: Container(color: s.color),
+                      ))
+                  .toList(),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 10,
+          children: List.generate(
+            segments.length,
+            (i) => Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 7, height: 7,
+                  decoration: BoxDecoration(
+                    color: segments[i].color,
+                    shape: BoxShape.circle,
                   ),
+                ),
+                const SizedBox(width: 3),
+                Text(
+                  labels[i],
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.35),
+                    fontSize: 9,
+                  ),
+                ),
               ],
             ),
           ),
         ),
-        const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _Legend(color: Colors.green.shade600, label: 'Escaped'),
-            const SizedBox(width: 16),
-            _Legend(color: Colors.white24, label: 'Played'),
-            const SizedBox(width: 16),
-            _Legend(color: Colors.redAccent, label: 'Donkey'),
-          ],
-        ),
       ],
     );
   }
 }
 
-class _Legend extends StatelessWidget {
-  final Color color;
-  final String label;
-  const _Legend({required this.color, required this.label});
+// ── Grid dividers ─────────────────────────────────────────────────────────────
 
+class _GridDividerV extends StatelessWidget {
+  const _GridDividerV();
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-        const SizedBox(width: 6),
-        Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
-      ],
-    );
-  }
+  Widget build(BuildContext context) =>
+      Container(width: 1, color: Colors.white10);
 }
 
-class _SectionTitle extends StatelessWidget {
-  final String title;
-  const _SectionTitle(this.title);
-
+class _GridDividerH extends StatelessWidget {
+  const _GridDividerH();
   @override
-  Widget build(BuildContext context) {
-    return Text(
-      title.toUpperCase(),
-      style: TextStyle(
-        color: Colors.white.withValues(alpha: 0.4),
-        fontSize: 11,
-        fontWeight: FontWeight.bold,
-        letterSpacing: 2,
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      Container(height: 1, color: Colors.white10);
 }

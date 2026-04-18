@@ -9,6 +9,9 @@ import '../services/rummy_bot_service.dart';
 import '../widgets/player_avatar.dart';
 import '../widgets/ad_banner_widget.dart';
 import '../services/admob_service.dart';
+import '../services/auth_service.dart';
+import '../services/stats_service.dart';
+import '../widgets/how_to_play_overlay.dart';
 
 // ── Flying card state ─────────────────────────────────────────────────────────
 
@@ -29,12 +32,17 @@ class RummyGameScreen extends StatefulWidget {
   final String roomId;
   final String playerId;
   final String playerName;
+  /// Bot player IDs in this room. Empty for non-host players.
+  /// The host receives these so it can subscribe to bot hand streams
+  /// and drive bot moves.
+  final List<String> botIds;
 
   const RummyGameScreen({
     super.key,
     required this.roomId,
     required this.playerId,
     required this.playerName,
+    this.botIds = const [],
   });
 
   @override
@@ -48,6 +56,7 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
   String? _lastBotActionKey; // prevents double-firing bot actions
 
   bool _gameOverAdFired = false;
+  bool _statsRecorded = false;
 
   // Flying card animation
   _FlyCard? _flyCard;
@@ -59,7 +68,7 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
   void initState() {
     super.initState();
     _sub = RummyService.instance
-        .gameStream(widget.roomId)
+        .gameStream(widget.roomId, widget.playerId, widget.botIds)
         .listen(_onStateChange);
   }
 
@@ -77,17 +86,33 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
       HapticFeedback.mediumImpact();
     }
 
-    // Fire rewarded ad once when game over
-    if (state != null &&
-        state.phase == RummyPhase.gameOver &&
-        !_gameOverAdFired) {
-      _gameOverAdFired = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        Future.delayed(const Duration(seconds: 3), () {
-          if (mounted) AdMobService.instance.showRewardedAsync(context);
+    // Fire rewarded ad + record stats once when game over
+    if (state != null && state.phase == RummyPhase.gameOver) {
+      if (!_gameOverAdFired) {
+        _gameOverAdFired = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          Future.delayed(const Duration(seconds: 3), () {
+            if (mounted) AdMobService.instance.showRewardedAsync(context);
+          });
         });
-      });
+      }
+
+      if (!_statsRecorded && !RummyBotService.isBot(widget.playerId)) {
+        _statsRecorded = true;
+        final won = state.winnerId == widget.playerId;
+        final dropped =
+            state.players[widget.playerId]?.hasDropped ?? false;
+        final penalty = state.scores[widget.playerId] ?? 0;
+        AuthService.instance.signInAnonymously().then((user) {
+          StatsService.instance.recordRummyResult(
+            uid: user.uid,
+            won: won,
+            dropped: dropped,
+            penalty: penalty,
+          );
+        });
+      }
     }
 
     // Drive bot turns — only the first real player in turnOrder acts as host
@@ -526,6 +551,12 @@ class _TopBar extends StatelessWidget {
                     color: Colors.white)),
           ),
           const Spacer(),
+          GestureDetector(
+            onTap: () => showHowToPlay(context, game: 'rummy'),
+            child: Icon(Icons.help_outline_rounded,
+                color: Colors.white.withValues(alpha: 0.45), size: 20),
+          ),
+          const SizedBox(width: 12),
           GestureDetector(
             onTap: onExit,
             child: Icon(Icons.exit_to_app,

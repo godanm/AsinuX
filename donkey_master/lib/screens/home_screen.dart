@@ -146,187 +146,206 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Expanded(
                   child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // ── Top bar ────────────────────────────────
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        child: Row(
-                          children: [
-                            Flexible(
-                              child: GestureDetector(
-                              onTap: _nameLoaded ? _openSettings : null,
-                              child: Row(
-                                children: [
-                                  Stack(
-                                    children: [
-                                      _nameLoaded
-                                          ? PlayerAvatarWidget(
-                                              radius: 22,
-                                              playerId: _playerName,
-                                              playerName: _playerName,
-                                              preset: _avatar,
-                                            )
-                                          : _Shimmer(width: 44, height: 44, radius: 22),
-                                      if (_nameLoaded)
-                                        Positioned(
-                                          bottom: 0, right: 0,
-                                          child: Container(
-                                            width: 14, height: 14,
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFE63946),
-                                              shape: BoxShape.circle,
-                                              border: Border.all(color: const Color(0xFF0a0008), width: 1.5),
-                                            ),
-                                            child: const Icon(Icons.edit, size: 8, color: Colors.white),
-                                          ),
+                      // ── Top group: bar + logo ──────────────────
+                      Column(
+                        children: [
+                          // ── Top bar ──────────────────────────────
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            child: Row(
+                              children: [
+                                Flexible(
+                                  child: GestureDetector(
+                                    onTap: _nameLoaded ? _openSettings : null,
+                                    child: Row(
+                                      children: [
+                                        Stack(
+                                          children: [
+                                            _nameLoaded
+                                                ? PlayerAvatarWidget(
+                                                    radius: 22,
+                                                    playerId: _playerName,
+                                                    playerName: _playerName,
+                                                    preset: _avatar,
+                                                  )
+                                                : _Shimmer(width: 44, height: 44, radius: 22),
+                                            if (_nameLoaded)
+                                              Positioned(
+                                                bottom: 0, right: 0,
+                                                child: Container(
+                                                  width: 14, height: 14,
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFFE63946),
+                                                    shape: BoxShape.circle,
+                                                    border: Border.all(color: const Color(0xFF0a0008), width: 1.5),
+                                                  ),
+                                                  child: const Icon(Icons.edit, size: 8, color: Colors.white),
+                                                ),
+                                              ),
+                                          ],
                                         ),
-                                    ],
+                                        const SizedBox(width: 10),
+                                        _nameLoaded
+                                            ? Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    _playerName,
+                                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                                                  ),
+                                                  Text(
+                                                    '${_stats.totalPoints} pts',
+                                                    style: TextStyle(color: const Color(0xFFFFD700).withValues(alpha: 0.85), fontSize: 11, fontWeight: FontWeight.w600),
+                                                  ),
+                                                ],
+                                              )
+                                            : Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  _Shimmer(width: 90, height: 12, radius: 6),
+                                                  const SizedBox(height: 5),
+                                                  _Shimmer(width: 55, height: 10, radius: 5),
+                                                ],
+                                              ),
+                                      ],
+                                    ),
                                   ),
-                                  const SizedBox(width: 10),
-                                  _nameLoaded
-                                      ? Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              _playerName,
-                                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                                            ),
-                                            Text(
-                                              '${_stats.totalPoints} pts',
-                                              style: TextStyle(color: const Color(0xFFFFD700).withValues(alpha: 0.85), fontSize: 11, fontWeight: FontWeight.w600),
-                                            ),
-                                          ],
-                                        )
-                                      : Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            _Shimmer(width: 90, height: 12, radius: 6),
-                                            const SizedBox(height: 5),
-                                            _Shimmer(width: 55, height: 10, radius: 5),
-                                          ],
-                                        ),
-                                ],
+                                ),
+                                const Spacer(),
+                                IconButton(
+                                  icon: const Icon(Icons.bar_chart_rounded, color: Colors.white54, size: 24),
+                                  tooltip: 'Stats',
+                                  onPressed: () async {
+                                    final user = await AuthService.instance.signInAnonymously();
+                                    if (!mounted) return;
+                                    Navigator.push(context, MaterialPageRoute(
+                                      builder: (_) => StatsScreen(uid: user.uid, playerName: _playerName),
+                                    ));
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.help_outline_rounded, color: Colors.white54, size: 24),
+                                  tooltip: 'How to play',
+                                  onPressed: () => showHowToPlay(context),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.outlined_flag, color: Colors.white54, size: 22),
+                                  tooltip: 'Feedback / Report issue',
+                                  onPressed: () => FeedbackSheet.show(context),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.settings_outlined, color: Colors.white54, size: 24),
+                                  tooltip: 'Settings',
+                                  onPressed: _openSettings,
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // ── Logo block ────────────────────────────
+                          const SizedBox(height: 4),
+                          ShaderMask(
+                            shaderCallback: (bounds) => const LinearGradient(
+                              colors: [Color(0xFFE63946), Color(0xFFFF6B6B), Color(0xFFFFD700)],
+                              stops: [0.0, 0.6, 1.0],
+                            ).createShader(bounds),
+                            child: const Text(
+                              'AsinuX',
+                              style: TextStyle(
+                                fontSize: 64,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 6,
+                                color: Colors.white,
                               ),
                             ),
+                          ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.15),
+                          Text(
+                            '— THE CARD GAME —',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w400,
+                              letterSpacing: 8,
+                              color: Colors.white.withValues(alpha: 0.35),
                             ),
-                            const Spacer(),
-                            IconButton(
-                              icon: const Icon(Icons.bar_chart_rounded, color: Colors.white54, size: 24),
-                              tooltip: 'Stats',
-                              onPressed: () async {
-                                final user = await AuthService.instance.signInAnonymously();
-                                if (!mounted) return;
-                                Navigator.push(context, MaterialPageRoute(
-                                  builder: (_) => StatsScreen(uid: user.uid, playerName: _playerName),
-                                ));
-                              },
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.help_outline_rounded, color: Colors.white54, size: 24),
-                              tooltip: 'How to play',
-                              onPressed: () => showHowToPlay(context),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.outlined_flag, color: Colors.white54, size: 22),
-                              tooltip: 'Feedback / Report issue',
-                              onPressed: () => FeedbackSheet.show(context),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.settings_outlined, color: Colors.white54, size: 24),
-                              tooltip: 'Settings',
-                              onPressed: _openSettings,
-                            ),
-                          ],
-                        ),
+                          ).animate().fadeIn(delay: 300.ms),
+                        ],
                       ),
 
-                      // ── Logo block ─────────────────────────────
-                      const SizedBox(height: 4),
-                      ShaderMask(
-                        shaderCallback: (bounds) => const LinearGradient(
-                          colors: [Color(0xFFE63946), Color(0xFFFF6B6B), Color(0xFFFFD700)],
-                          stops: [0.0, 0.6, 1.0],
-                        ).createShader(bounds),
-                        child: const Text(
-                          'AsinuX',
-                          style: TextStyle(
-                            fontSize: 64,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 6,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.15),
-                      Text(
-                        '— THE CARD GAME —',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w400,
-                          letterSpacing: 8,
-                          color: Colors.white.withValues(alpha: 0.35),
-                        ),
-                      ).animate().fadeIn(delay: 300.ms),
+                      // ── Bottom group: stats + game cards ──────────
+                      Column(
+                        children: [
+                          // ── Quick stats strip ──────────────────────
+                          if (_stats.roundsPlayed > 0) ...[
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24),
+                              child: Row(
+                                children: [
+                                  // Centered over Kazhutha card
+                                  Expanded(
+                                    child: Center(
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          _QuickStat(label: 'Rounds', value: '${_stats.roundsPlayed}'),
+                                          _QuickStatDivider(),
+                                          _QuickStat(label: 'Escaped', value: '${_stats.escapeCount}', color: Colors.greenAccent.shade400),
+                                          _QuickStatDivider(),
+                                          _QuickStat(label: 'Donkey', value: '${_stats.donkeyCount}', color: Colors.redAccent),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12), // matches game cards gap
+                                  const Expanded(child: SizedBox()),
+                                ],
+                              ),
+                            ).animate().fadeIn(delay: 400.ms),
+                            const SizedBox(height: 10),
+                          ],
 
-                      const SizedBox(height: 16),
-
-                      // ── Quick stats strip ──────────────────────
-                      if (_stats.roundsPlayed > 0)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              _QuickStat(label: 'Rounds', value: '${_stats.roundsPlayed}'),
-                              _QuickStatDivider(),
-                              _QuickStat(label: 'Escaped', value: '${_stats.escapeCount}', color: Colors.greenAccent.shade400),
-                              _QuickStatDivider(),
-                              _QuickStat(label: 'Donkey', value: '${_stats.donkeyCount}', color: Colors.redAccent),
-                            ],
-                          ),
-                        ).animate().fadeIn(delay: 400.ms),
-
-                      const SizedBox(height: 16),
-
-                      // ── Game cards ─────────────────────────────
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: _GameCard(
-                                emoji: '🃏',
-                                title: 'KAZHUTHA',
-                                subtitle: 'Trick-taking · 4 players',
-                                accentColor: const Color(0xFFE63946),
-                                gradientColors: const [Color(0xFF5c0a1a), Color(0xFF2a0010)],
-                                suits: const ['♠', '♥', '♣', '♦'],
-                                enabled: _nameLoaded,
-                                comingSoon: false,
-                                onTap: _startMatch,
-                              ).animate().fadeIn(delay: 500.ms, duration: 500.ms).slideY(begin: 0.1),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _GameCard(
-                                emoji: '🀄',
-                                title: 'RUMMY',
-                                subtitle: '13-card · 2–6 players',
-                                accentColor: const Color(0xFF1565C0),
-                                gradientColors: const [Color(0xFF0a1a4a), Color(0xFF050d26)],
-                                suits: const ['🂡', '🂱', '🃁', '🃑'],
-                                enabled: _nameLoaded,
-                                comingSoon: false,
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => RummyMatchmakingScreen(playerName: _playerName)),
+                          // ── Game cards ─────────────────────────────
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: _GameCard(
+                                    emoji: '🃏',
+                                    title: 'KAZHUTHA',
+                                    subtitle: 'Trick-taking · 4 players',
+                                    accentColor: const Color(0xFFE63946),
+                                    gradientColors: const [Color(0xFF5c0a1a), Color(0xFF2a0010)],
+                                    suits: const ['♠', '♥', '♣', '♦'],
+                                    enabled: _nameLoaded,
+                                    comingSoon: false,
+                                    onTap: _startMatch,
+                                  ).animate().fadeIn(delay: 500.ms, duration: 500.ms).slideY(begin: 0.1),
                                 ),
-                              ).animate().fadeIn(delay: 650.ms, duration: 500.ms).slideY(begin: 0.1),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _GameCard(
+                                    emoji: '🀄',
+                                    title: 'RUMMY',
+                                    subtitle: '13-card · 2–6 players',
+                                    accentColor: const Color(0xFF1565C0),
+                                    gradientColors: const [Color(0xFF0a1a4a), Color(0xFF050d26)],
+                                    suits: const ['🂡', '🂱', '🃁', '🃑'],
+                                    enabled: _nameLoaded,
+                                    comingSoon: false,
+                                    onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (_) => RummyMatchmakingScreen(playerName: _playerName)),
+                                    ),
+                                  ).animate().fadeIn(delay: 650.ms, duration: 500.ms).slideY(begin: 0.1),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
                       ),
-
-                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
@@ -830,7 +849,7 @@ class _ShimmerState extends State<_Shimmer> with SingleTickerProviderStateMixin 
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _anim,
-      builder: (_, __) => Container(
+      builder: (_, _) => Container(
         width: widget.width,
         height: widget.height,
         decoration: BoxDecoration(

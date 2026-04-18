@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>About Kazhutha — The Story Behind the Game</title>
-  <meta name="description" content="Kazhutha was built by a solo developer who grew up playing this South Indian card game. Learn the story behind bringing கழுதை online for the first time." />
-  <meta name="keywords" content="about kazhutha, kazhutha app, south indian card game online, donkey card game online, kazhutha developer" />
-  <meta property="og:title" content="About Kazhutha — The Story Behind the Game" />
-  <meta property="og:description" content="Kazhutha was built by a solo developer who grew up playing this South Indian card game. The first web version of கழுதை." />
-  <meta property="og:url" content="https://kazhutha.app/about" />
+  <title>About — Kazhutha &amp; Rummy Online</title>
+  <meta name="description" content="Kazhutha.app was built by a solo developer who grew up playing South Indian card games. Two games live now: Kazhutha (கழுதை) and 13-card Rummy." />
+  <meta name="keywords" content="about kazhutha, kazhutha app, rummy online, south indian card game online, donkey card game, kazhutha developer" />
+  <meta property="og:title" content="About — Kazhutha &amp; Rummy Online" />
+  <meta property="og:description" content="Two South Indian card games in one place — Kazhutha and Rummy. Built by one developer, free to play." />
+  <meta property="og:url" content="https://www.kazhutha.app/about" />
   <meta property="og:type" content="article" />
-  <link rel="canonical" href="https://kazhutha.app/about" />
+  <link rel="canonical" href="https://www.kazhutha.app/about" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -61,7 +61,7 @@
       text-align: center;
     }
     .hero-suits {
-      font-size: 36px;
+      font-size: 32px;
       margin-bottom: 16px;
       opacity: 0.6;
       letter-spacing: 8px;
@@ -107,6 +107,45 @@
       font-style: italic;
       color: rgba(240,230,238,0.6);
       font-size: 17px;
+    }
+
+    /* ── Game cards ── */
+    .game-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 24px 0;
+    }
+    @media (max-width: 480px) { .game-cards { grid-template-columns: 1fr; } }
+    .game-card {
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid;
+    }
+    .game-card.kaz {
+      background: rgba(230,57,70,0.07);
+      border-color: rgba(230,57,70,0.3);
+    }
+    .game-card.rum {
+      background: rgba(21,101,192,0.07);
+      border-color: rgba(21,101,192,0.3);
+    }
+    .game-card .gc-icon { font-size: 28px; margin-bottom: 10px; }
+    .game-card h3 { font-size: 14px; font-weight: 900; letter-spacing: 1.5px; margin-bottom: 6px; }
+    .game-card.kaz h3 { color: #E63946; }
+    .game-card.rum h3 { color: #4FC3F7; }
+    .game-card p { font-size: 13px; color: rgba(240,230,238,0.6); margin: 0; line-height: 1.55; }
+    .live-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-bottom: 8px;
+      background: rgba(100,255,130,0.12);
+      color: #64ff82;
+      border: 1px solid rgba(100,255,130,0.3);
     }
 
     .stat-grid {
@@ -191,13 +230,13 @@
   {
     "@context": "https://schema.org",
     "@type": "AboutPage",
-    "name": "About Kazhutha",
-    "description": "The story behind Kazhutha — the first web version of the South Indian card game.",
-    "url": "https://kazhutha.app/about",
+    "name": "About Kazhutha.app",
+    "description": "Two South Indian card games — Kazhutha and Rummy — built by one developer and free to play on the web.",
+    "url": "https://www.kazhutha.app/about",
     "publisher": {
       "@type": "Organization",
       "name": "Kazhutha",
-      "url": "https://kazhutha.app"
+      "url": "https://www.kazhutha.app"
     }
   }
   </script>
@@ -224,9 +263,9 @@
   </nav>
 
   <div class="hero">
-    <div class="hero-suits">♠ ♥ ♦ ♣</div>
-    <h1>The Story Behind Kazhutha</h1>
-    <p>Why a 25-year IT veteran spent his evenings building a card game the internet forgot.</p>
+    <div class="hero-suits">🃏 &nbsp; 🀄</div>
+    <h1>Two Games, One Place</h1>
+    <p>Why a 25-year IT veteran spent his evenings building the card games the internet forgot.</p>
   </div>
 
   <div class="container">
@@ -240,30 +279,46 @@
       "I searched for an online version to play with friends who had moved abroad. There was nothing. A few native apps, most of them abandoned. No web version at all."
     </div>
 
-    <p>That gap felt wrong. A game this loved, this widely played across Tamil Nadu and Kerala, deserved better than being locked inside an old APK. So in March 2026, I started building one.</p>
+    <p>That gap felt wrong. A game this loved, this widely played across Tamil Nadu and Kerala, deserved better than being locked inside an old APK. So in March 2026, I started building one. And while I was at it — Rummy too.</p>
+
+    <h2>The Games</h2>
+    <div class="game-cards">
+      <div class="game-card kaz">
+        <div class="live-badge">LIVE</div>
+        <div class="gc-icon">🃏</div>
+        <h3>KAZHUTHA</h3>
+        <p>The classic South Indian trick-taking game. 4 players, 13 cards each, one Donkey eliminated per round. Use the Vettu (cut) to force opponents to pick up cards.</p>
+      </div>
+      <div class="game-card rum">
+        <div class="live-badge">LIVE</div>
+        <div class="gc-icon">🀄</div>
+        <h3>RUMMY</h3>
+        <p>13-card Indian Rummy. Arrange your hand into sequences and sets, then declare before anyone else. Two decks, wild jokers, real-time multiplayer.</p>
+      </div>
+    </div>
 
     <h2>Why Web First</h2>
     <p>The decision to build for the web before anything else was deliberate. Native apps create friction — you have to find them, download them, install them, and then convince your friends to do the same. A web app has no barrier. You share a link, they click it, and the game starts. No app store, no account, no waiting.</p>
 
-    <p>Kazhutha should be as easy to start as sending a WhatsApp message. That is the standard I held this to.</p>
+    <p>Both games should be as easy to start as sending a WhatsApp message. That is the standard I held this to.</p>
 
     <h2>Built by One Person</h2>
-    <p>I am an IT engineer with 25 years of experience across software development, systems architecture, and infrastructure. Most of that time was spent building things for other people. Kazhutha is the first thing I have built purely for the love of it.</p>
+    <p>I am an IT engineer with 25 years of experience across software development, systems architecture, and infrastructure. Most of that time was spent building things for other people. This is the first thing I have built purely for the love of it.</p>
 
-    <p>The entire app — game logic, real-time multiplayer, bot AI, animations, ads integration, deployment — was built from scratch over the course of about a month, mostly in evenings and weekends. It is written in Flutter and Dart, backed by Firebase Realtime Database for live multiplayer, and hosted on Firebase Hosting.</p>
+    <p>The entire app — two complete games, real-time multiplayer, bot AI for both, animations, ads integration, stats tracking, leaderboards, deployment — was built from scratch over the course of about a month, mostly in evenings and weekends. Written in Flutter and Dart, backed by Firebase Realtime Database, hosted on Firebase Hosting.</p>
 
     <div class="stat-grid">
+      <div class="stat-card">
+        <span class="num">2</span>
+        <div class="label">Games live</div>
+      </div>
       <div class="stat-card">
         <span class="num">~1mo</span>
         <div class="label">Time to build</div>
       </div>
       <div class="stat-card">
-        <span class="num">4</span>
-        <div class="label">Players per game</div>
-      </div>
-      <div class="stat-card">
-        <span class="num">3</span>
-        <div class="label">Difficulty levels</div>
+        <span class="num">1</span>
+        <div class="label">Developer</div>
       </div>
       <div class="stat-card">
         <span class="num">25yr</span>
@@ -272,12 +327,14 @@
     </div>
 
     <h2>The Bot Problem</h2>
-    <p>Building real-time multiplayer was the easy part — Firebase handles the heavy lifting. The harder challenge was the bots. Kazhutha requires genuine game sense: knowing when to cut, which suits to deplete first, when to play aggressively and when to conserve. A bot that plays randomly is no fun to play against.</p>
+    <p>Building real-time multiplayer was the easy part — Firebase handles the heavy lifting. The harder challenge was the bots. Both Kazhutha and Rummy require genuine game sense, not just random legal moves.</p>
 
-    <p>The bot AI went through several rewrites. The final version uses a phase-aware strategy system — bots play differently in the early game (suit depletion), mid game (tactical cutting), and late game (escape or sabotage). Hard mode bots track every card played, model the other players' hands, and use the Vettu as a targeted weapon rather than a last resort.</p>
+    <p>The Kazhutha bots use a phase-aware strategy: suit depletion in the early game, tactical cutting in the mid game, and targeted sabotage in the late game. Hard mode bots track every card played and model opponents' hands.</p>
+
+    <p>The Rummy bots understand meld structure — they evaluate each card in their hand for sequence and set potential, draw from the open deck only when the card genuinely improves a meld, and discard the card that least connects to their partial groups. They will not give away useful cards to opponents.</p>
 
     <h2>What's Next</h2>
-    <p>The game is free and will stay free. The roadmap includes a live leaderboard, in-game chat, and regional variations of the ruleset. If you have played Kazhutha under a different name or with different rules in your family, I would genuinely like to hear about it.</p>
+    <p>Both games are free and will stay free. The roadmap includes a live leaderboard, in-game chat, more bot difficulty levels for Rummy, and at least two more games. If you have played Kazhutha or Rummy under different house rules, I would genuinely like to hear about them.</p>
 
     <p>Feedback, bug reports, and suggestions go directly to me — there is no support team, no ticketing system. Just the flag icon in the app and a developer who reads every message.</p>
 
@@ -293,7 +350,7 @@
 
     <div class="cta">
       <h2>Come Play</h2>
-      <p>No account needed. Jump straight into a match — real opponents or bots, your choice.</p>
+      <p>No account needed. Pick a game and jump straight into a match.</p>
       <div class="cta-buttons">
         <a href="/" class="btn-primary">Play Now →</a>
         <a href="/how-to-play" class="btn-secondary">Learn the Rules</a>
