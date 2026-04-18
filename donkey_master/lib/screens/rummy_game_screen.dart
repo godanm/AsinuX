@@ -232,6 +232,8 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
   }
 
   Future<void> _exitGame() async {
+    await _sub?.cancel();
+    _sub = null;
     await RummyService.instance.leaveRoom(widget.roomId, widget.playerId);
     if (!mounted) return;
     final nav = Navigator.of(context);
@@ -349,13 +351,16 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
               ),
 
               // ── Opponents ────────────────────────────────────
-              SizedBox(
-                height: 80,
-                child: _OpponentsRow(
-                  players: opponents,
-                  currentTurn: state.currentTurn,
-                  wildRank: state.wildJoker.rank,
-                  opponentKeys: _opponentKeys,
+              Flexible(
+                fit: FlexFit.loose,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 80),
+                  child: _OpponentsRow(
+                    players: opponents,
+                    currentTurn: state.currentTurn,
+                    wildRank: state.wildJoker.rank,
+                    opponentKeys: _opponentKeys,
+                  ),
                 ),
               ),
 
@@ -404,7 +409,7 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
                 onDrop: _confirmDrop,
               ),
 
-              const AdBannerWidget(),
+              const Flexible(fit: FlexFit.loose, child: AdBannerWidget()),
                 ],
               ),
             ),

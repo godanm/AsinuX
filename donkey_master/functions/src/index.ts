@@ -109,7 +109,8 @@ function validateDeclaration(melds: RummyCard[][], wildRank: number): string | n
 // rummy_hands/{roomId}/{playerId} via the Admin SDK (bypasses client rules).
 // No client ever receives the complete deck or any other player's hand.
 
-export const dealRummyGame = onCall(async (request) => {
+export const dealRummyGame = onCall({ invoker: "public" }, async (request) => {
+  try {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError("unauthenticated", "Sign in required");
 
@@ -189,6 +190,12 @@ export const dealRummyGame = onCall(async (request) => {
   await db.ref().update(updates);
   logger.info(`[Rummy] dealRummyGame: room=${roomId} players=${turnOrder.length} wild=${wildJoker.rank}`);
   return { success: true };
+  } catch (e) {
+    if (e instanceof HttpsError) throw e;
+    const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+    logger.error("[Rummy] dealRummyGame unhandled:", msg);
+    throw new HttpsError("internal", msg);
+  }
 });
 
 // ── Cloud Function: declareRummyGame ──────────────────────────────────────────
@@ -197,7 +204,7 @@ export const dealRummyGame = onCall(async (request) => {
 // server-held hand (preventing fabricated cards) and computes authoritative
 // deadwood scores for all other players.
 
-export const declareRummyGame = onCall(async (request) => {
+export const declareRummyGame = onCall({ invoker: "public" }, async (request) => {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError("unauthenticated", "Sign in required");
 

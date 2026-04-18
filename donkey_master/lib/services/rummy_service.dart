@@ -198,17 +198,24 @@ class RummyService {
       return;
     }
 
-    await _roomRef(roomId).child('players/$playerId').remove();
+    // Build one atomic update so all changes land in a single write.
+    // The rule is evaluated against pre-write data, so auth.uid is still
+    // in players when Firebase checks the permission.
+    final updates = <String, dynamic>{
+      'players/$playerId': null, // removes the slot
+    };
 
     if (room['hostId'] == playerId) {
       final newHostId = players.keys.first;
-      await _roomRef(roomId).child('hostId').set(newHostId);
-      await _roomRef(roomId).child('players/$newHostId/isHost').set(true);
+      updates['hostId'] = newHostId;
+      updates['players/$newHostId/isHost'] = true;
     }
 
     if (room['status'] == 'ready') {
-      await _roomRef(roomId).child('status').set('waiting');
+      updates['status'] = 'waiting';
     }
+
+    await _roomRef(roomId).update(updates);
   }
 
   // ── Start game (host triggers server-side deal) ────────────────
@@ -471,6 +478,13 @@ class RummyService {
       }
     }
 
+    void onPermissionError(Object e) {
+      // Expected when the player leaves the room and the listener is still
+      // briefly active — treat as game-gone rather than an unhandled error.
+      debugPrint('[Rummy] gameStream permission error (leaving): $e');
+      if (!controller.isClosed) controller.add(null);
+    }
+
     // Shared game state
     subs.add(_gameRef(roomId).onValue.listen((event) {
       if (!event.snapshot.exists) {
@@ -480,20 +494,20 @@ class RummyService {
       latestGameData =
           Map<dynamic, dynamic>.from(event.snapshot.value as Map);
       emit();
-    }));
+    }, onError: onPermissionError));
 
     // Own hand (private path)
     subs.add(_handRef(roomId, playerId).onValue.listen((event) {
       hands[playerId] = parseHand(event.snapshot);
       emit();
-    }));
+    }, onError: onPermissionError));
 
     // Bot hands (host only — rule allows host to read bot_* slots)
     for (final botId in botIds) {
       subs.add(_handRef(roomId, botId).onValue.listen((event) {
         hands[botId] = parseHand(event.snapshot);
         emit();
-      }));
+      }, onError: onPermissionError));
     }
 
     controller.onCancel = () {
