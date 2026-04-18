@@ -296,7 +296,7 @@ export const declareRummyGame = onCall({ invoker: "public" }, async (request) =>
   return { error: null };
 });
 
-const RETENTION_DAYS = 7;
+const RETENTION_DAYS = 3;
 
 /**
  * Runs daily at 02:00 UTC and deletes any gamelogs room whose most recent
@@ -307,7 +307,6 @@ const RETENTION_DAYS = 7;
 export const cleanOldGameLogs = onSchedule("every day 02:00", async () => {
   const db = admin.database();
   const cutoff = Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000;
-
   const snapshot = await db.ref("gamelogs").get();
   if (!snapshot.exists()) {
     logger.info("cleanOldGameLogs: no gamelogs found, nothing to do");

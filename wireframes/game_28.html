@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>28 — Wireframe</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #111;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 24px 16px;
+    gap: 24px;
+    flex-wrap: wrap;
+    color: #fff;
+  }
+
+  /* ── nav ── */
+  #nav {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+  #nav button {
+    background: #222;
+    color: #aaa;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: all 0.15s;
+  }
+  #nav button.active {
+    background: #00c6ff22;
+    color: #00c6ff;
+    border-color: #00c6ff55;
+  }
+  #nav button:hover { border-color: #555; color: #ddd; }
+
+  /* ── phone shell ── */
+  .phone {
+    width: 360px;
+    min-height: 720px;
+    background: #0a0008;
+    border-radius: 40px;
+    border: 2px solid #2a2a2a;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 60px #00000088;
+    display: none;
+    flex-direction: column;
+  }
+  .phone.visible { display: flex; }
+
+  /* label above phone */
+  .phone-wrap { display: none; flex-direction: column; align-items: center; gap: 10px; }
+  .phone-wrap.visible { display: flex; }
+  .screen-label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: #555;
+    text-transform: uppercase;
+  }
+
+  /* status bar */
+  .statusbar {
+    height: 32px;
+    background: #0a0008;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    font-size: 11px;
+    color: #ffffff44;
+    flex-shrink: 0;
+  }
+
+  /* ── shared colours ── */
+  :root {
+    --green:  #00C853;
+    --red:    #E63946;
+    --gold:   #FFD700;
+    --blue:   #00c6ff;
+    --dim:    #ffffff22;
+    --muted:  #ffffff55;
+    --card-bg:#1a000e;
+  }
+
+  /* ── utility ── */
+  .row { display: flex; align-items: center; }
+  .col { display: flex; flex-direction: column; }
+  .center { justify-content: center; align-items: center; }
+  .spacer { flex: 1; }
+  .tag {
+    font-size: 9px; letter-spacing: 1.5px; font-weight: 700;
+    padding: 3px 8px; border-radius: 20px; text-transform: uppercase;
+  }
+  .tag.green  { background: #00C85322; color: var(--green); border: 1px solid #00C85344; }
+  .tag.red    { background: #E6394622; color: var(--red);   border: 1px solid #E6394644; }
+  .tag.blue   { background: #00c6ff22; color: var(--blue);  border: 1px solid #00c6ff44; }
+  .tag.gold   { background: #FFD70022; color: var(--gold);  border: 1px solid #FFD70044; }
+  .tag.dim    { background: #ffffff0a; color: #ffffff44;     border: 1px solid #ffffff11; }
+
+  /* ── buttons ── */
+  .btn {
+    border: none; border-radius: 12px; cursor: pointer;
+    font-weight: 700; letter-spacing: 1px; font-size: 13px;
+    padding: 12px 20px; transition: opacity 0.15s;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn-green  { background: var(--green); color: #000; }
+  .btn-red    { background: var(--red);   color: #fff; }
+  .btn-blue   { background: var(--blue);  color: #000; }
+  .btn-outline {
+    background: transparent; color: #fff;
+    border: 1.5px solid #ffffff33;
+  }
+  .btn-dim {
+    background: #ffffff0d; color: #ffffff55;
+    border: 1px solid #ffffff11;
+  }
+  .btn-gold { background: var(--gold); color: #000; }
+  .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* ── card chip (playing card) ── */
+  .card {
+    width: 48px; height: 68px;
+    background: #fff;
+    border-radius: 8px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 700;
+    color: #111;
+    box-shadow: 0 4px 12px #00000066;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .card .rank { font-size: 14px; font-weight: 800; line-height: 1; }
+  .card .suit { font-size: 16px; line-height: 1; margin-top: 2px; }
+  .card.red .rank, .card.red .suit { color: #cc0000; }
+  .card.face-down {
+    background: linear-gradient(135deg, #1a4a8a, #0d2a5c);
+    border: 1px solid #2a5a9a;
+  }
+  .card.face-down::after {
+    content: '🂠';
+    font-size: 28px;
+    color: #ffffff22;
+  }
+  .card.highlight { box-shadow: 0 0 0 2px var(--gold), 0 4px 12px #00000066; }
+  .card.played {
+    width: 44px; height: 62px;
+  }
+
+  /* hand strip */
+  .hand {
+    display: flex;
+    gap: -8px;
+    justify-content: center;
+    padding: 8px 0;
+  }
+  .hand .card { margin-left: -10px; }
+  .hand .card:first-child { margin-left: 0; }
+
+  /* player seat */
+  .seat {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 4px;
+  }
+  .avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; flex-shrink: 0;
+  }
+  .seat-name { font-size: 10px; color: #ffffff88; }
+  .seat.active .avatar { box-shadow: 0 0 0 2.5px var(--gold); }
+  .seat.partner .avatar { box-shadow: 0 0 0 2px var(--green); }
+  .seat.you .avatar { box-shadow: 0 0 0 2px var(--blue); }
+
+  /* trick area */
+  .trick-area {
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background: #ffffff05;
+    border: 1px dashed #ffffff11;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .trick-area .card {
+    position: absolute;
+  }
+  .trick-card-top    { top: 8px;   left: 50%; transform: translateX(-50%); }
+  .trick-card-bottom { bottom: 8px; left: 50%; transform: translateX(-50%); }
+  .trick-card-left   { left: 12px; top: 50%; transform: translateY(-50%); }
+  .trick-card-right  { right: 12px; top: 50%; transform: translateY(-50%); }
+
+  /* score strip */
+  .score-strip {
+    background: #ffffff08;
+    border-radius: 10px;
+    padding: 8px 14px;
+    display: flex; gap: 0; flex-direction: column;
+  }
+  .score-team { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .score-team .pts { font-size: 18px; font-weight: 800; }
+  .score-team .pts.leading { color: var(--gold); }
+  .team-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* bid display */
+  .bid-display {
+    background: #ffffff0a;
+    border: 1px solid #ffffff11;
+    border-radius: 14px;
+    padding: 14px 20px;
+    text-align: center;
+  }
+  .bid-number {
+    font-size: 56px; font-weight: 900; line-height: 1;
+    background: linear-gradient(135deg, #00c6ff, #0066ff);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+
+  /* trump pill */
+  .trump-pill {
+    display: flex; align-items: center; gap: 6px;
+    background: #ffffff0d;
+    border: 1px solid #ffffff22;
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 13px;
+  }
+  .trump-suit { font-size: 18px; }
+
+  /* bid history row */
+  .bid-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid #ffffff0a;
+    font-size: 12px;
+  }
+  .bid-row:last-child { border-bottom: none; }
+  .bid-row .name { flex: 1; color: #ffffffcc; }
+  .bid-row .action { color: #ffffff44; font-size: 11px; }
+  .bid-row .bid-val { color: var(--blue); font-weight: 700; font-size: 13px; }
+  .bid-row.current .name { color: #fff; font-weight: 700; }
+
+  /* suit picker */
+  .suit-picker { display: flex; gap: 12px; justify-content: center; }
+  .suit-btn {
+    width: 64px; height: 64px; border-radius: 16px;
+    border: 2px solid #ffffff22;
+    background: #ffffff0d;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .suit-btn:hover { border-color: #ffffff66; background: #ffffff1a; transform: scale(1.05); }
+  .suit-btn.selected {
+    border-color: var(--gold);
+    background: #FFD70022;
+    box-shadow: 0 0 16px #FFD70044;
+  }
+
+  /* point badge on card */
+  .card .pts-badge {
+    position: absolute; top: -6px; right: -6px;
+    background: var(--gold); color: #000;
+    font-size: 9px; font-weight: 800;
+    width: 16px; height: 16px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 4px #00000066;
+  }
+
+  /* round end result */
+  .result-banner {
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+  }
+  .result-banner.win {
+    background: linear-gradient(135deg, #003d1a, #005c26);
+    border: 1px solid #00C85344;
+  }
+  .result-banner.lose {
+    background: linear-gradient(135deg, #3d0010, #5c0018);
+    border: 1px solid #E6394644;
+  }
+
+  /* divider */
+  .divider { height: 1px; background: #ffffff0f; margin: 8px 0; }
+
+  /* annotation callouts */
+  .callout {
+    background: #1a1a2e;
+    border: 1px solid #00c6ff33;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 10px;
+    color: #00c6ffaa;
+    letter-spacing: 0.3px;
+    line-height: 1.4;
+  }
+  .callout.red { border-color: #E6394633; color: #E63946aa; background: #1a0a0e; }
+  .callout.gold { border-color: #FFD70033; color: #FFD700aa; background: #1a1400; }
+
+  /* waiting dots */
+  .dot-anim span {
+    display: inline-block;
+    animation: blink 1.4s infinite;
+    font-size: 18px; color: #00c6ff;
+  }
+  .dot-anim span:nth-child(2) { animation-delay: 0.2s; }
+  .dot-anim span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%,80%,100%{opacity:0} 40%{opacity:1} }
+
+  /* game over screen */
+  .trophy { font-size: 64px; text-align: center; }
+
+  /* scrollable inner */
+  .scroll-inner {
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .scroll-inner::-webkit-scrollbar { display: none; }
+
+  /* annotation sidebar */
+  .annotations {
+    width: 200px;
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 48px;
+  }
+  .annotations.visible { display: flex; }
+  .ann-item {
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 10px;
+    color: #888;
+    line-height: 1.5;
+  }
+  .ann-item strong { color: #ccc; display: block; margin-bottom: 3px; font-size: 10px; letter-spacing: 0.5px; }
+
+  /* all screens container */
+  .all-screens {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+  }
+  .all-screens .phone-wrap { display: flex !important; }
+  .all-screens .phone { display: flex !important; }
+</style>
+</head>
+<body>
+
+<div id="nav">
+  <button onclick="show('all')" class="active" id="btn-all">ALL SCREENS</button>
+  <button onclick="show('lobby')"   id="btn-lobby">1 · LOBBY</button>
+  <button onclick="show('bid')"     id="btn-bid">2 · BIDDING</button>
+  <button onclick="show('trump')"   id="btn-trump">3 · TRUMP SELECT</button>
+  <button onclick="show('game')"    id="btn-game">4 · GAME TABLE</button>
+  <button onclick="show('roundend')" id="btn-roundend">5 · ROUND END</button>
+  <button onclick="show('gameover')" id="btn-gameover">6 · GAME OVER</button>
+</div>
+
+<div class="all-screens" id="view-all">
+
+<!-- ══════════════════════════════════════════════════
+     SCREEN 1 — LOBBY / MATCHMAKING
+══════════════════════════════════════════════════ -->
+<div class="phone-wrap" id="wrap-lobby">
+  <div class="screen-label">1 · Lobby / Matchmaking</div>
+  <div class="phone visible" id="screen-lobby">
+    <div class="statusbar"><span>9:41</span><span>●●●</span></div>
+    <div class="scroll-inner">
+      <div class="col" style="padding:20px 20px 24px; gap:16px; height:100%;">
+
+        <!-- header -->
+        <div class="row" style="gap:8px;">
+          <div style="font-size:22px;">🎴</div>
+          <div>
+            <div style="font-size:18px;font-weight:900;letter-spacing:2px;">28</div>
+            <div style="font-size:10px;color:#ffffff44;letter-spacing:1px;">TRICK-TAKING · TEAMS</div>
+          </div>
+          <div class="spacer"></div>
+          <div class="tag dim">4 PLAYERS</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- room code -->
+        <div class="col" style="gap:6px;">
+          <div style="font-size:10px;color:#ffffff44;letter-spacing:2px;">ROOM CODE</div>
+          <div style="font-size:36px;font-weight:900;letter-spacing:10px;color:var(--gold);text-align:center;padding:8px 0;">
+            K9X2
+          </div>
+          <div style="font-size:10px;color:#ffffff33;text-align:center;">Share this code with friends</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- player list -->
+        <div class="col" style="gap:4px;">
+          <div style="font-size:10px;color:#ffffff44;letter-spacing:2px;margin-bottom:6px;">PLAYERS</div>
+
+          <!-- slot 1 — you -->
+          <div class="row" style="gap:10px;padding:8px 10px;background:#ffffff08;border-radius:10px;">
+            <div class="avatar" style="background:#E63946;">G</div>
+            <div class="col" style="gap:2px;">
+              <div style="font-size:13px;font-weight:700;">Godan <span style="font-size:10px;color:#ffffff44;">(you)</span></div>
+              <div class="tag green" style="width:fit-content;">READY</div>
+            </div>
+            <div class="spacer"></div>
+            <div style="font-size:18px;">👑</div>
+          </div>
+
+          <!-- slot 2 — joined -->
+          <div class="row" style="gap:10px;padding:8px 10px;background:#ffffff08;border-radius:10px;">
+            <div class="avatar" style="background:#2979FF;">A</div>
+            <div class="col" style="gap:2px;">
+              <div style="font-size:13px;font-weight:700;">Arun</div>
+              <div class="tag blue" style="width:fit-content;">JOINED</div>
+            </div>
+          </div>
+
+          <!-- slot 3 — joined -->
+          <div class="row" style="gap:10px;padding:8px 10px;background:#ffffff08;border-radius:10px;">
+            <div class="avatar" style="background:#00C853;">S</div>
+            <div class="col" style="gap:2px;">
+              <div style="font-size:13px;font-weight:700;">Sanu</div>
+              <div class="tag blue" style="width:fit-content;">JOINED</div>
+            </div>
+          </div>
+
+          <!-- slot 4 — waiting -->
+          <div class="row" style="gap:10px;padding:8px 10px;background:#ffffff05;border-radius:10px;border:1px dashed #ffffff11;">
+            <div class="avatar" style="background:#ffffff11;color:#ffffff33;">?</div>
+            <div style="font-size:12px;color:#ffffff33;">Waiting for player 4…</div>
+            <div class="spacer"></div>
+            <div class="dot-anim"><span>•</span><span>•</span><span>•</span></div>
+          </div>
+        </div>
+
+        <!-- teams preview (shows once all 4 join) -->
+        <div class="col" style="gap:6px;">
+          <div style="font-size:10px;color:#ffffff44;letter-spacing:2px;">TEAMS (once full)</div>
+          <div style="background:#ffffff08;border-radius:10px;padding:10px 12px;">
+            <div class="row" style="gap:6px;margin-bottom:6px;">
+              <div class="team-dot" style="background:var(--blue);"></div>
+              <div style="font-size:12px;font-weight:700;color:var(--blue);">Team A</div>
+              <div style="font-size:11px;color:#ffffff55;">Godan &amp; Sanu (seats 1 &amp; 3)</div>
+            </div>
+            <div class="row" style="gap:6px;">
+              <div class="team-dot" style="background:var(--red);"></div>
+              <div style="font-size:12px;font-weight:700;color:var(--red);">Team B</div>
+              <div style="font-size:11px;color:#ffffff55;">Arun &amp; — (seats 2 &amp; 4)</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="spacer"></div>
+
+        <button class="btn btn-dim" style="width:100%;" disabled>WAITING FOR PLAYERS…</button>
+
+        <div class="callout" style="text-align:center;">
+          Players seated opposite = partners · Seats 1&amp;3 vs 2&amp;4
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SCREEN 2 — BIDDING
+══════════════════════════════════════════════════ -->
+<div class="phone-wrap" id="wrap-bid">
+  <div class="screen-label">2 · Bidding</div>
+  <div class="phone visible" id="screen-bid">
+    <div class="statusbar"><span>9:41</span><span>●●●</span></div>
+    <div class="scroll-inner">
+      <div class="col" style="padding:16px 20px 24px; gap:14px;">
+
+        <!-- header -->
+        <div class="row center" style="gap:8px;">
+          <div style="font-size:14px;font-weight:900;letter-spacing:3px;color:#ffffff88;">BIDDING</div>
+          <div class="spacer"></div>
+          <div class="tag gold">ROUND 1</div>
+        </div>
+
+        <!-- current bid -->
+        <div class="bid-display col center" style="gap:4px;">
+          <div style="font-size:10px;letter-spacing:2px;color:#ffffff44;">CURRENT BID</div>
+          <div class="bid-number">16</div>
+          <div style="font-size:11px;color:#ffffff55;">by Arun (Team B)</div>
+        </div>
+
+        <!-- bid history -->
+        <div class="col" style="gap:0;background:#ffffff08;border-radius:12px;padding:10px 14px;">
+          <div style="font-size:9px;letter-spacing:2px;color:#ffffff33;margin-bottom:6px;">BID HISTORY</div>
+
+          <div class="bid-row">
+            <div class="avatar" style="width:24px;height:24px;background:#E63946;font-size:10px;border-radius:50%;display:flex;align-items:center;justify-content:center;">G</div>
+            <div class="name">Godan <span style="color:#ffffff33;font-size:10px;">(you)</span></div>
+            <div class="action">BID</div>
+            <div class="bid-val">14</div>
+          </div>
+          <div class="bid-row">
+            <div class="avatar" style="width:24px;height:24px;background:#2979FF;font-size:10px;border-radius:50%;display:flex;align-items:center;justify-content:center;">A</div>
+            <div class="name">Arun</div>
+            <div class="action">BID</div>
+            <div class="bid-val">15</div>
+          </div>
+          <div class="bid-row">
+            <div class="avatar" style="width:24px;height:24px;background:#00C853;font-size:10px;border-radius:50%;display:flex;align-items:center;justify-content:center;">S</div>
+            <div class="name">Sanu</div>
+            <div class="action" style="color:#E6394688;">PASS</div>
+            <div style="font-size:10px;color:#ffffff22;">—</div>
+          </div>
+          <div class="bid-row">
+            <div class="avatar" style="width:24px;height:24px;background:#FF6D00;font-size:10px;border-radius:50%;display:flex;align-items:center;justify-content:center;">R</div>
+            <div class="name">Rahul</div>
+            <div class="action">BID</div>
+            <div class="bid-val">16</div>
+          </div>
+          <div class="bid-row current" style="background:#ffffff0a;border-radius:6px;padding:6px 4px;">
+            <div class="avatar" style="width:24px;height:24px;background:#E63946;font-size:10px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px var(--gold);">G</div>
+            <div class="name">Godan <span style="color:#FFD700;font-size:10px;">← YOUR TURN</span></div>
+            <div class="action">…</div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- your action -->
+        <div class="col" style="gap:10px;">
+          <div style="font-size:10px;color:#ffffff44;letter-spacing:2px;text-align:center;">YOUR MOVE</div>
+
+          <div class="row center" style="gap:12px;">
+            <button class="btn btn-outline" style="flex:1;" onclick="alert('PASS — you are out of bidding')">PASS</button>
+            <button class="btn btn-blue" style="flex:1;" onclick="alert('BID 17')">BID 17</button>
+          </div>
+
+          <div class="row center" style="gap:8px;">
+            <button class="btn btn-dim" style="font-size:11px;padding:8px 14px;" onclick="alert('Bid 18')">18</button>
+            <button class="btn btn-dim" style="font-size:11px;padding:8px 14px;" onclick="alert('Bid 19')">19</button>
+            <button class="btn btn-dim" style="font-size:11px;padding:8px 14px;" onclick="alert('Bid 20')">20</button>
+            <button class="btn btn-dim" style="font-size:11px;padding:8px 14px;" onclick="alert('Bid 21')">21</button>
+          </div>
+        </div>
+
+        <div class="callout">
+          Min bid: 14 · Max: 28 · You must beat 16 to win the bid.<br>
+          If you pass, you cannot re-enter bidding.
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SCREEN 3 — TRUMP SELECTION  (two views side by side)
+══════════════════════════════════════════════════ -->
+<div class="phone-wrap" id="wrap-trump">
+  <div class="screen-label">3a · Trump Select — Bidder's View</div>
+  <div class="phone visible" id="screen-trump">
+    <div class="statusbar"><span>9:41</span><span>●●●</span></div>
+    <div class="scroll-inner">
+      <div class="col" style="padding:16px 20px 24px; gap:16px;">
+
+        <!-- winner banner -->
+        <div class="result-banner win col center" style="gap:6px;">
+          <div style="font-size:32px;">🏆</div>
+          <div style="font-size:14px;font-weight:900;letter-spacing:2px;">BID WON!</div>
+          <div style="font-size:22px;font-weight:900;color:var(--gold);">17 pts</div>
+          <div style="font-size:11px;color:#ffffff66;">Your team must score ≥17 to win this round</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- trump pick -->
+        <div class="col center" style="gap:14px;">
+          <div style="font-size:12px;color:#ffffff88;letter-spacing:1px;text-align:center;">
+            Choose trump suit — <span style="color:var(--red);">only you can see this</span>
+          </div>
+
+          <div class="suit-picker" id="suit-picker">
+            <div class="suit-btn" onclick="selectSuit(this, '♠')">♠</div>
+            <div class="suit-btn" onclick="selectSuit(this, '♥')">♥</div>
+            <div class="suit-btn" onclick="selectSuit(this, '♦')">♦</div>
+            <div class="suit-btn" onclick="selectSuit(this, '♣')">♣</div>
+          </div>
+
+          <button class="btn btn-gold" style="width:100%;margin-top:4px;" onclick="alert('Trump locked in! Game starts.')">
+            LOCK IN TRUMP
+          </button>
+        </div>
+
+        <div class="callout gold">
+          Trump is hidden from opponents until you or a teammate first plays a trump card during a trick.
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- hand preview -->
+        <div class="col" style="gap:8px;">
+          <div style="font-size:10px;color:#ffffff44;letter-spacing:2px;">YOUR HAND (8 cards)</div>
+          <div class="hand">
+            <div class="card"><div class="rank">A</div><div class="suit">♠</div><div class="pts-badge">1</div></div>
+            <div class="card"><div class="rank">J</div><div class="suit">♠</div><div class="pts-badge">3</div></div>
+            <div class="card red"><div class="rank">9</div><div class="suit">♥</div><div class="pts-badge">2</div></div>
+            <div class="card red"><div class="rank">K</div><div class="suit">♥</div></div>
+            <div class="card"><div class="rank">Q</div><div class="suit">♣</div></div>
+            <div class="card red"><div class="rank">10</div><div class="suit">♦</div><div class="pts-badge">1</div></div>
+            <div class="card red"><div class="rank">7</div><div class="suit">♦</div></div>
+            <div class="card"><div class="rank">8</div><div class="suit">♣</div></div>
+          </div>
+          <div style="font-size:10px;color:#ffffff33;text-align:center;">Gold badge = point card (J·3, 9·2, A·1, 10·1)</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 3b: other player view -->
+<div class="phone-wrap" id="wrap-trump2">
+  <div class="screen-label">3b · Trump Select — Other Player's View</div>
+  <div class="phone visible" id="screen-trump2">
+    <div class="statusbar"><span>9:41</span><span>●●●</span></div>
+    <div class="scroll-inner">
+      <div class="col center" style="padding:20px; gap:20px; height:100%;">
+
+        <div class="tag gold" style="font-size:11px;padding:6px 14px;">ROUND 1</div>
+
+        <div class="col center" style="gap:12px;">
+          <div class="avatar" style="width:56px;height:56px;background:#E63946;font-size:22px;box-shadow:0 0 0 3px var(--gold);">G</div>
+          <div style="font-size:15px;font-weight:700;">Godan</div>
+          <div style="font-size:11px;color:#ffffff55;">won the bid at <span style="color:var(--blue);font-weight:700;">17</span></div>
+        </div>
+
+        <div class="col center" style="gap:8px;padding:24px 20px;background:#ffffff08;border-radius:16px;width:100%;">
+          <div style="font-size:28px;">🤫</div>
+          <div style="font-size:13px;font-weight:700;">Choosing trump…</div>
+          <div style="font-size:11px;color:#ffffff44;text-align:center;">Trump suit is secret until first played</div>
+          <div class="dot-anim" style="margin-top:4px;"><span>•</span><span>•</span><span>•</span></div>
+        </div>
+
+        <div class="col" style="gap:8px;width:100%;">
+          <div style="font-size:10px;color:#ffffff44;letter-spacing:2px;">YOUR HAND</div>
+          <div class="hand">
+            <div class="card red"><div class="rank">A</div><div class="suit">♥</div><div class="pts-badge">1</div></div>
+            <div class="card"><div class="rank">J</div><div class="suit">♣</div><div class="pts-badge">3</div></div>
+            <div class="card"><div class="rank">K</div><div class="suit">♠</div></div>
+            <div class="card red"><div class="rank">Q</div><div class="suit">♦</div></div>
+            <div class="card"><div class="rank">9</div><div class="suit">♠</div><div class="pts-badge">2</div></div>
+            <div class="card red"><div class="rank">8</div><div class="suit">♥</div></div>
+            <div class="card"><div class="rank">7</div><div class="suit">♣</div></div>
+            <div class="card red"><div class="rank">10</div><div class="suit">♦</div><div class="pts-badge">1</div></div>
+          </div>
+        </div>
+
+        <div class="callout" style="width:100%;text-align:center;">
+          Trump will be revealed when Godan's team plays their first trump card
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SCREEN 4 — GAME TABLE (mid-trick, trump revealed)
+══════════════════════════════════════════════════ -->
+<div class="phone-wrap" id="wrap-game">
+  <div class="screen-label">4 · Game Table</div>
+  <div class="phone visible" id="screen-game">
+    <div class="statusbar"><span>9:41</span><span>●●●</span></div>
+    <div class="col" style="flex:1;padding:10px 16px 16px;gap:10px;">
+
+      <!-- score strip -->
+      <div class="row" style="gap:8px;">
+        <div class="score-strip" style="flex:1;">
+          <div class="score-team">
+            <div class="team-dot" style="background:var(--blue);"></div>
+            <div style="font-size:11px;color:#ffffffaa;">Team A</div>
+            <div class="spacer"></div>
+            <div class="pts leading">12</div>
+          </div>
+        </div>
+        <div class="col center" style="gap:2px;">
+          <div style="font-size:9px;color:#ffffff33;letter-spacing:1px;">BID</div>
+          <div style="font-size:14px;font-weight:900;color:var(--gold);">17</div>
+          <div style="font-size:8px;color:#ffffff33;">Team A</div>
+        </div>
+        <div class="score-strip" style="flex:1;">
+          <div class="score-team">
+            <div class="team-dot" style="background:var(--red);"></div>
+            <div style="font-size:11px;color:#ffffffaa;">Team B</div>
+            <div class="spacer"></div>
+            <div class="pts">8</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- trump + trick count -->
+      <div class="row center" style="gap:10px;">
+        <div class="trump-pill">
+          <span style="font-size:10px;color:#ffffff44;letter-spacing:1px;">TRUMP</span>
+          <span class="trump-suit" style="color:var(--red);">♥</span>
+        </div>
+        <div style="font-size:10px;color:#ffffff44;">Trick 5 / 8</div>
+      </div>
+
+      <!-- table -->
+      <div class="col center" style="flex:1;gap:8px;">
+
+        <!-- top seat (opponent) -->
+        <div class="seat">
+          <div class="avatar" style="background:#2979FF;">A</div>
+          <div class="seat-name">Arun</div>
+          <div class="row" style="gap:4px;margin-top:2px;">
+            <div class="card face-down" style="width:30px;height:42px;"></div>
+            <div class="card face-down" style="width:30px;height:42px;"></div>
+          </div>
+        </div>
+
+        <!-- middle row: left, trick area, right -->
+        <div class="row center" style="gap:8px;width:100%;">
+
+          <!-- left seat (partner) -->
+          <div class="seat partner">
+            <div class="avatar" style="background:#00C853;">S</div>
+            <div class="seat-name">Sanu ✦</div>
+            <div class="row" style="gap:2px;margin-top:2px;">
+              <div class="card face-down" style="width:24px;height:34px;"></div>
+              <div class="card face-down" style="width:24px;height:34px;"></div>
+              <div class="card face-down" style="width:24px;height:34px;"></div>
+            </div>
+          </div>
+
+          <!-- trick area -->
+          <div class="trick-area">
+            <!-- top: Arun played J♠ -->
+            <div class="card trick-card-top" style="width:44px;height:62px;">
+              <div class="rank" style="font-size:12px;">J</div><div class="suit" style="font-size:14px;">♠</div>
+              <div class="pts-badge">3</div>
+            </div>
+            <!-- left: Sanu played 7♣ -->
+            <div class="card trick-card-left" style="width:44px;height:62px;">
+              <div class="rank" style="font-size:12px;">7</div><div class="suit" style="font-size:14px;">♣</div>
+            </div>
+            <!-- right: Rahul played K♠ -->
+            <div class="card trick-card-right" style="width:44px;height:62px;">
+              <div class="rank" style="font-size:12px;">K</div><div class="suit" style="font-size:14px;">♠</div>
+            </div>
+            <!-- bottom: your turn (empty slot) -->
+            <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+                        width:44px;height:62px;border-radius:8px;
+                        border:2px dashed #FFD70066;
+                        display:flex;align-items:center;justify-content:center;
+                        font-size:9px;color:#FFD700aa;text-align:center;line-height:1.2;">
+              YOUR<br>TURN
+            </div>
+          </div>
+
+          <!-- right seat (opponent) -->
+          <div class="seat active">
+            <div class="avatar" style="background:#FF6D00;box-shadow:0 0 0 2.5px var(--gold);">R</div>
+            <div class="seat-name">Rahul</div>
+            <div class="row" style="gap:2px;margin-top:2px;">
+              <div class="card face-down" style="width:24px;height:34px;"></div>
+              <div class="card face-down" style="width:24px;height:34px;"></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- lead suit indicator -->
+        <div class="row center" style="gap:6px;">
+          <div style="font-size:10px;color:#ffffff44;">LEAD SUIT</div>
+          <div style="font-size:18px;">♠</div>
+          <div style="font-size:10px;color:#ffffff44;">must follow or play trump</div>
+        </div>
+
+      </div>
+
+      <!-- your hand -->
+      <div class="col" style="gap:6px;">
+        <div style="font-size:9px;color:#ffffff33;letter-spacing:2px;text-align:center;">YOUR HAND · TAP TO PLAY</div>
+        <div class="hand" style="justify-content:center;">
+          <div class="card highlight" style="cursor:pointer;" onclick="alert('Play A♠')">
+            <div class="rank">A</div><div class="suit">♠</div><div class="pts-badge">1</div>
+          </div>
+          <div class="card" style="cursor:pointer;" onclick="alert('Play Q♠')">
+            <div class="rank">Q</div><div class="suit">♠</div>
+          </div>
+          <div class="card" style="opacity:0.35;cursor:not-allowed;" title="Must follow suit ♠">
+            <div class="rank">9</div><div class="suit red" style="color:#cc0000;">♥</div>
+          </div>
+          <div class="card" style="opacity:0.35;cursor:not-allowed;">
+            <div class="rank">7</div><div class="suit red" style="color:#cc0000;">♦</div>
+          </div>
+          <div class="card" style="cursor:pointer;" onclick="alert('Play 8♠')">
+            <div class="rank">8</div><div class="suit">♠</div>
+          </div>
+        </div>
+        <div class="callout" style="text-align:center;">
+          You have ♠ — must follow suit. Dimmed cards can't be played.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SCREEN 5 — ROUND END
+══════════════════════════════════════════════════ -->
+<div class="phone-wrap" id="wrap-roundend">
+  <div class="screen-label">5 · Round End</div>
+  <div class="phone visible" id="screen-roundend">
+    <div class="statusbar"><span>9:41</span><span>●●●</span></div>
+    <div class="scroll-inner">
+      <div class="col" style="padding:20px; gap:16px;">
+
+        <!-- result -->
+        <div class="result-banner win col center" style="gap:8px;">
+          <div style="font-size:32px;">🏆</div>
+          <div style="font-size:13px;letter-spacing:2px;color:#ffffff88;">BID MET</div>
+          <div style="font-size:22px;font-weight:900;color:var(--green);">Team A wins!</div>
+          <div style="font-size:12px;color:#ffffff66;">Scored 18 pts · bid was 17</div>
+        </div>
+
+        <!-- point breakdown -->
+        <div class="col" style="gap:6px;">
+          <div style="font-size:10px;color:#ffffff44;letter-spacing:2px;">CARD POINTS THIS ROUND</div>
+
+          <div style="background:#ffffff08;border-radius:12px;padding:12px 14px;">
+            <div class="row" style="margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #ffffff0f;">
+              <div class="row" style="gap:6px;flex:1;">
+                <div class="team-dot" style="background:var(--blue);"></div>
+                <div style="font-size:13px;font-weight:700;color:var(--blue);">Team A</div>
+                <div class="tag green" style="margin-left:4px;">BID TEAM</div>
+              </div>
+              <div style="font-size:22px;font-weight:900;color:var(--green);">18</div>
+            </div>
+            <div class="row">
+              <div class="row" style="gap:6px;flex:1;">
+                <div class="team-dot" style="background:var(--red);"></div>
+                <div style="font-size:13px;font-weight:700;color:var(--red);">Team B</div>
+              </div>
+              <div style="font-size:22px;font-weight:900;">10</div>
+            </div>
+          </div>
+
+          <div class="callout gold" style="text-align:center;">Total always = 28 · Bid team needed ≥17</div>
+        </div>
+
+        <!-- cumulative scores -->
+        <div class="col" style="gap:6px;">
+          <div style="font-size:10px;color:#ffffff44;letter-spacing:2px;">GAME SCORE</div>
+
+          <div style="background:#ffffff08;border-radius:12px;padding:12px 14px;">
+            <div class="row" style="margin-bottom:8px;">
+              <div class="row" style="gap:6px;flex:1;">
+                <div class="team-dot" style="background:var(--blue);"></div>
+                <div style="font-size:13px;font-weight:700;">Team A</div>
+              </div>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <div style="font-size:22px;font-weight:900;color:var(--gold);">3</div>
+                <div style="font-size:10px;color:#ffffff44;">pts</div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="row" style="gap:6px;flex:1;">
+                <div class="team-dot" style="background:var(--red);"></div>
+                <div style="font-size:13px;font-weight:700;">Team B</div>
+              </div>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <div style="font-size:22px;font-weight:900;">1</div>
+                <div style="font-size:10px;color:#ffffff44;">pts</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- trick breakdown (collapsed by default) -->
+        <details style="background:#ffffff08;border-radius:12px;padding:10px 14px;">
+          <summary style="font-size:11px;color:#ffffff66;cursor:pointer;letter-spacing:1px;">TRICK BREAKDOWN ▾</summary>
+          <div class="col" style="gap:4px;margin-top:10px;">
+            <div class="row" style="font-size:10px;color:#ffffff33;gap:8px;padding-bottom:4px;border-bottom:1px solid #ffffff0f;">
+              <div style="width:16px;">#</div>
+              <div style="flex:1;">Winner</div>
+              <div>Points</div>
+            </div>
+            <div class="row" style="font-size:11px;gap:8px;padding:3px 0;">
+              <div style="width:16px;color:#ffffff44;">1</div><div style="flex:1;">Godan (A)</div><div style="color:var(--gold);">4</div>
+            </div>
+            <div class="row" style="font-size:11px;gap:8px;padding:3px 0;">
+              <div style="width:16px;color:#ffffff44;">2</div><div style="flex:1;">Arun (B)</div><div>2</div>
+            </div>
+            <div class="row" style="font-size:11px;gap:8px;padding:3px 0;">
+              <div style="width:16px;color:#ffffff44;">3</div><div style="flex:1;">Sanu (A)</div><div style="color:var(--gold);">5</div>
+            </div>
+            <div class="row" style="font-size:11px;gap:8px;padding:3px 0;">
+              <div style="width:16px;color:#ffffff44;">4</div><div style="flex:1;">Rahul (B)</div><div>5</div>
+            </div>
+            <div class="row" style="font-size:11px;gap:8px;padding:3px 0;">
+              <div style="width:16px;color:#ffffff44;">5</div><div style="flex:1;">Godan (A)</div><div style="color:var(--gold);">3</div>
+            </div>
+            <div class="row" style="font-size:11px;gap:8px;padding:3px 0;">
+              <div style="width:16px;color:#ffffff44;">6</div><div style="flex:1;">Arun (B)</div><div>3</div>
+            </div>
+            <div class="row" style="font-size:11px;gap:8px;padding:3px 0;">
+              <div style="width:16px;color:#ffffff44;">7</div><div style="flex:1;">Sanu (A)</div><div style="color:var(--gold);">6</div>
+            </div>
+            <div class="row" style="font-size:11px;gap:8px;padding:3px 0;">
+              <div style="width:16px;color:#ffffff44;">8</div><div style="flex:1;">Rahul (B)</div><div>0</div>
+            </div>
+          </div>
+        </details>
+
+        <button class="btn btn-green" style="width:100%;" onclick="show('bid')">NEXT ROUND →</button>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SCREEN 6 — GAME OVER
+══════════════════════════════════════════════════ -->
+<div class="phone-wrap" id="wrap-gameover">
+  <div class="screen-label">6 · Game Over</div>
+  <div class="phone visible" id="screen-gameover">
+    <div class="statusbar"><span>9:41</span><span>●●●</span></div>
+    <div class="scroll-inner">
+      <div class="col center" style="padding:24px 20px; gap:18px;">
+
+        <div class="trophy">🏆</div>
+
+        <div class="col center" style="gap:4px;">
+          <div style="font-size:13px;letter-spacing:3px;color:#ffffff44;">WINNERS</div>
+          <div style="font-size:26px;font-weight:900;color:var(--gold);">Team A</div>
+          <div style="font-size:12px;color:#ffffff55;">Godan &amp; Sanu</div>
+        </div>
+
+        <!-- final score -->
+        <div style="background:#ffffff08;border-radius:16px;padding:16px 20px;width:100%;">
+          <div style="font-size:10px;color:#ffffff44;letter-spacing:2px;margin-bottom:12px;">FINAL SCORE</div>
+
+          <div class="row" style="align-items:flex-start;gap:12px;">
+            <div class="col center" style="flex:1;gap:4px;">
+              <div class="row" style="gap:6px;">
+                <div class="team-dot" style="background:var(--blue);width:10px;height:10px;"></div>
+                <div style="font-size:13px;font-weight:700;color:var(--blue);">Team A</div>
+              </div>
+              <div style="font-size:40px;font-weight:900;color:var(--gold);">6</div>
+              <div style="font-size:10px;color:#ffffff44;">game points</div>
+            </div>
+
+            <div style="width:1px;background:#ffffff11;align-self:stretch;"></div>
+
+            <div class="col center" style="flex:1;gap:4px;">
+              <div class="row" style="gap:6px;">
+                <div class="team-dot" style="background:var(--red);width:10px;height:10px;"></div>
+                <div style="font-size:13px;font-weight:700;color:var(--red);">Team B</div>
+              </div>
+              <div style="font-size:40px;font-weight:900;">3</div>
+              <div style="font-size:10px;color:#ffffff44;">game points</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- player summary -->
+        <div style="background:#ffffff08;border-radius:16px;padding:14px 16px;width:100%;">
+          <div style="font-size:10px;color:#ffffff44;letter-spacing:2px;margin-bottom:10px;">PLAYERS</div>
+          <div class="col" style="gap:8px;">
+            <div class="row" style="gap:10px;">
+              <div class="avatar" style="background:#E63946;">G</div>
+              <div class="col" style="gap:2px;flex:1;">
+                <div style="font-size:13px;font-weight:700;">Godan <span style="font-size:10px;color:#ffffff33;">(you)</span></div>
+                <div style="font-size:10px;color:#ffffff55;">Team A · 3 bids won</div>
+              </div>
+              <div class="tag green">WIN</div>
+            </div>
+            <div class="row" style="gap:10px;">
+              <div class="avatar" style="background:#00C853;">S</div>
+              <div class="col" style="gap:2px;flex:1;">
+                <div style="font-size:13px;font-weight:700;">Sanu</div>
+                <div style="font-size:10px;color:#ffffff55;">Team A · partner</div>
+              </div>
+              <div class="tag green">WIN</div>
+            </div>
+            <div class="row" style="gap:10px;">
+              <div class="avatar" style="background:#2979FF;">A</div>
+              <div class="col" style="gap:2px;flex:1;">
+                <div style="font-size:13px;font-weight:700;">Arun</div>
+                <div style="font-size:10px;color:#ffffff55;">Team B · 2 bids won</div>
+              </div>
+              <div class="tag red">LOSS</div>
+            </div>
+            <div class="row" style="gap:10px;">
+              <div class="avatar" style="background:#FF6D00;">R</div>
+              <div class="col" style="gap:2px;flex:1;">
+                <div style="font-size:13px;font-weight:700;">Rahul</div>
+                <div style="font-size:10px;color:#ffffff55;">Team B · partner</div>
+              </div>
+              <div class="tag red">LOSS</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row" style="gap:10px;width:100%;">
+          <button class="btn btn-outline" style="flex:1;">HOME</button>
+          <button class="btn btn-green" style="flex:1;" onclick="show('lobby')">PLAY AGAIN</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end .all-screens -->
+
+<script>
+  const screens = ['lobby','bid','trump','trump2','roundend','gameover','game'];
+  const navMap = {
+    lobby: 'btn-lobby',
+    bid: 'btn-bid',
+    trump: 'btn-trump',
+    trump2: 'btn-trump',
+    roundend: 'btn-roundend',
+    gameover: 'btn-gameover',
+    game: 'btn-game',
+  };
+
+  function show(id) {
+    // update nav
+    document.querySelectorAll('#nav button').forEach(b => b.classList.remove('active'));
+
+    const allView = document.getElementById('view-all');
+    const wraps = document.querySelectorAll('.phone-wrap');
+    const phones = document.querySelectorAll('.phone');
+
+    if (id === 'all') {
+      document.getElementById('btn-all').classList.add('active');
+      allView.style.display = 'flex';
+      wraps.forEach(w => w.style.display = 'flex');
+      phones.forEach(p => p.style.display = 'flex');
+    } else {
+      document.getElementById('btn-all').classList.remove('active');
+      allView.style.display = 'flex';
+
+      // hide all
+      wraps.forEach(w => { w.style.display = 'none'; });
+      phones.forEach(p => { p.style.display = 'none'; });
+
+      // show target(s)
+      if (id === 'trump') {
+        // show both 3a and 3b
+        ['wrap-trump','wrap-trump2'].forEach(wid => {
+          const el = document.getElementById(wid);
+          if (el) { el.style.display = 'flex'; el.querySelector('.phone').style.display = 'flex'; }
+        });
+      } else {
+        const wrap = document.getElementById('wrap-' + id);
+        if (wrap) { wrap.style.display = 'flex'; wrap.querySelector('.phone').style.display = 'flex'; }
+      }
+
+      const btnId = navMap[id] || ('btn-' + id);
+      const btn = document.getElementById(btnId);
+      if (btn) btn.classList.add('active');
+    }
+  }
+
+  function selectSuit(el, suit) {
+    document.querySelectorAll('.suit-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  // start on all
+  show('all');
+</script>
+</body>
+</html>
