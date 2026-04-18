@@ -727,53 +727,156 @@ class _TrumpSelectionView extends StatelessWidget {
         state.players[state.bidWinnerId ?? '']?.name ?? 'Someone');
 
     if (_isBidWinner) {
-      // Bidder picks trump
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Win banner
-          Container(
-            margin: const EdgeInsets.all(24),
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
-            decoration: BoxDecoration(
-              color: const Color(0xFF003d1a),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                  color: Colors.green.withValues(alpha: 0.4)),
-            ),
-            child: Column(
-              children: [
-                const Text('🏆', style: TextStyle(fontSize: 36)),
-                const SizedBox(height: 6),
-                const Text('BID WON',
-                    style: TextStyle(
-                        fontSize: 12,
-                        letterSpacing: 3,
-                        color: Colors.white54)),
-                const SizedBox(height: 4),
-                Text('${state.currentBid} pts',
-                    style: const TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.w900,
-                        color: _kGold)),
-                Text('Your team must score ≥${state.currentBid} to win',
-                    style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.white.withValues(alpha: 0.5))),
-              ],
-            ),
-          ),
+      final bidCards = state.players[playerId]?.hand.take(4).toList() ?? [];
 
-          Text('Choose trump suit',
-              style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.white.withValues(alpha: 0.6),
-                  letterSpacing: 1)),
-          Text('Only you can see this',
-              style: TextStyle(
-                  fontSize: 11,
-                  color: _kTeamB.withValues(alpha: 0.7))),
-          const SizedBox(height: 20),
+      // Per-suit point tally for the 4 visible cards
+      final suitPts = <int, int>{};
+      for (final c in bidCards) {
+        suitPts[c.suit.index] =
+            (suitPts[c.suit.index] ?? 0) + cardPoints28(c.rank);
+      }
+
+      // Bidder picks trump
+      return SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Win banner (compact)
+            Container(
+              margin: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+              padding:
+                  const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+              decoration: BoxDecoration(
+                color: const Color(0xFF003d1a),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.green.withValues(alpha: 0.4)),
+              ),
+              child: Row(
+                children: [
+                  const Text('🏆', style: TextStyle(fontSize: 28)),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('${state.currentBid} pts',
+                            style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
+                                color: _kGold)),
+                        Text('Your team must score ≥${state.currentBid} to win',
+                            style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.white.withValues(alpha: 0.5))),
+                      ],
+                    ),
+                  ),
+                  _tag('BID WON', Colors.greenAccent),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // ── 4 bid cards ──────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 8, height: 8,
+                        decoration: const BoxDecoration(
+                            shape: BoxShape.circle, color: _kGold),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text('YOUR BID CARDS',
+                          style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.5,
+                              color: _kGold)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: _kGold.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(14),
+                      border:
+                          Border.all(color: _kGold.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: bidCards
+                          .map((c) =>
+                              CardWidget(card: c, width: 58, height: 82))
+                          .toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Per-suit point hints
+                  Row(
+                    children: List.generate(4, (i) {
+                      final suit = Suit.values[i];
+                      final pts = suitPts[i] ?? 0;
+                      final isRed =
+                          suit == Suit.hearts || suit == Suit.diamonds;
+                      final color =
+                          isRed ? const Color(0xFFD32F2F) : Colors.white70;
+                      return Expanded(
+                        child: Container(
+                          margin: EdgeInsets.only(right: i < 3 ? 6 : 0),
+                          padding: const EdgeInsets.symmetric(vertical: 5),
+                          decoration: BoxDecoration(
+                            color: pts > 0
+                                ? color.withValues(alpha: 0.08)
+                                : Colors.white.withValues(alpha: 0.03),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: pts > 0
+                                  ? color.withValues(alpha: 0.3)
+                                  : Colors.white12,
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(_suitSymbol(suit),
+                                  style: TextStyle(
+                                      fontSize: 16, color: color)),
+                              Text('$pts pt${pts != 1 ? 's' : ''}',
+                                  style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w700,
+                                      color: pts > 0
+                                          ? color
+                                          : Colors.white24)),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            Text('Choose trump suit',
+                style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.white.withValues(alpha: 0.6),
+                    letterSpacing: 1)),
+            Text('Only you can see this',
+                style: TextStyle(
+                    fontSize: 11,
+                    color: _kTeamB.withValues(alpha: 0.7))),
+            const SizedBox(height: 16),
 
           // Suit picker
           Row(
@@ -828,7 +931,8 @@ class _TrumpSelectionView extends StatelessWidget {
             ),
           ),
         ],
-      );
+      ),
+    );
     }
 
     // Others wait
