@@ -309,8 +309,14 @@ class Game28Service {
     if (!isLeader) {
       final hasSuit = player.hand.any((c) => c.suit.index == leadSuit);
       if (hasSuit && card.suit.index != leadSuit) return; // must follow lead
-      // After asking for trump, must play trump if held
-      if (!hasSuit && state.trumpRevealRequired && state.trumpSuit != null) {
+    }
+
+    // ── Forced trump after reveal ─────────────────────────────────────────
+    // Triggered only when this player called askForTrump this turn.
+    // They must be void in the lead suit and must play trump if they hold it.
+    if (state.trumpRevealRequired && !isLeader && state.trumpSuit != null) {
+      final isVoid = !player.hand.any((c) => c.suit.index == leadSuit);
+      if (isVoid) {
         final hasTrump =
             player.hand.any((c) => c.suit.index == state.trumpSuit);
         if (hasTrump && card.suit.index != state.trumpSuit) return;
