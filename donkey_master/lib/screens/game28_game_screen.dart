@@ -182,7 +182,8 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
           playerId: widget.playerId,
           canPlay: _canPlay,
           onCardTap: _playCard,
-          onAskTrump: () => Game28Service.instance.askForTrump(state),
+          onAskTrump: () =>
+              Game28Service.instance.askForTrump(state, widget.playerId),
         );
       case Game28Phase.roundEnd:
         return _RoundEndView(

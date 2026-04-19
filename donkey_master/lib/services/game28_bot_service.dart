@@ -170,7 +170,7 @@ class Game28BotService {
           fresh.trumpSuit != null &&
           chosenCard.suit.index == fresh.trumpSuit &&
           fresh.leadSuit != null) {
-        await Game28Service.instance.askForTrump(fresh);
+        await Game28Service.instance.askForTrump(fresh, turn);
       }
 
       await Game28Service.instance.playCard(fresh, turn, cardIdx);

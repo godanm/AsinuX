@@ -265,14 +265,28 @@ class Game28Service {
 
   // ── Ask for trump ─────────────────────────────────────────────────────────
 
-  /// Called by a void player to reveal the trump suit to all.
-  /// Sets trumpRevealRequired so the engine enforces they must play trump next.
-  Future<void> askForTrump(Game28State state) async {
+  /// Called by a player to reveal the trump suit to all.
+  /// Non-bid-winners must be void in the lead suit to call this.
+  /// The bid winner may reveal at any time.
+  /// Sets trumpRevealRequired so the engine enforces trump must be played next.
+  Future<void> askForTrump(Game28State state, String playerId) async {
     if (state.trumpSuit == null || state.trumpRevealed) return;
     if (state.phase != Game28Phase.playing) return;
+
+    final isBidWinner = playerId == state.bidWinnerId;
+    if (!isBidWinner) {
+      // Non-bid-winner must be void in the lead suit
+      final leadSuit = state.leadSuit;
+      if (leadSuit == null) return; // no trick in progress
+      final hand = state.players[playerId]?.hand ?? [];
+      final hasSuit = hand.any((c) => c.suit.index == leadSuit);
+      if (hasSuit) return; // can follow suit — not allowed to ask
+    }
+
     await _ref(state.roomId)
         .update({'trumpRevealed': true, 'trumpRevealRequired': true});
-    debugPrint('[28] trump revealed via Ask for Trump');
+    debugPrint('[28] trump revealed by $playerId'
+        '${isBidWinner ? ' (bid winner)' : ' (void in lead)'}');
   }
 
   // ── Card play ─────────────────────────────────────────────────────────────
