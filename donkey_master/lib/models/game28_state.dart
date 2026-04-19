@@ -31,19 +31,18 @@ int cardPoints28(Rank rank) {
 }
 
 /// Authentic 28 rank: J(7) > 9(6) > A(5) > 10(4) > K(3) > Q(2) > 8(1) > 7(0)
-int rankStrength28(Rank rank) {
-  switch (rank) {
-    case Rank.jack:  return 7;
-    case Rank.nine:  return 6;
-    case Rank.ace:   return 5;
-    case Rank.ten:   return 4;
-    case Rank.king:  return 3;
-    case Rank.queen: return 2;
-    case Rank.eight: return 1;
-    case Rank.seven: return 0;
-    default:         return -1; // non-28 card
-  }
-}
+const Map<Rank, int> _rank28StrengthMap = {
+  Rank.jack:  7,
+  Rank.nine:  6,
+  Rank.ace:   5,
+  Rank.ten:   4,
+  Rank.king:  3,
+  Rank.queen: 2,
+  Rank.eight: 1,
+  Rank.seven: 0,
+};
+
+int rankStrength28(Rank rank) => _rank28StrengthMap[rank] ?? -1;
 
 List<PlayingCard> buildDeck28() => [
       for (final suit in Suit.values)

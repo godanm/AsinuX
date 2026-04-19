@@ -224,20 +224,12 @@ class Game28Service {
     if (state.bidWinnerId != playerId) return;
     if (state.phase != Game28Phase.trumpSelection) return;
 
-    // Phase 2 deal: give each player their remaining 4 cards
-    final order = state.playerOrder;
-    final pending = state.pendingDeck;
-    final updatedPlayers = Map<String, Game28Player>.from(state.players);
-    for (int i = 0; i < order.length; i++) {
-      final secondHalf = pending.sublist(i * 4, i * 4 + 4);
-      final fullHand = [...updatedPlayers[order[i]]!.hand, ...secondHalf];
-      updatedPlayers[order[i]] =
-          updatedPlayers[order[i]]!.copyWith(hand: fullHand);
-    }
-
     // First trick leader = player after bidder in order
+    final order = state.playerOrder;
     final bidIdx = order.indexOf(playerId);
     final firstLeader = order[(bidIdx + 1) % order.length];
+
+    // Step 1: commit trump suit and transition to playing phase
     await _ref(state.roomId).update({
       'trumpSuit': suitIndex,
       'phase': Game28Phase.playing.index,
@@ -245,10 +237,30 @@ class Game28Service {
       'leadPlayer': null,
       'currentTrick': {},
       'leadSuit': null,
+    });
+
+    // Step 2: deal remaining 4 cards to each player now that trump is set
+    await _dealRemainingCards(state);
+    debugPrint('[28] trump = ${Suit.values[suitIndex]}, dealt second 4 cards — leads $firstLeader');
+  }
+
+  /// Distributes the stored pendingDeck (second 4 cards per player) and clears it.
+  /// Guard: if pendingDeck is already empty, does nothing (prevents double-deal).
+  Future<void> _dealRemainingCards(Game28State state) async {
+    final pending = state.pendingDeck;
+    if (pending.isEmpty) return;
+    final order = state.playerOrder;
+    final updatedPlayers = Map<String, Game28Player>.from(state.players);
+    for (int i = 0; i < order.length; i++) {
+      final secondHalf = pending.sublist(i * 4, i * 4 + 4);
+      final fullHand = [...updatedPlayers[order[i]]!.hand, ...secondHalf];
+      updatedPlayers[order[i]] =
+          updatedPlayers[order[i]]!.copyWith(hand: fullHand);
+    }
+    await _ref(state.roomId).update({
       'pendingDeck': [],
       'players': updatedPlayers.map((k, v) => MapEntry(k, v.toMap())),
     });
-    debugPrint('[28] trump = ${Suit.values[suitIndex]}, dealt second 4 cards — leads $firstLeader');
   }
 
   // ── Ask for trump ─────────────────────────────────────────────────────────
@@ -277,11 +289,6 @@ class Game28Service {
     final isLeader = state.leadSuit == null && state.currentTrick.isEmpty;
     final leadSuit = isLeader ? card.suit.index : state.leadSuit!;
 
-    // Detect trump reveal
-    final isTrump =
-        state.trumpSuit != null && card.suit.index == state.trumpSuit;
-    final trumpRevealed = state.trumpRevealed || isTrump;
-
     // Update player hand
     final updatedPlayers =
         Map<String, Game28Player>.from(state.players);
@@ -309,7 +316,7 @@ class Game28Service {
       'leadSuit': leadSuit,
       'leadPlayer': isLeader ? playerId : state.leadPlayer,
       'currentTurn': nextTurn,
-      'trumpRevealed': trumpRevealed,
+      'trumpRevealed': state.trumpRevealed,
     });
 
     // All 4 played — resolve
@@ -380,7 +387,7 @@ class Game28Service {
         'currentTurn': winnerId,
         'leadPlayer': null,
         'currentTrick': trick.map((k, v) => MapEntry(k, v.toMap())),
-        'trumpRevealed': state.trumpRevealed || hasTrump,
+        'trumpRevealed': state.trumpRevealed,
       });
     }
   }

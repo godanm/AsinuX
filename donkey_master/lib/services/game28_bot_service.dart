@@ -63,7 +63,7 @@ class Game28BotService {
       final fresh = await Game28Service.instance.getFreshState(state.roomId);
       if (fresh == null || fresh.biddingTurn != biddingTurn) return;
 
-      final strength = _handStrength(player.hand);
+      final strength = _handStrength(fresh.players[biddingTurn]?.hand ?? player.hand);
       final maxBid = _maxBidForStrength(strength);
 
       // Partner 20 rule: must bid ≥ 20 to outbid own partner
@@ -163,6 +163,16 @@ class Game28BotService {
       if (hand.isEmpty) return;
 
       final cardIdx = _chooseCard(fresh, turn, hand);
+      final chosenCard = hand[cardIdx];
+
+      // If playing a trump card while trump is unrevealed, explicitly reveal first
+      if (!fresh.trumpRevealed &&
+          fresh.trumpSuit != null &&
+          chosenCard.suit.index == fresh.trumpSuit &&
+          fresh.leadSuit != null) {
+        await Game28Service.instance.askForTrump(fresh);
+      }
+
       await Game28Service.instance.playCard(fresh, turn, cardIdx);
     });
   }
