@@ -379,11 +379,13 @@ Total points in the deck: **28** (hence the name). The 8 zero-point cards are pu
 
 ## Card Rank Within a Suit
 
-For following suit and determining trick winners:
+The rank order in 28 is **not** standard — the Jack and Nine are elevated because of their high point values:
 
-**7 < 8 < 9 < 10 < Jack < Queen < King < Ace**
+**7 < 8 < Q < K < 10 < A < 9 < J**
 
-Trump cards **always beat non-trump cards**, regardless of rank. Within trump, the same rank order applies.
+Jack is the strongest card of any suit. Nine is second. Ace and Ten come next (both score points), then King, Queen, Eight, Seven.
+
+Trump cards **always beat non-trump cards**, regardless of rank. Within trump, the same order applies (trump Jack beats trump Nine, etc.).
 
 ---
 
@@ -397,9 +399,17 @@ Before the main play, players bid for the right to name the trump suit.
 - A player may **pass** at any time; once passed, they cannot re-enter the bidding
 - The last player remaining wins the bid — if only one player hasn't passed, they win at their current bid (minimum 14)
 
+> **In the app**: you are dealt only **4 cards** before bidding. These bid cards are shown throughout the entire bidding screen. Your remaining 4 cards are dealt to you only after the trump suit is chosen, so nobody can infer trump from your second-hand play style.
+
+### Partner 20 Rule
+
+If your **partner currently holds the bid**, you cannot outbid them by just 1. You must jump to at least **20** to take the bid from your own partner. This prevents partners from endlessly outbidding each other by small increments and forces a meaningful commitment. The app enforces this — the bid button will automatically show 20 as the minimum when this rule applies, and a notice appears explaining why.
+
 ### After Bidding
 
 The **bid-winner privately selects the trump suit** — no one else is told. The trump suit is **hidden** until the first trump card is played in a trick.
+
+> **In the app**: the trump selection screen shows the bid-winner their 4 bid cards again, along with a per-suit point tally, to help them pick the strongest trump.
 
 ---
 
@@ -420,6 +430,14 @@ The trump suit is **unrevealed** at the start. It is revealed the moment any pla
 
 > **Note**: if you cannot follow suit you are not forced to play trump — you can play any non-trump card and keep the trump suit secret longer. But you may also choose to play trump to win the trick.
 
+### Ask for Trump
+
+When a player is void in the lead suit, they may explicitly ask the bid-winner to reveal the trump suit before deciding what to play. This is the standard way trump gets revealed — not by accident, but as a deliberate request.
+
+> **In the app**: when it is your turn and you have no cards of the lead suit, an **ASK TRUMP** button appears in the info bar. Tapping it reveals the trump suit to all players immediately. You can then see which of your cards are trump (marked with a gold **T** badge) and decide what to play. If you prefer to keep trump hidden, simply play a non-trump card without asking.
+>
+> When trump is revealed (either via Ask or by playing a trump card), a banner flashes at the top of the screen for all players.
+
 ### Winning a Trick
 
 - If **no trump was played**: the highest card of the lead suit wins
@@ -433,10 +451,15 @@ The trump suit is **unrevealed** at the start. It is revealed the moment any pla
 
 After all 8 tricks are played, each team counts the **point value of cards they won**.
 
-| Outcome | Result |
+| Outcome | Game points awarded |
 |---|---|
-| Bidding team scores ≥ bid | Bidding team earns **1 game point** |
-| Bidding team scores < bid | Opposing team earns **1 game point** |
+| Bidding team scores ≥ bid (bid 14–19) | Bidding team earns **+1** |
+| Bidding team scores ≥ bid (bid ≥ 20) | Bidding team earns **+2** |
+| Bidding team wins all 28 card points (**Thani**) | Bidding team earns **+3** |
+| Bidding team fails (bid 14–19) | Opposing team earns **+1** |
+| Bidding team fails (bid ≥ 20) | Opposing team earns **+2** |
+
+**Thani** means the bidding team captured every single point card (all 4 Jacks, all 4 Nines, all 4 Aces, all 4 Tens) — a total of 28 card points. This is rare and earns the maximum reward.
 
 The first team to reach **6 game points** wins the match.
 
@@ -447,12 +470,15 @@ The first team to reach **6 game points** wins the match.
 Bots handle bidding, trump selection, and play automatically.
 
 ### Bidding
-Bots estimate their hand's strength by summing card point values. The total guides their max bid:
-- 0–4 pts → pass (won't open)
-- 5–8 pts → bid up to 16
-- 9–12 pts → bid up to 19
-- 13–16 pts → bid up to 22
-- 17+ pts → bid up to 25
+Bots estimate their hand's strength by summing the point values of their 4 bid cards (J=3, 9=2, A=1, 10=1). The total guides their maximum willingness to bid:
+- 0–1 pts → max bid 13 (will always pass)
+- 2–3 pts → max bid 15
+- 4–5 pts → max bid 16
+- 6–7 pts → max bid 18
+- 8–9 pts → max bid 20
+- 10+ pts → max bid 22
+
+Bots also respect the **Partner 20 rule** — if their partner holds the bid below 20, they will only outbid if their max bid is ≥ 20.
 
 ### Trump Selection
 The bot picks the suit with the highest total point value in hand. J-9 combinations in a suit are strongly preferred.
@@ -504,14 +530,14 @@ After each trick resolves, the winning team's bot (or human) automatically start
 
 | Card | Points | Rank strength |
 |---|---|---|
-| Jack | 3 | 5th of 8 |
-| 9 | 2 | 3rd of 8 |
-| Ace | 1 | 8th of 8 (highest) |
-| 10 | 1 | 4th of 8 |
-| King | 0 | 7th of 8 |
-| Queen | 0 | 6th of 8 |
-| 8 | 0 | 2nd of 8 |
-| 7 | 0 | 1st of 8 (lowest) |
+| Jack | 3 | **1st** (strongest) |
+| 9 | 2 | 2nd |
+| Ace | 1 | 3rd |
+| 10 | 1 | 4th |
+| King | 0 | 5th |
+| Queen | 0 | 6th |
+| 8 | 0 | 7th |
+| 7 | 0 | 8th (weakest) |
 
 ---
 ---

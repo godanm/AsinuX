@@ -92,15 +92,15 @@ class Game28Service {
   Future<void> startGame(Game28State state) async {
     final deck = buildDeck28()..shuffle(Random());
     final order = List<String>.from(state.playerOrder);
-    // Deal 8 cards to each of the 4 players
-    final updatedPlayers =
-        Map<String, Game28Player>.from(state.players);
+    // Phase 1: deal first 4 cards to each player (used for bidding)
+    final updatedPlayers = Map<String, Game28Player>.from(state.players);
     for (int i = 0; i < order.length; i++) {
-      final hand = deck.sublist(i * 8, i * 8 + 8);
+      final hand = deck.sublist(i * 4, i * 4 + 4);
       updatedPlayers[order[i]] =
           updatedPlayers[order[i]]!.copyWith(hand: hand);
     }
-    // Bidding starts with player at seat 0 (host)
+    // Remaining 16 cards stored until trump is chosen (phase 2 deal)
+    final pendingDeck = deck.sublist(16);
     final firstBidder = order[0];
     await _ref(state.roomId).update({
       'phase': Game28Phase.bidding.index,
@@ -118,10 +118,11 @@ class Game28Service {
       'leadSuit': null,
       'leadPlayer': null,
       'currentTurn': null,
+      'pendingDeck': pendingDeck.map((c) => c.toMap()).toList(),
       'teamTrickPoints': {'t0': 0, 't1': 0},
       'players': updatedPlayers.map((k, v) => MapEntry(k, v.toMap())),
     });
-    debugPrint('[28] startGame — round ${state.roundNumber + 1}');
+    debugPrint('[28] startGame — round ${state.roundNumber + 1}, dealt 4 bid cards each');
   }
 
   // ── Bidding ───────────────────────────────────────────────────────────────
@@ -221,9 +222,19 @@ class Game28Service {
       Game28State state, String playerId, int suitIndex) async {
     if (state.bidWinnerId != playerId) return;
     if (state.phase != Game28Phase.trumpSelection) return;
-    // Trump is stored in DB. UI only shows it to the bidder.
-    // First trick leader = player after bidder in order.
+
+    // Phase 2 deal: give each player their remaining 4 cards
     final order = state.playerOrder;
+    final pending = state.pendingDeck;
+    final updatedPlayers = Map<String, Game28Player>.from(state.players);
+    for (int i = 0; i < order.length; i++) {
+      final secondHalf = pending.sublist(i * 4, i * 4 + 4);
+      final fullHand = [...updatedPlayers[order[i]]!.hand, ...secondHalf];
+      updatedPlayers[order[i]] =
+          updatedPlayers[order[i]]!.copyWith(hand: fullHand);
+    }
+
+    // First trick leader = player after bidder in order
     final bidIdx = order.indexOf(playerId);
     final firstLeader = order[(bidIdx + 1) % order.length];
     await _ref(state.roomId).update({
@@ -233,8 +244,20 @@ class Game28Service {
       'leadPlayer': null,
       'currentTrick': {},
       'leadSuit': null,
+      'pendingDeck': [],
+      'players': updatedPlayers.map((k, v) => MapEntry(k, v.toMap())),
     });
-    debugPrint('[28] trump = ${Suit.values[suitIndex]} — $playerId leads $firstLeader');
+    debugPrint('[28] trump = ${Suit.values[suitIndex]}, dealt second 4 cards — leads $firstLeader');
+  }
+
+  // ── Ask for trump ─────────────────────────────────────────────────────────
+
+  /// Called by a void player to reveal the trump suit to all.
+  Future<void> askForTrump(Game28State state) async {
+    if (state.trumpSuit == null || state.trumpRevealed) return;
+    if (state.phase != Game28Phase.playing) return;
+    await _ref(state.roomId).update({'trumpRevealed': true});
+    debugPrint('[28] trump revealed via Ask for Trump');
   }
 
   // ── Card play ─────────────────────────────────────────────────────────────
@@ -367,19 +390,34 @@ class Game28Service {
     Map<String, PlayingCard> lastTrick,
   ) async {
     final bidTeam = state.bidWinnerTeam!;
+    final otherTeam = 1 - bidTeam;
     final bidTeamPts = finalTrickPoints['t$bidTeam'] ?? 0;
     final bidMet = bidTeamPts >= state.currentBid;
+    final isThani = bidTeamPts == 28; // bidding team won every card point
+
+    // Scoring multipliers
+    // Thani (+3): bidding team swept all 28 points
+    // High bid (+2): bid ≥ 20 succeeded, or defending team stopped one
+    // Standard (+1): everything else
+    final int gamePointsToAward;
+    if (bidMet) {
+      gamePointsToAward = isThani ? 3 : (state.currentBid >= 20 ? 2 : 1);
+    } else {
+      gamePointsToAward = state.currentBid >= 20 ? 2 : 1;
+    }
 
     final newGamePoints = Map<String, int>.from(state.teamGamePoints);
     if (bidMet) {
-      newGamePoints['t$bidTeam'] = (newGamePoints['t$bidTeam'] ?? 0) + 1;
+      newGamePoints['t$bidTeam'] =
+          (newGamePoints['t$bidTeam'] ?? 0) + gamePointsToAward;
     } else {
-      final otherTeam = 1 - bidTeam;
-      newGamePoints['t$otherTeam'] = (newGamePoints['t$otherTeam'] ?? 0) + 1;
+      newGamePoints['t$otherTeam'] =
+          (newGamePoints['t$otherTeam'] ?? 0) + gamePointsToAward;
     }
 
     debugPrint('[28] round ${state.roundNumber} end — bid=$bidMet '
         'bidTeam=$bidTeam pts=$bidTeamPts/${state.currentBid} '
+        '+${gamePointsToAward}gp${isThani ? ' THANI' : ''} '
         'gamePoints=$newGamePoints');
 
     final gameOver = newGamePoints.values.any((p) => p >= state.targetScore);

@@ -176,6 +176,7 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
           playerId: widget.playerId,
           canPlay: _canPlay,
           onCardTap: _playCard,
+          onAskTrump: () => Game28Service.instance.askForTrump(state),
         );
       case Game28Phase.roundEnd:
         return _RoundEndView(
@@ -917,12 +918,14 @@ class _GameTableView extends StatelessWidget {
   final String playerId;
   final bool Function(PlayingCard) canPlay;
   final void Function(int) onCardTap;
+  final VoidCallback onAskTrump;
 
   const _GameTableView({
     required this.state,
     required this.playerId,
     required this.canPlay,
     required this.onCardTap,
+    required this.onAskTrump,
   });
 
   @override
@@ -986,65 +989,121 @@ class _GameTableView extends StatelessWidget {
                 ),
 
                 // Info bar: trump + lead suit + turn pill
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _TrumpPill(
-                      trumpSuit: state.trumpSuit,
-                      revealed: state.trumpRevealed,
-                      isBidWinner: state.bidWinnerId == playerId,
-                    ),
-                    if (state.leadSuit != null) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.06),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white24),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text('LEAD ',
-                                style: TextStyle(
-                                    fontSize: 9,
-                                    letterSpacing: 1.5,
-                                    color: Colors.white.withValues(alpha: 0.4))),
-                            Text(
-                              _suitSymbol(Suit.values[state.leadSuit!]),
-                              style: TextStyle(
-                                  fontSize: 18,
-                                  color: _suitIsRed(Suit.values[state.leadSuit!])
-                                      ? const Color(0xFFD32F2F)
-                                      : Colors.white),
+                Builder(builder: (context) {
+                  final isVoidInLead = myTurn &&
+                      !isTrickEnd &&
+                      state.leadSuit != null &&
+                      !state.trumpRevealed &&
+                      state.trumpSuit != null &&
+                      !me.hand.any((c) => c.suit.index == state.leadSuit);
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _TrumpPill(
+                            trumpSuit: state.trumpSuit,
+                            revealed: state.trumpRevealed,
+                            isBidWinner: state.bidWinnerId == playerId,
+                          ),
+                          if (state.leadSuit != null) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.06),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: Colors.white24),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text('LEAD ',
+                                      style: TextStyle(
+                                          fontSize: 9,
+                                          letterSpacing: 1.5,
+                                          color: Colors.white
+                                              .withValues(alpha: 0.4))),
+                                  Text(
+                                    _suitSymbol(
+                                        Suit.values[state.leadSuit!]),
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        color: _suitIsRed(Suit.values[
+                                                state.leadSuit!])
+                                            ? const Color(0xFFD32F2F)
+                                            : Colors.white),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
-                        ),
+                          if (myTurn && !isTrickEnd) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: _kGold.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                    color: _kGold.withValues(alpha: 0.45)),
+                              ),
+                              child: const Text('YOUR TURN',
+                                  style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w900,
+                                      color: _kGold,
+                                      letterSpacing: 1.2)),
+                            ),
+                          ],
+                        ],
                       ),
-                    ],
-                    if (myTurn && !isTrickEnd) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: _kGold.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(20),
-                          border:
-                              Border.all(color: _kGold.withValues(alpha: 0.45)),
+                      // Ask for Trump — only when void in lead suit
+                      if (isVoidInLead) ...[
+                        const SizedBox(height: 6),
+                        GestureDetector(
+                          onTap: onAskTrump,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF4a0080)
+                                  .withValues(alpha: 0.6),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                  color: Colors.purpleAccent
+                                      .withValues(alpha: 0.6)),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.purpleAccent
+                                      .withValues(alpha: 0.25),
+                                  blurRadius: 10,
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text('🃏',
+                                    style: TextStyle(fontSize: 13)),
+                                const SizedBox(width: 6),
+                                const Text('ASK TRUMP',
+                                    style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.purpleAccent,
+                                        letterSpacing: 1.5)),
+                              ],
+                            ),
+                          ),
                         ),
-                        child: const Text('YOUR TURN',
-                            style: TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w900,
-                                color: _kGold,
-                                letterSpacing: 1.2)),
-                      ),
+                      ],
                     ],
-                  ],
-                ),
+                  );
+                }),
               ],
             ),
           ),
@@ -1111,28 +1170,59 @@ class _RoundEndView extends StatelessWidget {
                 Text(iWon ? '🏆' : '💔',
                     style: const TextStyle(fontSize: 36)),
                 const SizedBox(height: 6),
-                Text(
-                  bidMet ? 'BID MET' : 'BID FAILED',
-                  style: TextStyle(
-                      fontSize: 11,
-                      letterSpacing: 2,
-                      color: Colors.white.withValues(alpha: 0.55)),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  bidMet ? 'Team ${bidTeam == 0 ? 'A' : 'B'} wins!' : 'Team ${bidTeam == 0 ? 'B' : 'A'} wins!',
-                  style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: iWon ? Colors.greenAccent : _kTeamB),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Bid team scored $bidTeamPts / needed ${state.currentBid}',
-                  style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.white.withValues(alpha: 0.5)),
-                ),
+                Builder(builder: (_) {
+                  final isThani = bidTeamPts == 28;
+                  final gp = isThani ? 3
+                      : (state.currentBid >= 20 ? 2 : 1);
+                  final winTeamIdx = bidMet ? bidTeam : 1 - bidTeam;
+                  return Column(
+                    children: [
+                      if (isThani)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _kGold.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                                color: _kGold.withValues(alpha: 0.5)),
+                          ),
+                          child: const Text('✦ THANI ✦',
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w900,
+                                  color: _kGold,
+                                  letterSpacing: 2)),
+                        ),
+                      Text(
+                        bidMet ? 'BID MET' : 'BID FAILED',
+                        style: TextStyle(
+                            fontSize: 11,
+                            letterSpacing: 2,
+                            color: Colors.white.withValues(alpha: 0.55)),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Team ${winTeamIdx == 0 ? 'A' : 'B'} wins!',
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                            color: iWon ? Colors.greenAccent : _kTeamB),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Bid team scored $bidTeamPts / needed ${state.currentBid}',
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.white.withValues(alpha: 0.5)),
+                      ),
+                      const SizedBox(height: 6),
+                      _tag('+$gp game point${gp > 1 ? 's' : ''}',
+                          _kTeamColor(winTeamIdx)),
+                    ],
+                  );
+                }),
               ],
             ),
           ),

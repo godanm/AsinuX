@@ -30,8 +30,20 @@ int cardPoints28(Rank rank) {
   }
 }
 
-/// 0 = weakest (7), 7 = strongest (A)
-int rankStrength28(Rank rank) => rank.index - 5;
+/// Authentic 28 rank: J(7) > 9(6) > A(5) > 10(4) > K(3) > Q(2) > 8(1) > 7(0)
+int rankStrength28(Rank rank) {
+  switch (rank) {
+    case Rank.jack:  return 7;
+    case Rank.nine:  return 6;
+    case Rank.ace:   return 5;
+    case Rank.ten:   return 4;
+    case Rank.king:  return 3;
+    case Rank.queen: return 2;
+    case Rank.eight: return 1;
+    case Rank.seven: return 0;
+    default:         return -1; // non-28 card
+  }
+}
 
 List<PlayingCard> buildDeck28() => [
       for (final suit in Suit.values)
@@ -120,6 +132,9 @@ class Game28State {
   final String? currentTurn;
   final int trickNumber;        // 1–8
 
+  // Two-phase deal: second 4 cards per player stored here until trump is chosen
+  final List<PlayingCard> pendingDeck;
+
   // Scores
   final Map<String, int> teamTrickPoints; // "0"/"1" → pts won this round
   final Map<String, int> teamGamePoints;  // "0"/"1" → cumulative game pts
@@ -146,6 +161,7 @@ class Game28State {
     this.leadPlayer,
     this.currentTurn,
     this.trickNumber = 1,
+    this.pendingDeck = const [],
     this.teamTrickPoints = const {'t0': 0, 't1': 0},
     this.teamGamePoints = const {'t0': 0, 't1': 0},
     this.roundNumber = 0,
@@ -179,6 +195,7 @@ class Game28State {
     String? leadPlayer,
     String? currentTurn,
     int? trickNumber,
+    List<PlayingCard>? pendingDeck,
     Map<String, int>? teamTrickPoints,
     Map<String, int>? teamGamePoints,
     int? roundNumber,
@@ -205,6 +222,7 @@ class Game28State {
         leadPlayer: leadPlayer ?? this.leadPlayer,
         currentTurn: currentTurn ?? this.currentTurn,
         trickNumber: trickNumber ?? this.trickNumber,
+        pendingDeck: pendingDeck ?? this.pendingDeck,
         teamTrickPoints: teamTrickPoints ?? this.teamTrickPoints,
         teamGamePoints: teamGamePoints ?? this.teamGamePoints,
         roundNumber: roundNumber ?? this.roundNumber,
@@ -231,6 +249,7 @@ class Game28State {
         'leadPlayer': leadPlayer,
         'currentTurn': currentTurn,
         'trickNumber': trickNumber,
+        'pendingDeck': pendingDeck.map((c) => c.toMap()).toList(),
         'teamTrickPoints': teamTrickPoints,
         'teamGamePoints': teamGamePoints,
         'roundNumber': roundNumber,
@@ -276,6 +295,9 @@ class Game28State {
       leadPlayer: map['leadPlayer'] as String?,
       currentTurn: map['currentTurn'] as String?,
       trickNumber: (map['trickNumber'] as num?)?.toInt() ?? 1,
+      pendingDeck: (map['pendingDeck'] as List<dynamic>? ?? [])
+          .map((c) => PlayingCard.fromMap(c as Map<dynamic, dynamic>))
+          .toList(),
       teamTrickPoints: {
         't0': (trickPts['t0'] as num?)?.toInt() ?? 0,
         't1': (trickPts['t1'] as num?)?.toInt() ?? 0,
