@@ -134,6 +134,10 @@ class Game28State {
   // Two-phase deal: second 4 cards per player stored here until trump is chosen
   final List<PlayingCard> pendingDeck;
 
+  // Set to true when the current player calls askForTrump; forces them to
+  // play a trump card, then clears automatically after the card is played.
+  final bool trumpRevealRequired;
+
   // Scores
   final Map<String, int> teamTrickPoints; // "0"/"1" → pts won this round
   final Map<String, int> teamGamePoints;  // "0"/"1" → cumulative game pts
@@ -161,6 +165,7 @@ class Game28State {
     this.currentTurn,
     this.trickNumber = 1,
     this.pendingDeck = const [],
+    this.trumpRevealRequired = false,
     this.teamTrickPoints = const {'t0': 0, 't1': 0},
     this.teamGamePoints = const {'t0': 0, 't1': 0},
     this.roundNumber = 0,
@@ -195,6 +200,7 @@ class Game28State {
     String? currentTurn,
     int? trickNumber,
     List<PlayingCard>? pendingDeck,
+    bool? trumpRevealRequired,
     Map<String, int>? teamTrickPoints,
     Map<String, int>? teamGamePoints,
     int? roundNumber,
@@ -222,6 +228,7 @@ class Game28State {
         currentTurn: currentTurn ?? this.currentTurn,
         trickNumber: trickNumber ?? this.trickNumber,
         pendingDeck: pendingDeck ?? this.pendingDeck,
+        trumpRevealRequired: trumpRevealRequired ?? this.trumpRevealRequired,
         teamTrickPoints: teamTrickPoints ?? this.teamTrickPoints,
         teamGamePoints: teamGamePoints ?? this.teamGamePoints,
         roundNumber: roundNumber ?? this.roundNumber,
@@ -249,6 +256,7 @@ class Game28State {
         'currentTurn': currentTurn,
         'trickNumber': trickNumber,
         'pendingDeck': pendingDeck.map((c) => c.toMap()).toList(),
+        'trumpRevealRequired': trumpRevealRequired,
         'teamTrickPoints': teamTrickPoints,
         'teamGamePoints': teamGamePoints,
         'roundNumber': roundNumber,
@@ -297,6 +305,7 @@ class Game28State {
       pendingDeck: (map['pendingDeck'] as List<dynamic>? ?? [])
           .map((c) => PlayingCard.fromMap(c as Map<dynamic, dynamic>))
           .toList(),
+      trumpRevealRequired: map['trumpRevealRequired'] as bool? ?? false,
       teamTrickPoints: {
         't0': (trickPts['t0'] as num?)?.toInt() ?? 0,
         't1': (trickPts['t1'] as num?)?.toInt() ?? 0,

@@ -266,10 +266,12 @@ class Game28Service {
   // ── Ask for trump ─────────────────────────────────────────────────────────
 
   /// Called by a void player to reveal the trump suit to all.
+  /// Sets trumpRevealRequired so the engine enforces they must play trump next.
   Future<void> askForTrump(Game28State state) async {
     if (state.trumpSuit == null || state.trumpRevealed) return;
     if (state.phase != Game28Phase.playing) return;
-    await _ref(state.roomId).update({'trumpRevealed': true});
+    await _ref(state.roomId)
+        .update({'trumpRevealed': true, 'trumpRevealRequired': true});
     debugPrint('[28] trump revealed via Ask for Trump');
   }
 
@@ -288,6 +290,18 @@ class Game28Service {
 
     final isLeader = state.leadSuit == null && state.currentTrick.isEmpty;
     final leadSuit = isLeader ? card.suit.index : state.leadSuit!;
+
+    // ── Server-side card legality ─────────────────────────────────────────
+    if (!isLeader) {
+      final hasSuit = player.hand.any((c) => c.suit.index == leadSuit);
+      if (hasSuit && card.suit.index != leadSuit) return; // must follow lead
+      // After asking for trump, must play trump if held
+      if (!hasSuit && state.trumpRevealRequired && state.trumpSuit != null) {
+        final hasTrump =
+            player.hand.any((c) => c.suit.index == state.trumpSuit);
+        if (hasTrump && card.suit.index != state.trumpSuit) return;
+      }
+    }
 
     // Update player hand
     final updatedPlayers =
@@ -317,6 +331,7 @@ class Game28Service {
       'leadPlayer': isLeader ? playerId : state.leadPlayer,
       'currentTurn': nextTurn,
       'trumpRevealed': state.trumpRevealed,
+      'trumpRevealRequired': false,
     });
 
     // All 4 played — resolve
@@ -337,8 +352,9 @@ class Game28Service {
     String? winnerId;
     int winStrength = -1;
 
-    final hasTrump =
-        trumpSuit != null && trick.values.any((c) => c.suit.index == trumpSuit);
+    final hasTrump = trumpSuit != null &&
+        state.trumpRevealed &&
+        trick.values.any((c) => c.suit.index == trumpSuit);
 
     if (hasTrump) {
       for (final entry in trick.entries) {
@@ -451,6 +467,7 @@ class Game28Service {
       'leadSuit': null,
       'leadPlayer': null,
       'currentTurn': leader,
+      'trumpRevealRequired': false,
     });
   }
 

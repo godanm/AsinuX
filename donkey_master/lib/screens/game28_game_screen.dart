@@ -98,9 +98,15 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
     final leadSuit = state.leadSuit;
     if (leadSuit == null) return true; // leader, play anything
     final hand = state.players[widget.playerId]!.hand;
+    // Must follow lead suit if held
     final hasLead = hand.any((c) => c.suit.index == leadSuit);
     if (hasLead) return card.suit.index == leadSuit;
-    return true; // no lead suit — play anything
+    // Void in lead suit — if player just asked for trump, must play trump
+    if (state.trumpRevealRequired && state.trumpSuit != null) {
+      final hasTrump = hand.any((c) => c.suit.index == state.trumpSuit);
+      if (hasTrump) return card.suit.index == state.trumpSuit;
+    }
+    return true; // no constraint
   }
 
   Future<void> _playCard(int idx) async {
