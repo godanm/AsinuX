@@ -77,8 +77,20 @@ class Game28BotService {
           : fresh.currentBid + 1;
 
       if (maxBid >= minBid) {
-        await Game28Service.instance.placeBid(fresh, biddingTurn, bidValue: minBid);
-        debugPrint('[28Bot] $biddingTurn bids $minBid (strength=$strength)');
+        // Occasionally pass even when able — simulates conservative play (~15%)
+        if (_rng.nextDouble() < 0.15 && fresh.currentBid >= 14) {
+          await Game28Service.instance.placeBid(fresh, biddingTurn);
+          debugPrint('[28Bot] $biddingTurn folds (bluff pass, strength=$strength)');
+          return;
+        }
+        // Vary bid amount: strong hands jump 1-3 above minimum; weak hands hug minimum
+        final room = (maxBid - minBid).clamp(0, 4);
+        final extra = room == 0 ? 0 : _rng.nextInt(room + 1);
+        // Bias: use full jump only ~40% of the time to avoid always jumping
+        final actualExtra = (_rng.nextDouble() < 0.4) ? extra : (extra > 0 ? 1 : 0);
+        final bidValue = (minBid + actualExtra).clamp(minBid, 28);
+        await Game28Service.instance.placeBid(fresh, biddingTurn, bidValue: bidValue);
+        debugPrint('[28Bot] $biddingTurn bids $bidValue (strength=$strength, range=$minBid-$maxBid)');
       } else {
         await Game28Service.instance.placeBid(fresh, biddingTurn);
         debugPrint('[28Bot] $biddingTurn passes (strength=$strength, maxBid=$maxBid, minBid=$minBid)');

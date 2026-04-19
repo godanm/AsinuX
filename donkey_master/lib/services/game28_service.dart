@@ -101,7 +101,8 @@ class Game28Service {
     }
     // Remaining 16 cards stored until trump is chosen (phase 2 deal)
     final pendingDeck = deck.sublist(16);
-    final firstBidder = order[0];
+    // Rotate first bidder each round so every player gets to open
+    final firstBidder = order[(state.roundNumber) % order.length];
     await _ref(state.roomId).update({
       'phase': Game28Phase.bidding.index,
       'roundNumber': state.roundNumber + 1,
