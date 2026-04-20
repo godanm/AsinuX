@@ -1122,6 +1122,7 @@ class _GameTableView extends StatelessWidget {
         _MyHand(
           hand: me.hand,
           trumpSuit: state.trumpSuit,
+          trumpRevealed: state.trumpRevealed,
           isBidWinner: state.bidWinnerId == playerId,
           canPlay: canPlay,
           onTap: onCardTap,
@@ -1787,6 +1788,7 @@ class _OpponentSeat extends StatelessWidget {
 class _MyHand extends StatelessWidget {
   final List<PlayingCard> hand;
   final int? trumpSuit;
+  final bool trumpRevealed;
   final bool isBidWinner;
   final bool Function(PlayingCard) canPlay;
   final void Function(int) onTap;
@@ -1794,6 +1796,7 @@ class _MyHand extends StatelessWidget {
   const _MyHand({
     required this.hand,
     required this.trumpSuit,
+    required this.trumpRevealed,
     required this.isBidWinner,
     required this.canPlay,
     required this.onTap,
@@ -1822,7 +1825,10 @@ class _MyHand extends StatelessWidget {
           final origIdx = sorted[i].key;
           final card = sorted[i].value;
           final playable = canPlay(card);
-          final isTrump = trumpSuit != null && card.suit.index == trumpSuit;
+          // Show trump badge only to the bid winner (before reveal) or everyone (after reveal)
+          final isTrump = trumpSuit != null &&
+              card.suit.index == trumpSuit &&
+              (isBidWinner || trumpRevealed);
           final pts = cardPoints28(card.rank);
 
           return Padding(
