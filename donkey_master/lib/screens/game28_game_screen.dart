@@ -1020,7 +1020,8 @@ class _GameTableView extends StatelessWidget {
                       state.leadSuit != null &&
                       !state.trumpRevealed &&
                       effectiveTrumpSuit != null &&
-                      !me.hand.any((c) => c.suit.index == state.leadSuit);
+                      !me.hand.any((c) => c.suit.index == state.leadSuit) &&
+                      me.hand.any((c) => c.suit.index == effectiveTrumpSuit);
                   return Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
