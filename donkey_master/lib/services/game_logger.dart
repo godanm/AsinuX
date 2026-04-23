@@ -11,15 +11,23 @@ class GameLogger {
   static const enabled = true;
 
   final _db = FirebaseDatabase.instance;
-  DatabaseReference _ref(String roomId) => _db.ref('gamelogs/$roomId/events');
-  DatabaseReference _rootRef(String roomId) => _db.ref('gamelogs/$roomId');
+
+  // Keyed by roomId → session node name for current game session
+  final Map<String, String> _sessionKeys = {};
+
+  // Session node: "{roomId}-started-{datetime}-game-{gameType}"
+  // Firebase keys can't contain '.' so milliseconds are stripped from the timestamp.
+  DatabaseReference _ref(String roomId) {
+    final key = _sessionKeys[roomId];
+    return _db.ref('gamelogs/${key ?? roomId}/events');
+  }
 
   Future<void> _initRoom(String roomId, String gameType) async {
     if (!enabled) return;
-    await _rootRef(roomId).update({
-      'gameType': gameType,
-      'startedAt': DateTime.now().toUtc().toIso8601String(),
-    });
+    final ts = '${DateTime.now().toUtc().toIso8601String().split('.').first}Z';
+    final sessionKey = '$roomId-started-$ts-game-$gameType';
+    _sessionKeys[roomId] = sessionKey;
+    // Node is created implicitly when first event is pushed; no extra write needed.
   }
 
   String _cardStr(PlayingCard c) => '${c.rank.name}_of_${c.suit.name}';
