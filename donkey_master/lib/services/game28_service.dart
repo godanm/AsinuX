@@ -11,6 +11,14 @@ class Game28Service {
 
   final _db = FirebaseDatabase.instance;
   DatabaseReference _ref(String roomId) => _db.ref('game28_rooms/$roomId');
+  DatabaseReference _secretsRef(String roomId) =>
+      _db.ref('game28_secrets/$roomId');
+
+  /// Bid winner subscribes to this to know their trump before it is revealed.
+  Stream<int?> trumpSecretStream(String roomId) =>
+      _secretsRef(roomId).child('trumpSuit').onValue.map(
+            (e) => (e.snapshot.value as num?)?.toInt(),
+          );
 
   // ── Room lifecycle ────────────────────────────────────────────────────────
 
@@ -103,6 +111,7 @@ class Game28Service {
     final pendingDeck = deck.sublist(16);
     // Rotate first bidder each round so every player gets to open
     final firstBidder = order[(state.roundNumber) % order.length];
+    await _secretsRef(state.roomId).remove();
     await _ref(state.roomId).update({
       'phase': Game28Phase.bidding.index,
       'roundNumber': state.roundNumber + 1,
@@ -229,9 +238,11 @@ class Game28Service {
     final bidIdx = order.indexOf(playerId);
     final firstLeader = order[(bidIdx + 1) % order.length];
 
-    // Step 1: commit trump suit and transition to playing phase
+    // Step 1: store trump in secrets path — hidden from opponents until revealed
+    await _secretsRef(state.roomId).update({'trumpSuit': suitIndex});
+
+    // Step 2: transition to playing phase (trumpSuit NOT written to main state yet)
     await _ref(state.roomId).update({
-      'trumpSuit': suitIndex,
       'phase': Game28Phase.playing.index,
       'currentTurn': firstLeader,
       'leadPlayer': null,
@@ -270,22 +281,32 @@ class Game28Service {
   /// The bid winner may reveal at any time.
   /// Sets trumpRevealRequired so the engine enforces trump must be played next.
   Future<void> askForTrump(Game28State state, String playerId) async {
-    if (state.trumpSuit == null || state.trumpRevealed) return;
+    if (state.trumpRevealed) return;
     if (state.phase != Game28Phase.playing) return;
+
+    // Read the secret trump suit (not in main state before reveal)
+    final snap =
+        await _secretsRef(state.roomId).child('trumpSuit').get();
+    final suitIndex = (snap.value as num?)?.toInt();
+    if (suitIndex == null) return;
 
     final isBidWinner = playerId == state.bidWinnerId;
     if (!isBidWinner) {
       // Non-bid-winner must be void in the lead suit
       final leadSuit = state.leadSuit;
-      if (leadSuit == null) return; // no trick in progress
+      if (leadSuit == null) return;
       final hand = state.players[playerId]?.hand ?? [];
       final hasSuit = hand.any((c) => c.suit.index == leadSuit);
-      if (hasSuit) return; // can follow suit — not allowed to ask
+      if (hasSuit) return;
     }
 
-    await _ref(state.roomId)
-        .update({'trumpRevealed': true, 'trumpRevealRequired': true});
-    debugPrint('[28] trump revealed by $playerId'
+    // Write trumpSuit to main state for the first time alongside the reveal flags
+    await _ref(state.roomId).update({
+      'trumpSuit': suitIndex,
+      'trumpRevealed': true,
+      'trumpRevealRequired': true,
+    });
+    debugPrint('[28] trump revealed by $playerId — ${Suit.values[suitIndex]}'
         '${isBidWinner ? ' (bid winner)' : ' (void in lead)'}');
   }
 

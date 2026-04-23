@@ -28,8 +28,10 @@ class Game28GameScreen extends StatefulWidget {
 
 class _Game28GameScreenState extends State<Game28GameScreen> {
   StreamSubscription<Game28State?>? _sub;
+  StreamSubscription<int?>? _secretSub;
   Game28State? _state;
-  int? _selectedTrump; // index during trump selection
+  int? _selectedTrump;  // index during trump selection
+  int? _preRevealTrump; // bid winner's trump before reveal (from secrets path)
   bool _trickEndHandled = false;
   Timer? _trickEndTimer;
   bool _showTrumpReveal = false;
@@ -48,6 +50,7 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
   void dispose() {
     AdMobService.instance.suppressAppOpenAd = false;
     _sub?.cancel();
+    _secretSub?.cancel();
     _trickEndTimer?.cancel();
     _trumpRevealTimer?.cancel();
     Game28BotService.instance.stop();
@@ -63,6 +66,18 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
     }
     final prev = _state;
     setState(() => _state = state);
+
+    // Subscribe to secrets path so bid winner sees their trump before reveal
+    if (state.bidWinnerId == widget.playerId && _secretSub == null) {
+      _secretSub = Game28Service.instance
+          .trumpSecretStream(widget.roomId)
+          .listen((suit) {
+        if (mounted) setState(() => _preRevealTrump = suit);
+      });
+    } else if (state.bidWinnerId != widget.playerId && _secretSub != null) {
+      _secretSub?.cancel();
+      _secretSub = null;
+    }
 
     // Trump reveal notification
     if (!(prev?.trumpRevealed ?? false) &&
@@ -180,6 +195,7 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
         return _GameTableView(
           state: state,
           playerId: widget.playerId,
+          effectiveTrumpSuit: state.trumpSuit ?? _preRevealTrump,
           canPlay: _canPlay,
           onCardTap: _playCard,
           onAskTrump: () =>
@@ -923,6 +939,7 @@ class _TrumpSelectionView extends StatelessWidget {
 class _GameTableView extends StatelessWidget {
   final Game28State state;
   final String playerId;
+  final int? effectiveTrumpSuit;
   final bool Function(PlayingCard) canPlay;
   final void Function(int) onCardTap;
   final VoidCallback onAskTrump;
@@ -930,6 +947,7 @@ class _GameTableView extends StatelessWidget {
   const _GameTableView({
     required this.state,
     required this.playerId,
+    required this.effectiveTrumpSuit,
     required this.canPlay,
     required this.onCardTap,
     required this.onAskTrump,
@@ -1001,7 +1019,7 @@ class _GameTableView extends StatelessWidget {
                       !isTrickEnd &&
                       state.leadSuit != null &&
                       !state.trumpRevealed &&
-                      state.trumpSuit != null &&
+                      effectiveTrumpSuit != null &&
                       !me.hand.any((c) => c.suit.index == state.leadSuit);
                   return Column(
                     mainAxisSize: MainAxisSize.min,
@@ -1010,7 +1028,7 @@ class _GameTableView extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           _TrumpPill(
-                            trumpSuit: state.trumpSuit,
+                            trumpSuit: effectiveTrumpSuit,
                             revealed: state.trumpRevealed,
                             isBidWinner: state.bidWinnerId == playerId,
                           ),
@@ -1121,7 +1139,7 @@ class _GameTableView extends StatelessWidget {
         // ── My hand ────────────────────────────────────────────────
         _MyHand(
           hand: me.hand,
-          trumpSuit: state.trumpSuit,
+          trumpSuit: effectiveTrumpSuit,
           trumpRevealed: state.trumpRevealed,
           isBidWinner: state.bidWinnerId == playerId,
           canPlay: canPlay,

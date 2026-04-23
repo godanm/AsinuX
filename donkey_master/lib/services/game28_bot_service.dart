@@ -14,6 +14,7 @@ class Game28BotService {
   final List<Timer> _timers = [];
   final _rng = Random();
   String? _roomId;
+  int? _localTrumpSuit; // bid-winner bot's trump before it is revealed in state
 
   void start(String roomId) {
     stop();
@@ -27,6 +28,7 @@ class Game28BotService {
     for (final t in _timers) t.cancel();
     _timers.clear();
     _roomId = null;
+    _localTrumpSuit = null;
   }
 
   void _onState(Game28State? state) {
@@ -127,6 +129,7 @@ class Game28BotService {
       if (fresh.trumpSuit != null) return;
 
       final bestSuit = _chooseTrump(winner.hand);
+      _localTrumpSuit = bestSuit;
       await Game28Service.instance.selectTrump(fresh, winnerId, bestSuit);
       debugPrint('[28Bot] $winnerId selects trump ${Suit.values[bestSuit]}');
     });
@@ -162,13 +165,17 @@ class Game28BotService {
       final hand = fresh.players[turn]!.hand;
       if (hand.isEmpty) return;
 
-      final cardIdx = _chooseCard(fresh, turn, hand);
+      // Bid-winner bot knows trump from _localTrumpSuit before state reveals it
+      final effectiveTrump = fresh.trumpSuit ??
+          (turn == fresh.bidWinnerId ? _localTrumpSuit : null);
+
+      final cardIdx = _chooseCard(fresh, turn, hand, effectiveTrump);
       final chosenCard = hand[cardIdx];
 
       // If playing a trump card while trump is unrevealed, explicitly reveal first
       if (!fresh.trumpRevealed &&
-          fresh.trumpSuit != null &&
-          chosenCard.suit.index == fresh.trumpSuit &&
+          effectiveTrump != null &&
+          chosenCard.suit.index == effectiveTrump &&
           fresh.leadSuit != null) {
         await Game28Service.instance.askForTrump(fresh, turn);
       }
@@ -177,9 +184,10 @@ class Game28BotService {
     });
   }
 
-  int _chooseCard(Game28State state, String playerId, List<PlayingCard> hand) {
+  int _chooseCard(Game28State state, String playerId, List<PlayingCard> hand,
+      int? effectiveTrump) {
     final leadSuit = state.leadSuit;
-    final trumpSuit = state.trumpSuit;
+    final trumpSuit = effectiveTrump;
     final isLeader = state.currentTrick.isEmpty;
 
     // ── Leader: pick best lead ───────────────────────────────────────────

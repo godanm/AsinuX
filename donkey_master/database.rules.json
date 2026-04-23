@@ -84,6 +84,15 @@
       }
     },
 
+    // ── 28 trump secrets (hidden until revealed) ──────────────────────────────
+    // Bid winner can read before reveal; everyone can read after trumpRevealed.
+    "game28_secrets": {
+      "$roomId": {
+        ".read":  "auth != null && (root.child('game28_rooms').child($roomId).child('trumpRevealed').val() == true || auth.uid == root.child('game28_rooms').child($roomId).child('bidWinnerId').val())",
+        ".write": "auth != null && root.child('game28_rooms').child($roomId).child('players').child(auth.uid).exists()"
+      }
+    },
+
     // ── 28 room code lookup ───────────────────────────────────────────────────
     "game28_codes": {
       ".read":  "auth != null",
