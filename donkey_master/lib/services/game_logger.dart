@@ -12,6 +12,15 @@ class GameLogger {
 
   final _db = FirebaseDatabase.instance;
   DatabaseReference _ref(String roomId) => _db.ref('gamelogs/$roomId/events');
+  DatabaseReference _rootRef(String roomId) => _db.ref('gamelogs/$roomId');
+
+  Future<void> _initRoom(String roomId, String gameType) async {
+    if (!enabled) return;
+    await _rootRef(roomId).update({
+      'gameType': gameType,
+      'startedAt': DateTime.now().toUtc().toIso8601String(),
+    });
+  }
 
   String _cardStr(PlayingCard c) => '${c.rank.name}_of_${c.suit.name}';
   String _handStr(List<PlayingCard> hand) => hand.map(_cardStr).join(', ');
@@ -100,14 +109,16 @@ class GameLogger {
     required List<PlayingCard> leaderHand,
     required Map<String, int> allHandSizes,
     required int trickNumber,
-  }) =>
-      _log(roomId, 'TRICK_START', 'kazhutha', {
-        'trick': trickNumber,
-        'leader': '$leaderName ($leaderId)',
-        'leaderHand': _handStr(leaderHand),
-        'leaderHandSize': leaderHand.length,
-        'allHandSizes': allHandSizes,
-      });
+  }) async {
+    if (trickNumber == 1) await _initRoom(roomId, 'kazhutha');
+    return _log(roomId, 'TRICK_START', 'kazhutha', {
+      'trick': trickNumber,
+      'leader': '$leaderName ($leaderId)',
+      'leaderHand': _handStr(leaderHand),
+      'leaderHandSize': leaderHand.length,
+      'allHandSizes': allHandSizes,
+    });
+  }
 
   Future<void> roundEnd({
     required String roomId,
@@ -129,12 +140,14 @@ class GameLogger {
     required int roundNumber,
     required String firstBidder,
     required Map<String, List<PlayingCard>> hands,
-  }) =>
-      _log(roomId, 'ROUND_START', '28', {
-        'round': roundNumber,
-        'firstBidder': firstBidder,
-        'hands': hands.map((k, v) => MapEntry(k, _handStr(v))),
-      });
+  }) async {
+    await _initRoom(roomId, '28');
+    return _log(roomId, 'ROUND_START', '28', {
+      'round': roundNumber,
+      'firstBidder': firstBidder,
+      'hands': hands.map((k, v) => MapEntry(k, _handStr(v))),
+    });
+  }
 
   Future<void> game28BidPlaced({
     required String roomId,
