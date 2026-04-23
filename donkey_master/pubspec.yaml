@@ -2,7 +2,7 @@ name: asinux
 description: "AsinuX — the fast-paced multiplayer card game. Play online, dodge the Donkey, and climb the leaderboard."
 publish_to: 'none'
 
-version: 1.0.0+11
+version: 1.0.0+12
 
 environment:
   sdk: ^3.10.7

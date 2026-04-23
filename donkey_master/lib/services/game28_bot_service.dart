@@ -195,6 +195,21 @@ class Game28BotService {
       return _pickLeadCard(hand, trumpSuit);
     }
 
+    // ── trumpRevealRequired: must play trump if void and trump held ───────
+    if (state.trumpRevealRequired && trumpSuit != null) {
+      final hasSuit = hand.any((c) => c.suit.index == leadSuit);
+      if (!hasSuit) {
+        final trumpCards =
+            hand.where((c) => c.suit.index == trumpSuit).toList();
+        if (trumpCards.isNotEmpty) {
+          return _indexIn(
+              hand,
+              trumpCards.reduce((a, b) =>
+                  rankStrength28(a.rank) > rankStrength28(b.rank) ? a : b));
+        }
+      }
+    }
+
     // ── Follower ─────────────────────────────────────────────────────────
     final mustFollowCards =
         hand.where((c) => c.suit.index == leadSuit).toList();
