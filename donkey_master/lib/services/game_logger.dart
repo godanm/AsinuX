@@ -2,30 +2,37 @@ import 'package:firebase_database/firebase_database.dart';
 import '../models/card_model.dart';
 
 /// Lightweight game event logger — writes to `gamelogs/{roomId}/events`.
-/// Enable/disable with [enabled]. Costs negligible reads; writes only on events.
+/// Every entry carries: event, gameType, ts (epoch ms), datetime (ISO-8601 UTC).
 class GameLogger {
   static final GameLogger _instance = GameLogger._();
   static GameLogger get instance => _instance;
   GameLogger._();
 
-  static const enabled = true; // set false to disable all logging
+  static const enabled = true;
 
   final _db = FirebaseDatabase.instance;
   DatabaseReference _ref(String roomId) => _db.ref('gamelogs/$roomId/events');
 
   String _cardStr(PlayingCard c) => '${c.rank.name}_of_${c.suit.name}';
+  String _handStr(List<PlayingCard> hand) => hand.map(_cardStr).join(', ');
 
-  String _handStr(List<PlayingCard> hand) =>
-      hand.map(_cardStr).join(', ');
-
-  Future<void> _log(String roomId, String event, Map<String, dynamic> data) async {
+  Future<void> _log(
+    String roomId,
+    String event,
+    String gameType,
+    Map<String, dynamic> data,
+  ) async {
     if (!enabled) return;
     await _ref(roomId).push().set({
       'event': event,
+      'gameType': gameType,
       'ts': ServerValue.timestamp,
+      'datetime': DateTime.now().toUtc().toIso8601String(),
       ...data,
     });
   }
+
+  // ── Kazhutha ──────────────────────────────────────────────────────────────
 
   Future<void> cardPlayed({
     required String roomId,
@@ -38,18 +45,19 @@ class GameLogger {
     required bool isCut,
     required int? leadSuit,
     required int trickNumber,
-  }) => _log(roomId, 'CARD_PLAYED', {
-    'trick': trickNumber,
-    'player': '$playerName ($playerId)',
-    'card': _cardStr(card),
-    'isLeader': isLeader,
-    'isCut': isCut,
-    'leadSuit': leadSuit != null ? Suit.values[leadSuit].name : null,
-    'handBefore': _handStr(handBefore),
-    'handAfter': _handStr(handAfter),
-    'handSizeBefore': handBefore.length,
-    'handSizeAfter': handAfter.length,
-  });
+  }) =>
+      _log(roomId, 'CARD_PLAYED', 'kazhutha', {
+        'trick': trickNumber,
+        'player': '$playerName ($playerId)',
+        'card': _cardStr(card),
+        'isLeader': isLeader,
+        'isCut': isCut,
+        'leadSuit': leadSuit != null ? Suit.values[leadSuit].name : null,
+        'handBefore': _handStr(handBefore),
+        'handAfter': _handStr(handAfter),
+        'handSizeBefore': handBefore.length,
+        'handSizeAfter': handAfter.length,
+      });
 
   Future<void> cutDetected({
     required String roomId,
@@ -61,27 +69,29 @@ class GameLogger {
     required List<PlayingCard> pickupHandBefore,
     required List<PlayingCard> pickupHandAfter,
     required int trickNumber,
-  }) => _log(roomId, 'CUT_DETECTED', {
-    'trick': trickNumber,
-    'cutter': '$cutterName ($cutterId)',
-    'pickup': '$pickupName ($pickupId)',
-    'tableCards': tableCards.map(_cardStr).join(', '),
-    'tableCardCount': tableCards.length,
-    'pickupHandBefore': _handStr(pickupHandBefore),
-    'pickupHandAfter': _handStr(pickupHandAfter),
-    'pickupHandSizeBefore': pickupHandBefore.length,
-    'pickupHandSizeAfter': pickupHandAfter.length,
-  });
+  }) =>
+      _log(roomId, 'CUT_DETECTED', 'kazhutha', {
+        'trick': trickNumber,
+        'cutter': '$cutterName ($cutterId)',
+        'pickup': '$pickupName ($pickupId)',
+        'tableCards': tableCards.map(_cardStr).join(', '),
+        'tableCardCount': tableCards.length,
+        'pickupHandBefore': _handStr(pickupHandBefore),
+        'pickupHandAfter': _handStr(pickupHandAfter),
+        'pickupHandSizeBefore': pickupHandBefore.length,
+        'pickupHandSizeAfter': pickupHandAfter.length,
+      });
 
   Future<void> trickWon({
     required String roomId,
     required String winnerId,
     required String winnerName,
     required int trickNumber,
-  }) => _log(roomId, 'TRICK_WON', {
-    'trick': trickNumber,
-    'winner': '$winnerName ($winnerId)',
-  });
+  }) =>
+      _log(roomId, 'TRICK_WON', 'kazhutha', {
+        'trick': trickNumber,
+        'winner': '$winnerName ($winnerId)',
+      });
 
   Future<void> trickStart({
     required String roomId,
@@ -90,13 +100,14 @@ class GameLogger {
     required List<PlayingCard> leaderHand,
     required Map<String, int> allHandSizes,
     required int trickNumber,
-  }) => _log(roomId, 'TRICK_START', {
-    'trick': trickNumber,
-    'leader': '$leaderName ($leaderId)',
-    'leaderHand': _handStr(leaderHand),
-    'leaderHandSize': leaderHand.length,
-    'allHandSizes': allHandSizes,
-  });
+  }) =>
+      _log(roomId, 'TRICK_START', 'kazhutha', {
+        'trick': trickNumber,
+        'leader': '$leaderName ($leaderId)',
+        'leaderHand': _handStr(leaderHand),
+        'leaderHandSize': leaderHand.length,
+        'allHandSizes': allHandSizes,
+      });
 
   Future<void> roundEnd({
     required String roomId,
@@ -104,9 +115,113 @@ class GameLogger {
     required String donkeyName,
     required List<String> finishOrder,
     required int trickNumber,
-  }) => _log(roomId, 'ROUND_END', {
-    'trick': trickNumber,
-    'donkey': '$donkeyName ($donkeyId)',
-    'finishOrder': finishOrder,
-  });
+  }) =>
+      _log(roomId, 'ROUND_END', 'kazhutha', {
+        'trick': trickNumber,
+        'donkey': '$donkeyName ($donkeyId)',
+        'finishOrder': finishOrder,
+      });
+
+  // ── 28 ────────────────────────────────────────────────────────────────────
+
+  Future<void> game28RoundStart({
+    required String roomId,
+    required int roundNumber,
+    required String firstBidder,
+    required Map<String, List<PlayingCard>> hands,
+  }) =>
+      _log(roomId, 'ROUND_START', '28', {
+        'round': roundNumber,
+        'firstBidder': firstBidder,
+        'hands': hands.map((k, v) => MapEntry(k, _handStr(v))),
+      });
+
+  Future<void> game28BidPlaced({
+    required String roomId,
+    required String playerId,
+    required String playerName,
+    required int? bidValue, // null = pass
+    required int currentBid,
+  }) =>
+      _log(roomId, 'BID', '28', {
+        'player': '$playerName ($playerId)',
+        'bid': bidValue ?? 'PASS',
+        'prevBid': currentBid,
+      });
+
+  Future<void> game28TrumpSelected({
+    required String roomId,
+    required String bidderId,
+    required String bidderName,
+    required int suitIndex,
+    required int bidAmount,
+  }) =>
+      _log(roomId, 'TRUMP_SELECTED', '28', {
+        'bidder': '$bidderName ($bidderId)',
+        'trump': Suit.values[suitIndex].name,
+        'bid': bidAmount,
+      });
+
+  Future<void> game28TrumpRevealed({
+    required String roomId,
+    required String revealerId,
+    required String revealer,
+    required String trump,
+    required bool isBidWinner,
+  }) =>
+      _log(roomId, 'TRUMP_REVEALED', '28', {
+        'revealer': '$revealer ($revealerId)',
+        'trump': trump,
+        'isBidWinner': isBidWinner,
+      });
+
+  Future<void> game28CardPlayed({
+    required String roomId,
+    required String playerId,
+    required String playerName,
+    required PlayingCard card,
+    required int trickNumber,
+    required bool isLeader,
+    required bool trumpRevealed,
+  }) =>
+      _log(roomId, 'CARD_PLAYED', '28', {
+        'trick': trickNumber,
+        'player': '$playerName ($playerId)',
+        'card': _cardStr(card),
+        'isLeader': isLeader,
+        'trumpRevealed': trumpRevealed,
+      });
+
+  Future<void> game28TrickWon({
+    required String roomId,
+    required String winnerId,
+    required String winnerName,
+    required int trickNumber,
+    required int trickPoints,
+    required Map<String, int> teamTrickPoints,
+  }) =>
+      _log(roomId, 'TRICK_WON', '28', {
+        'trick': trickNumber,
+        'winner': '$winnerName ($winnerId)',
+        'trickPoints': trickPoints,
+        'teamTrickPoints': teamTrickPoints,
+      });
+
+  Future<void> game28RoundEnd({
+    required String roomId,
+    required int roundNumber,
+    required int bid,
+    required bool bidMet,
+    required bool isThani,
+    required int gamePointsAwarded,
+    required Map<String, int> teamGamePoints,
+  }) =>
+      _log(roomId, 'ROUND_END', '28', {
+        'round': roundNumber,
+        'bid': bid,
+        'bidMet': bidMet,
+        'isThani': isThani,
+        'gamePointsAwarded': gamePointsAwarded,
+        'teamGamePoints': teamGamePoints,
+      });
 }

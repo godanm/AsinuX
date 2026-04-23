@@ -16,6 +16,8 @@ class Game28BotService {
   String? _roomId;
   int? _localTrumpSuit; // bid-winner bot's trump before it is revealed in state
 
+  bool get isRunning => _roomId != null;
+
   void start(String roomId) {
     stop();
     _roomId = roomId;

@@ -3,6 +3,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 import '../models/card_model.dart';
 import '../models/game28_state.dart';
+import 'game_logger.dart';
 
 class Game28Service {
   static final Game28Service _instance = Game28Service._();
@@ -132,6 +133,12 @@ class Game28Service {
       'teamTrickPoints': {'t0': 0, 't1': 0},
       'players': updatedPlayers.map((k, v) => MapEntry(k, v.toMap())),
     });
+    GameLogger.instance.game28RoundStart(
+      roomId: state.roomId,
+      roundNumber: state.roundNumber + 1,
+      firstBidder: firstBidder,
+      hands: updatedPlayers.map((k, v) => MapEntry(k, v.hand)),
+    );
     debugPrint('[28] startGame — round ${state.roundNumber + 1}, dealt 4 bid cards each');
   }
 
@@ -161,6 +168,13 @@ class Game28Service {
       if (bidValue <= state.currentBid || bidValue < 14 || bidValue > 28) return;
       // Partner 20 rule: must bid ≥ 20 to outbid your own partner
       final holder = state.currentBidder;
+      GameLogger.instance.game28BidPlaced(
+        roomId: state.roomId,
+        playerId: playerId,
+        playerName: state.players[playerId]?.name ?? playerId,
+        bidValue: bidValue,
+        currentBid: state.currentBid,
+      );
       if (holder != null && holder != playerId) {
         final holderTeam = state.players[holder]?.teamIndex;
         final myTeam = state.players[playerId]?.teamIndex;
@@ -199,6 +213,13 @@ class Game28Service {
       });
     } else {
       // Passed — check if only one active bidder remains
+      GameLogger.instance.game28BidPlaced(
+        roomId: state.roomId,
+        playerId: playerId,
+        playerName: state.players[playerId]?.name ?? playerId,
+        bidValue: null,
+        currentBid: state.currentBid,
+      );
       final active =
           order.where((id) => !passed.contains(id)).toList();
 
@@ -252,6 +273,13 @@ class Game28Service {
 
     // Step 2: deal remaining 4 cards to each player now that trump is set
     await _dealRemainingCards(state);
+    GameLogger.instance.game28TrumpSelected(
+      roomId: state.roomId,
+      bidderId: playerId,
+      bidderName: state.players[playerId]?.name ?? playerId,
+      suitIndex: suitIndex,
+      bidAmount: state.currentBid,
+    );
     debugPrint('[28] trump = ${Suit.values[suitIndex]}, dealt second 4 cards — leads $firstLeader');
   }
 
@@ -306,6 +334,13 @@ class Game28Service {
       'trumpRevealed': true,
       'trumpRevealRequired': true,
     });
+    GameLogger.instance.game28TrumpRevealed(
+      roomId: state.roomId,
+      revealerId: playerId,
+      revealer: state.players[playerId]?.name ?? playerId,
+      trump: Suit.values[suitIndex].name,
+      isBidWinner: isBidWinner,
+    );
     debugPrint('[28] trump revealed by $playerId — ${Suit.values[suitIndex]}'
         '${isBidWinner ? ' (bid winner)' : ' (void in lead)'}');
   }
@@ -343,6 +378,16 @@ class Game28Service {
         if (hasTrump && card.suit.index != state.trumpSuit) return;
       }
     }
+
+    GameLogger.instance.game28CardPlayed(
+      roomId: state.roomId,
+      playerId: playerId,
+      playerName: player.name,
+      card: card,
+      trickNumber: state.trickNumber,
+      isLeader: isLeader,
+      trumpRevealed: state.trumpRevealed,
+    );
 
     // Update player hand
     final updatedPlayers =
@@ -430,6 +475,14 @@ class Game28Service {
     newTrickPoints['t$winnerTeam'] =
         (newTrickPoints['t$winnerTeam'] ?? 0) + trickPts;
 
+    GameLogger.instance.game28TrickWon(
+      roomId: state.roomId,
+      winnerId: winnerId,
+      winnerName: updatedPlayers[winnerId]!.name,
+      trickNumber: state.trickNumber,
+      trickPoints: trickPts,
+      teamTrickPoints: newTrickPoints,
+    );
     debugPrint(
         '[28] trick ${state.trickNumber} won by $winnerId (team $winnerTeam, +$trickPts pts)');
 
@@ -480,6 +533,15 @@ class Game28Service {
           (newGamePoints['t$otherTeam'] ?? 0) + gamePointsToAward;
     }
 
+    GameLogger.instance.game28RoundEnd(
+      roomId: state.roomId,
+      roundNumber: state.roundNumber,
+      bid: state.currentBid,
+      bidMet: bidMet,
+      isThani: isThani,
+      gamePointsAwarded: gamePointsToAward,
+      teamGamePoints: newGamePoints,
+    );
     debugPrint('[28] round ${state.roundNumber} end — bid=$bidMet '
         'bidTeam=$bidTeam pts=$bidTeamPts/${state.currentBid} '
         '+${gamePointsToAward}gp${isThani ? ' THANI' : ''} '

@@ -67,6 +67,12 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
     final prev = _state;
     setState(() => _state = state);
 
+    // Safety net: restart bot service if host and it stopped (e.g. screen recreated)
+    if (state.hostId == widget.playerId &&
+        !Game28BotService.instance.isRunning) {
+      Game28BotService.instance.start(widget.roomId);
+    }
+
     // Subscribe to secrets path so bid winner sees their trump before reveal
     if (state.bidWinnerId == widget.playerId && _secretSub == null) {
       _secretSub = Game28Service.instance
@@ -1087,7 +1093,7 @@ class _GameTableView extends StatelessWidget {
                           ],
                         ],
                       ),
-                      // Ask for Trump — only when void in lead suit
+                      // Ask for Trump — only when void in lead suit + hold trump
                       if (isVoidInLead) ...[
                         const SizedBox(height: 6),
                         GestureDetector(
@@ -1121,6 +1127,51 @@ class _GameTableView extends StatelessWidget {
                                         fontSize: 10,
                                         fontWeight: FontWeight.w900,
                                         color: Colors.purpleAccent,
+                                        letterSpacing: 1.5)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                      // Reveal Trump — bid winner may reveal voluntarily before leading
+                      if (myTurn &&
+                          !isTrickEnd &&
+                          !state.trumpRevealed &&
+                          state.currentTrick.isEmpty &&
+                          state.bidWinnerId == playerId &&
+                          effectiveTrumpSuit != null) ...[
+                        const SizedBox(height: 6),
+                        GestureDetector(
+                          onTap: onAskTrump,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF003d00)
+                                  .withValues(alpha: 0.7),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                  color: Colors.greenAccent
+                                      .withValues(alpha: 0.5)),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.greenAccent
+                                      .withValues(alpha: 0.2),
+                                  blurRadius: 10,
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text('👑',
+                                    style: TextStyle(fontSize: 13)),
+                                const SizedBox(width: 6),
+                                const Text('REVEAL TRUMP',
+                                    style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.greenAccent,
                                         letterSpacing: 1.5)),
                               ],
                             ),
