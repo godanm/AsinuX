@@ -171,13 +171,16 @@ class Game28BotService {
       final effectiveTrump = fresh.trumpSuit ??
           (turn == fresh.bidWinnerId ? _localTrumpSuit : null);
 
-      // Non-bid-winner void in lead suit → ask for trump, then re-fetch and play
+      // Non-bid-winner void in lead suit → reveal trump (only when we know the suit),
+      // then re-fetch state and play. _localTrumpSuit is set whenever a bot won the bid.
       if (!fresh.trumpRevealed &&
           fresh.leadSuit != null &&
-          turn != fresh.bidWinnerId) {
+          turn != fresh.bidWinnerId &&
+          _localTrumpSuit != null) {
         final isVoidInLead = !hand.any((c) => c.suit.index == fresh.leadSuit);
         if (isVoidInLead) {
-          await Game28Service.instance.askForTrump(fresh, turn);
+          await Game28Service.instance.askForTrump(fresh, turn,
+              knownSuitIndex: _localTrumpSuit);
           final afterReveal =
               await Game28Service.instance.getFreshState(state.roomId);
           if (afterReveal == null || afterReveal.currentTurn != turn) return;
@@ -193,12 +196,15 @@ class Game28BotService {
       final cardIdx = _chooseCard(fresh, turn, hand, effectiveTrump);
       final chosenCard = hand[cardIdx];
 
-      // Bid-winner: if playing trump while unrevealed, reveal first
+      // Bid-winner bot: if playing trump while unrevealed, pass the known suit
+      // directly so askForTrump never needs to read from game28_secrets
+      // (security rules deny that read when auth.uid ≠ bidWinnerId).
       if (!fresh.trumpRevealed &&
           effectiveTrump != null &&
           chosenCard.suit.index == effectiveTrump &&
           fresh.leadSuit != null) {
-        await Game28Service.instance.askForTrump(fresh, turn);
+        await Game28Service.instance.askForTrump(fresh, turn,
+            knownSuitIndex: effectiveTrump);
       }
 
       await Game28Service.instance.playCard(fresh, turn, cardIdx);

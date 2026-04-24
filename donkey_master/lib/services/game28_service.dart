@@ -308,14 +308,21 @@ class Game28Service {
   /// Non-bid-winners must be void in the lead suit to call this.
   /// The bid winner may reveal at any time.
   /// Sets trumpRevealRequired so the engine enforces trump must be played next.
-  Future<void> askForTrump(Game28State state, String playerId) async {
+  /// [knownSuitIndex] lets callers bypass the Firebase secrets read (e.g. bots
+  /// that already hold the suit in memory). Without it the read goes through
+  /// security rules, which deny access when auth.uid ≠ bidWinnerId.
+  Future<void> askForTrump(Game28State state, String playerId,
+      {int? knownSuitIndex}) async {
     if (state.trumpRevealed) return;
     if (state.phase != Game28Phase.playing) return;
 
-    // Read the secret trump suit (not in main state before reveal)
-    final snap =
-        await _secretsRef(state.roomId).child('trumpSuit').get();
-    final suitIndex = (snap.value as num?)?.toInt();
+    // Use caller-supplied suit when available; fall back to secrets read.
+    int? suitIndex = knownSuitIndex;
+    if (suitIndex == null) {
+      final snap =
+          await _secretsRef(state.roomId).child('trumpSuit').get();
+      suitIndex = (snap.value as num?)?.toInt();
+    }
     if (suitIndex == null) return;
 
     final isBidWinner = playerId == state.bidWinnerId;
