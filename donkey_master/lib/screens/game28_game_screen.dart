@@ -35,7 +35,6 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
   bool _trickEndHandled = false;
   Timer? _trickEndTimer;
   bool _showTrumpReveal = false;
-  Timer? _trumpRevealTimer;
 
   @override
   void initState() {
@@ -52,7 +51,6 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
     _sub?.cancel();
     _secretSub?.cancel();
     _trickEndTimer?.cancel();
-    _trumpRevealTimer?.cancel();
     Game28BotService.instance.stop();
     super.dispose();
   }
@@ -89,11 +87,7 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
     if (!(prev?.trumpRevealed ?? false) &&
         state.trumpRevealed &&
         state.trumpSuit != null) {
-      _trumpRevealTimer?.cancel();
       setState(() => _showTrumpReveal = true);
-      _trumpRevealTimer = Timer(const Duration(seconds: 3), () {
-        if (mounted) setState(() => _showTrumpReveal = false);
-      });
     }
 
     // Auto-advance trickEnd for human leader
@@ -166,7 +160,12 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
             children: [
               _buildPhase(state),
               if (_showTrumpReveal && state.trumpSuit != null)
-                _TrumpRevealBanner(suit: Suit.values[state.trumpSuit!]),
+                _TrumpRevealBanner(
+                  suit: Suit.values[state.trumpSuit!],
+                  onDismissed: () {
+                    if (mounted) setState(() => _showTrumpReveal = false);
+                  },
+                ),
             ],
           ),
         ),
@@ -230,68 +229,138 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
 
 // ── Trump reveal banner ───────────────────────────────────────────────────────
 
-class _TrumpRevealBanner extends StatelessWidget {
+class _TrumpRevealBanner extends StatefulWidget {
   final Suit suit;
-  const _TrumpRevealBanner({required this.suit});
+  final VoidCallback onDismissed;
+  const _TrumpRevealBanner({required this.suit, required this.onDismissed});
+
+  @override
+  State<_TrumpRevealBanner> createState() => _TrumpRevealBannerState();
+}
+
+class _TrumpRevealBannerState extends State<_TrumpRevealBanner>
+    with TickerProviderStateMixin {
+  late final AnimationController _ctrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 450),
+  );
+  late final AnimationController _pulseCtrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 650),
+  );
+
+  late final Animation<Offset> _slide = Tween<Offset>(
+    begin: const Offset(0, -1.6),
+    end: Offset.zero,
+  ).animate(CurvedAnimation(
+    parent: _ctrl,
+    curve: Curves.easeOutBack,
+    reverseCurve: Curves.easeIn,
+  ));
+
+  late final Animation<double> _fade = CurvedAnimation(
+    parent: _ctrl,
+    curve: Curves.easeOut,
+    reverseCurve: Curves.easeIn,
+  );
+
+  late final Animation<double> _pulse = Tween<double>(begin: 1.0, end: 1.3)
+      .animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl.forward();
+    _pulseCtrl.repeat(reverse: true);
+    Future.delayed(const Duration(milliseconds: 2600), () {
+      if (!mounted) return;
+      _pulseCtrl.stop();
+      _ctrl.reverse().then((_) {
+        if (mounted) widget.onDismissed();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    _pulseCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final isRed = suit == Suit.hearts || suit == Suit.diamonds;
+    final isRed =
+        widget.suit == Suit.hearts || widget.suit == Suit.diamonds;
     final suitColor = isRed ? const Color(0xFFEF5350) : Colors.white;
+    final symbol = _suitSymbol(widget.suit);
+    final suitName =
+        '${widget.suit.name[0].toUpperCase()}${widget.suit.name.substring(1)}';
+
     return Positioned(
       top: 0,
       left: 0,
       right: 0,
       child: IgnorePointer(
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1a0a2e),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: suitColor.withValues(alpha: 0.6), width: 1.5),
-            boxShadow: [
-              BoxShadow(
-                color: suitColor.withValues(alpha: 0.35),
-                blurRadius: 24,
-                spreadRadius: 2,
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                _suitSymbol(suit),
-                style: TextStyle(fontSize: 32, color: suitColor),
-              ),
-              const SizedBox(width: 14),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'TRUMP REVEALED',
-                    style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 2,
-                        color: suitColor),
-                  ),
-                  Text(
-                    '${suit.name[0].toUpperCase()}${suit.name.substring(1)} is now the trump suit',
-                    style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.white.withValues(alpha: 0.55)),
+        child: SlideTransition(
+          position: _slide,
+          child: FadeTransition(
+            opacity: _fade,
+            child: Container(
+              margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1a0a2e),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                    color: suitColor.withValues(alpha: 0.65), width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: suitColor.withValues(alpha: 0.45),
+                    blurRadius: 32,
+                    spreadRadius: 4,
                   ),
                 ],
               ),
-              const SizedBox(width: 14),
-              Text(
-                _suitSymbol(suit),
-                style: TextStyle(fontSize: 32, color: suitColor),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ScaleTransition(
+                    scale: _pulse,
+                    child: Text(symbol,
+                        style: TextStyle(fontSize: 36, color: suitColor)),
+                  ),
+                  const SizedBox(width: 14),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'TRUMP REVEALED',
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 2,
+                            color: suitColor),
+                      ),
+                      Text(
+                        '$suitName is now the trump suit',
+                        style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.white.withValues(alpha: 0.55)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 14),
+                  ScaleTransition(
+                    scale: _pulse,
+                    child: Text(symbol,
+                        style: TextStyle(fontSize: 36, color: suitColor)),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
