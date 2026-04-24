@@ -40,6 +40,10 @@ class GameLogger {
     Map<String, dynamic> data,
   ) async {
     if (!enabled) return;
+    // Lazily initialize session key if missing (e.g. after app reload mid-game)
+    if (!_sessionKeys.containsKey(roomId)) {
+      await _initRoom(roomId, gameType);
+    }
     await _ref(roomId).push().set({
       'event': event,
       'gameType': gameType,

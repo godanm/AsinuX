@@ -356,6 +356,7 @@ class Game28Service {
 
   Future<void> playCard(
       Game28State state, String playerId, int cardIndex) async {
+    if (state.phase != Game28Phase.playing) return;
     if (state.currentTurn != playerId) return;
     final player = state.players[playerId]!;
     if (cardIndex >= player.hand.length) return;
@@ -423,8 +424,8 @@ class Game28Service {
       'leadSuit': leadSuit,
       'leadPlayer': isLeader ? playerId : state.leadPlayer,
       'currentTurn': nextTurn,
-      'trumpRevealed': state.trumpRevealed,
       'trumpRevealRequired': false,
+      // trumpRevealed intentionally not written here — owned by askForTrump/startGame
     });
 
     // All 4 played — resolve
@@ -504,7 +505,7 @@ class Game28Service {
         'currentTurn': winnerId,
         'leadPlayer': null,
         'currentTrick': trick.map((k, v) => MapEntry(k, v.toMap())),
-        'trumpRevealed': state.trumpRevealed,
+        // trumpRevealed intentionally not written here — owned by askForTrump/startGame
       });
     }
   }

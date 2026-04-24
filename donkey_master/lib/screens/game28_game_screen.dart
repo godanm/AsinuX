@@ -77,6 +77,8 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
           .trumpSecretStream(widget.roomId)
           .listen((suit) {
         if (mounted) setState(() => _preRevealTrump = suit);
+        // Share trump with bot service so bots can ask for trump when void
+        if (suit != null) Game28BotService.instance.setLocalTrump(suit);
       });
     } else if (state.bidWinnerId != widget.playerId && _secretSub != null) {
       _secretSub?.cancel();
@@ -109,6 +111,7 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
 
   bool _canPlay(PlayingCard card) {
     final state = _state!;
+    if (state.phase != Game28Phase.playing) return false;
     if (state.currentTurn != widget.playerId) return false;
     final leadSuit = state.leadSuit;
     if (leadSuit == null) return true; // leader, play anything
@@ -127,6 +130,31 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
   Future<void> _playCard(int idx) async {
     final state = _state;
     if (state == null) return;
+
+    // Bid winner playing trump while unrevealed → auto-reveal trump first.
+    // Covers two cases: leading with trump, or following while void in lead suit.
+    final leadSuit = state.leadSuit;
+    final hand = state.players[widget.playerId]?.hand ?? [];
+    final card = idx < hand.length ? hand[idx] : null;
+    final knownTrump = _preRevealTrump;
+    final isLeading = leadSuit == null;
+    final isVoidInLead = !isLeading &&
+        !hand.any((c) => c.suit.index == leadSuit);
+    if (card != null &&
+        knownTrump != null &&
+        !state.trumpRevealed &&
+        state.bidWinnerId == widget.playerId &&
+        card.suit.index == knownTrump &&
+        (isLeading || isVoidInLead)) {
+      await Game28Service.instance.askForTrump(state, widget.playerId,
+          knownSuitIndex: knownTrump);
+      final fresh =
+          await Game28Service.instance.getFreshState(state.roomId);
+      if (fresh == null) return;
+      await Game28Service.instance.playCard(fresh, widget.playerId, idx);
+      return;
+    }
+
     await Game28Service.instance.playCard(state, widget.playerId, idx);
   }
 
@@ -203,8 +231,10 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
           effectiveTrumpSuit: state.trumpSuit ?? _preRevealTrump,
           canPlay: _canPlay,
           onCardTap: _playCard,
-          onAskTrump: () =>
-              Game28Service.instance.askForTrump(state, widget.playerId),
+          onAskTrump: () => Game28Service.instance.askForTrump(
+              state, widget.playerId,
+              knownSuitIndex:
+                  _preRevealTrump ?? Game28BotService.instance.localTrumpSuit),
         );
       case Game28Phase.roundEnd:
         return _RoundEndView(
@@ -764,6 +794,8 @@ class _TrumpSelectionView extends StatelessWidget {
         suitPts[c.suit.index] =
             (suitPts[c.suit.index] ?? 0) + cardPoints28(c.rank);
       }
+      final availableSuitIndices =
+          bidCards.map((c) => c.suit.index).toSet().toList()..sort();
 
       // Bidder picks trump
       return SingleChildScrollView(
@@ -907,10 +939,10 @@ class _TrumpSelectionView extends StatelessWidget {
                     color: _kTeamB.withValues(alpha: 0.7))),
             const SizedBox(height: 16),
 
-          // Suit picker
+          // Suit picker — only suits present in the bid cards
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(4, (i) {
+            children: availableSuitIndices.map((i) {
               final suit = Suit.values[i];
               final symbol = _suitSymbol(suit);
               final isRed = suit == Suit.hearts || suit == Suit.diamonds;
@@ -945,7 +977,7 @@ class _TrumpSelectionView extends StatelessWidget {
                   ),
                 ),
               );
-            }),
+            }).toList(),
           ),
 
           const SizedBox(height: 28),
@@ -1052,7 +1084,12 @@ class _GameTableView extends StatelessWidget {
 
         // ── Table ──────────────────────────────────────────────────
         Expanded(
-          child: Padding(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Reserve ~150px for top opponent + info bar; scale trick area down on small screens
+              final trickSize =
+                  (constraints.maxHeight - 150.0).clamp(148.0, 224.0);
+              return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -1078,6 +1115,7 @@ class _GameTableView extends StatelessWidget {
                     _TrickArea(
                       state: state,
                       orderedSeats: reordered,
+                      size: trickSize,
                     ),
                     _OpponentSeat(
                       player: right,
@@ -1094,9 +1132,8 @@ class _GameTableView extends StatelessWidget {
                       !isTrickEnd &&
                       state.leadSuit != null &&
                       !state.trumpRevealed &&
-                      effectiveTrumpSuit != null &&
-                      !me.hand.any((c) => c.suit.index == state.leadSuit) &&
-                      me.hand.any((c) => c.suit.index == effectiveTrumpSuit);
+                      playerId != state.bidWinnerId &&
+                      !me.hand.any((c) => c.suit.index == state.leadSuit);
                   return Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -1202,58 +1239,15 @@ class _GameTableView extends StatelessWidget {
                           ),
                         ),
                       ],
-                      // Reveal Trump — bid winner may reveal voluntarily before leading
-                      if (myTurn &&
-                          !isTrickEnd &&
-                          !state.trumpRevealed &&
-                          state.currentTrick.isEmpty &&
-                          state.bidWinnerId == playerId &&
-                          effectiveTrumpSuit != null) ...[
-                        const SizedBox(height: 6),
-                        GestureDetector(
-                          onTap: onAskTrump,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 7),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF003d00)
-                                  .withValues(alpha: 0.7),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                  color: Colors.greenAccent
-                                      .withValues(alpha: 0.5)),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.greenAccent
-                                      .withValues(alpha: 0.2),
-                                  blurRadius: 10,
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Text('👑',
-                                    style: TextStyle(fontSize: 13)),
-                                const SizedBox(width: 6),
-                                const Text('REVEAL TRUMP',
-                                    style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w900,
-                                        color: Colors.greenAccent,
-                                        letterSpacing: 1.5)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
                     ],
                   );
                 }),
               ],
             ),
-          ),
-        ),
+          );
+        },
+      ),
+    ),
 
         const SizedBox(height: 4),
 
@@ -1594,6 +1588,17 @@ class _ScoreStrip extends StatelessWidget {
                     style: TextStyle(
                         fontSize: 9,
                         color: Colors.white.withValues(alpha: 0.25))),
+                if (state.trumpRevealed && state.trumpSuit != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    _suitSymbol(Suit.values[state.trumpSuit!]),
+                    style: TextStyle(
+                        fontSize: 14,
+                        color: _suitIsRed(Suit.values[state.trumpSuit!])
+                            ? const Color(0xFFEF5350)
+                            : Colors.white),
+                  ),
+                ],
               ],
             ),
           ),
@@ -1723,9 +1728,10 @@ class _TrumpPill extends StatelessWidget {
 class _TrickArea extends StatelessWidget {
   final Game28State state;
   final List<String> orderedSeats; // [me, right, across, left]
+  final double size;
 
   const _TrickArea(
-      {required this.state, required this.orderedSeats});
+      {required this.state, required this.orderedSeats, this.size = 224});
 
   @override
   Widget build(BuildContext context) {
@@ -1738,10 +1744,14 @@ class _TrickArea extends StatelessWidget {
     ];
 
     final isTrickEnd = state.phase == Game28Phase.trickEnd;
+    final s = size;
+    final ringSize = s * (160 / 224);
+    final cardPad = (s * (12 / 224)).clamp(6.0, 12.0);
+    final wmarkFontSize = s * (44 / 224);
 
     return SizedBox(
-      width: 224,
-      height: 224,
+      width: s,
+      height: s,
       child: Stack(
         children: [
           // Table surface — radial gradient with outer glow
@@ -1771,8 +1781,8 @@ class _TrickArea extends StatelessWidget {
           // Inner ring
           Center(
             child: Container(
-              width: 160,
-              height: 160,
+              width: ringSize,
+              height: ringSize,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
@@ -1790,7 +1800,7 @@ class _TrickArea extends StatelessWidget {
                   Text(
                     '${state.trickNumber}',
                     style: TextStyle(
-                        fontSize: 44,
+                        fontSize: wmarkFontSize,
                         fontWeight: FontWeight.w900,
                         color: Colors.white.withValues(alpha: 0.07)),
                   ),
@@ -1810,7 +1820,7 @@ class _TrickArea extends StatelessWidget {
               Align(
                 alignment: positions[i],
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.all(cardPad),
                   child: CardWidget(
                     card: state.currentTrick[orderedSeats[i]]!,
                     width: 52,
@@ -1825,7 +1835,7 @@ class _TrickArea extends StatelessWidget {
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 12),
+                padding: EdgeInsets.only(bottom: cardPad),
                 child: Container(
                   width: 52,
                   height: 72,

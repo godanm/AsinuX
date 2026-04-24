@@ -296,61 +296,142 @@ export const declareRummyGame = onCall({ invoker: "public" }, async (request) =>
   return { error: null };
 });
 
-const RETENTION_DAYS = 3;
+const RETENTION_DAYS = 7;
+const QUEUE_STALE_HOURS = 24;
+
+// Firebase push key character set — first 8 chars encode creation timestamp (big-endian base-64).
+const PUSH_CHARS = '-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz';
+
+function pushKeyToMs(key: string): number {
+  let ts = 0;
+  for (let i = 0; i < 8; i++) {
+    const idx = PUSH_CHARS.indexOf(key[i] ?? '');
+    if (idx === -1) return 0;
+    ts = ts * 64 + idx;
+  }
+  return ts;
+}
+
+// Deletes all top-level entries in `path` whose key is a push ID older than cutoff.
+async function purgeByPushKey(
+  db: admin.database.Database,
+  path: string,
+  cutoff: number
+): Promise<number> {
+  const snap = await db.ref(path).get();
+  if (!snap.exists()) return 0;
+  const keys = Object.keys(snap.val() as Record<string, unknown>);
+  let n = 0;
+  await Promise.all(keys.map(async (key) => {
+    const ts = pushKeyToMs(key);
+    if (ts > 0 && ts < cutoff) {
+      await db.ref(`${path}/${key}`).remove();
+      n++;
+    }
+  }));
+  return n;
+}
 
 /**
- * Runs daily at 02:00 UTC and deletes any gamelogs room whose most recent
- * event is older than RETENTION_DAYS days.
- *
- * Structure: gamelogs/{roomId}/events/{pushId} → { ts: <epoch ms>, ... }
+ * Runs daily at 02:00 UTC and purges all transactional data older than
+ * RETENTION_DAYS (7 days). Covers: gamelogs, game28_rooms, game28_secrets,
+ * game28_codes, kazhutha rooms, roomCodes, rummy_rooms/games/hands,
+ * and stale matchmaking queue entries.
  */
 export const cleanOldGameLogs = onSchedule("every day 02:00", async () => {
   const db = admin.database();
   const cutoff = Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000;
-  const snapshot = await db.ref("gamelogs").get();
-  if (!snapshot.exists()) {
-    logger.info("cleanOldGameLogs: no gamelogs found, nothing to do");
-    return;
-  }
+  const s: Record<string, number> = {};
 
-  const rooms = snapshot.val() as Record<string, unknown>;
-  const roomIds = Object.keys(rooms);
-  logger.info(`cleanOldGameLogs: checking ${roomIds.length} rooms`);
-
-  let deleted = 0;
-  let kept = 0;
-
-  await Promise.all(
-    roomIds.map(async (roomId) => {
-      // Find the most recent event timestamp for this room
+  // ── 1. gamelogs (session-keyed paths; use last event ts) ─────────────────
+  const logsSnap = await db.ref("gamelogs").get();
+  if (logsSnap.exists()) {
+    const logEntries = logsSnap.val() as Record<string, unknown>;
+    await Promise.all(Object.keys(logEntries).map(async (key) => {
       const latestSnap = await db
-        .ref(`gamelogs/${roomId}/events`)
+        .ref(`gamelogs/${key}/events`)
         .orderByChild("ts")
         .limitToLast(1)
         .get();
-
       if (!latestSnap.exists()) {
-        // No events at all — delete the empty room entry
-        await db.ref(`gamelogs/${roomId}`).remove();
-        deleted++;
+        await db.ref(`gamelogs/${key}`).remove();
+        s.gamelogs = (s.gamelogs ?? 0) + 1;
         return;
       }
-
       let latestTs = 0;
-      latestSnap.forEach((child) => {
-        const ts = child.val()?.ts as number | undefined;
+      latestSnap.forEach((c) => {
+        const ts = c.val()?.ts as number | undefined;
         if (ts && ts > latestTs) latestTs = ts;
       });
-
       if (latestTs < cutoff) {
-        await db.ref(`gamelogs/${roomId}`).remove();
-        logger.info(`cleanOldGameLogs: deleted room ${roomId} (last event ${new Date(latestTs).toISOString()})`);
-        deleted++;
-      } else {
-        kept++;
+        await db.ref(`gamelogs/${key}`).remove();
+        s.gamelogs = (s.gamelogs ?? 0) + 1;
       }
-    })
-  );
+    }));
+  }
 
-  logger.info(`cleanOldGameLogs: done — deleted ${deleted}, kept ${kept}`);
+  // ── 2. game28_rooms (push key timestamp) ─────────────────────────────────
+  s.game28_rooms = await purgeByPushKey(db, "game28_rooms", cutoff);
+
+  // ── 3. game28_secrets orphan cleanup ─────────────────────────────────────
+  const secretsSnap = await db.ref("game28_secrets").get();
+  if (secretsSnap.exists()) {
+    const secretRooms = secretsSnap.val() as Record<string, unknown>;
+    await Promise.all(Object.keys(secretRooms).map(async (roomId) => {
+      const exists = (await db.ref(`game28_rooms/${roomId}`).get()).exists();
+      if (!exists) {
+        await db.ref(`game28_secrets/${roomId}`).remove();
+        s.game28_secrets = (s.game28_secrets ?? 0) + 1;
+      }
+    }));
+  }
+
+  // ── 4. game28_codes orphan cleanup ───────────────────────────────────────
+  const g28CodesSnap = await db.ref("game28_codes").get();
+  if (g28CodesSnap.exists()) {
+    const codes = g28CodesSnap.val() as Record<string, string>;
+    await Promise.all(Object.entries(codes).map(async ([code, roomId]) => {
+      const exists = (await db.ref(`game28_rooms/${roomId}`).get()).exists();
+      if (!exists) {
+        await db.ref(`game28_codes/${code}`).remove();
+        s.game28_codes = (s.game28_codes ?? 0) + 1;
+      }
+    }));
+  }
+
+  // ── 5. kazhutha rooms (push key timestamp) ───────────────────────────────
+  s.kazhutha_rooms = await purgeByPushKey(db, "rooms", cutoff);
+
+  // ── 6. roomCodes orphan cleanup ──────────────────────────────────────────
+  const roomCodesSnap = await db.ref("roomCodes").get();
+  if (roomCodesSnap.exists()) {
+    const roomCodes = roomCodesSnap.val() as Record<string, string>;
+    await Promise.all(Object.entries(roomCodes).map(async ([code, roomId]) => {
+      const exists = (await db.ref(`rooms/${roomId}`).get()).exists();
+      if (!exists) {
+        await db.ref(`roomCodes/${code}`).remove();
+        s.roomcodes = (s.roomcodes ?? 0) + 1;
+      }
+    }));
+  }
+
+  // ── 7. rummy_rooms / rummy_games / rummy_hands (push key timestamp) ──────
+  s.rummy_rooms = await purgeByPushKey(db, "rummy_rooms", cutoff);
+  s.rummy_games = await purgeByPushKey(db, "rummy_games", cutoff);
+  s.rummy_hands = await purgeByPushKey(db, "rummy_hands", cutoff);
+
+  // ── 8. matchmaking queue — stale entries older than QUEUE_STALE_HOURS ────
+  const queueCutoff = Date.now() - QUEUE_STALE_HOURS * 60 * 60 * 1000;
+  const queueSnap = await db.ref("matchmaking/queue").get();
+  if (queueSnap.exists()) {
+    const queue = queueSnap.val() as Record<string, { joinedAt?: number }>;
+    await Promise.all(Object.entries(queue).map(async ([uid, entry]) => {
+      if ((entry.joinedAt ?? 0) < queueCutoff) {
+        await db.ref(`matchmaking/queue/${uid}`).remove();
+        s.matchmaking_queue = (s.matchmaking_queue ?? 0) + 1;
+      }
+    }));
+  }
+
+  logger.info(`cleanOldGameLogs: ${JSON.stringify(s)}`);
 });
