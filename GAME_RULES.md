@@ -407,9 +407,9 @@ If your **partner currently holds the bid**, you cannot outbid them by just 1. Y
 
 ### After Bidding
 
-The **bid-winner privately selects the trump suit** — no one else is told. The trump suit is **hidden** until the first trump card is played in a trick.
+The **bid-winner privately selects the trump suit** — no one else is told. The trump suit is **hidden** until it is revealed during play.
 
-> **In the app**: the trump selection screen shows the bid-winner their 4 bid cards again, along with a per-suit point tally, to help them pick the strongest trump.
+> **In the app**: the trump selection screen shows the bid-winner their 4 bid cards again, along with a per-suit point tally, to help them pick the strongest trump. Only suits that appear in those 4 cards are shown as options — you can only name a trump suit you actually hold cards in.
 
 ---
 
@@ -426,17 +426,25 @@ On each turn you must play one card:
 
 ### Trump Reveal
 
-The trump suit is **unrevealed** at the start. It is revealed the moment any player plays a trump card. After that, everyone knows the trump suit for the rest of the round.
+The trump suit starts **secret**. It is revealed in one of three ways:
 
-> **Note**: if you cannot follow suit you are not forced to play trump — you can play any non-trump card and keep the trump suit secret longer. But you may also choose to play trump to win the trick.
+1. **Bid-winner leads with a trump card** — leading trump automatically reveals it to all players
+2. **Bid-winner plays trump while void in the lead suit** — cutting with trump auto-reveals it
+3. **Non-bid-winner asks for trump** — any player void in the lead suit can explicitly request the trump suit be revealed (see Ask for Trump below)
+
+Once revealed, everyone knows the trump suit for the rest of the round. There is no way to proactively reveal trump outside of these situations — it stays secret until play forces it out.
+
+> **Note**: if you cannot follow suit you are not forced to play trump — you can play any non-trump card and keep the trump suit secret longer. But if you choose to play trump while void, it will be revealed.
 
 ### Ask for Trump
 
-When a player is void in the lead suit, they may explicitly ask the bid-winner to reveal the trump suit before deciding what to play. This is the standard way trump gets revealed — not by accident, but as a deliberate request.
+When a **non-bid-winner** is void in the lead suit, they may explicitly ask for the trump suit to be revealed before deciding what to play.
 
-> **In the app**: when it is your turn and you have no cards of the lead suit, an **ASK TRUMP** button appears in the info bar. Tapping it reveals the trump suit to all players immediately. You can then see which of your cards are trump (marked with a gold **T** badge) and decide what to play. If you prefer to keep trump hidden, simply play a non-trump card without asking.
+> **In the app**: when it is your turn, you have no cards of the lead suit, and you are not the bid-winner, an **ASK TRUMP** button appears in the info bar. Tapping it reveals the trump suit to all players immediately. You can then see which of your cards are trump (marked with a gold **T** badge) and decide what to play. If you hold trump after the reveal, you are **required to play it** — you cannot discard a non-trump card once you've asked. If you prefer to keep trump hidden, simply play a non-trump card without asking.
 >
-> When trump is revealed (either via Ask or by playing a trump card), a banner flashes at the top of the screen for all players.
+> The bid-winner does **not** use the Ask Trump button — their trump is revealed automatically the moment they play a trump card (whether leading or cutting).
+>
+> When trump is revealed, a banner flashes at the top of the screen for all players, and the trump suit is shown permanently in the info bar for the rest of the round.
 
 ### Winning a Trick
 
@@ -486,7 +494,8 @@ The bot picks the suit with the highest total point value in hand. J-9 combinati
 ### Card Play
 - **Leading**: plays the highest trump it holds if trump is revealed and it holds strong trump; otherwise leads the highest card in the longest suit
 - **Following suit**: plays the highest card below the current winner to avoid winning unnecessarily; throws high trump if holding a winner
-- **Void in lead suit**: discards a zero-point card when possible; plays low trump if needing to win
+- **Void in lead suit**: asks for trump if any scoring card (A, 10, 9, or J — worth ≥1 pt) is already in the trick and the trick is going to the opponent's team; otherwise discards a zero-point card. After asking, plays the highest trump held
+- **Trump knowledge**: non-bid-winner bots always know the trump suit (shared when the bid-winner selects it), so they can make the ask-trump decision correctly even before trump is publicly revealed
 
 ### Trick-end auto-advance
 After each trick resolves, the winning team's bot (or human) automatically starts the next trick after a brief pause.
@@ -519,7 +528,9 @@ After each trick resolves, the winning team's bot (or human) automatically start
 |---|---|
 | Lead suit in hand | Must follow suit |
 | No lead suit | Can play any card (including trump) |
-| First trump card played | Trump suit revealed to all |
+| Bid-winner leads with trump | Trump revealed to all automatically |
+| Bid-winner plays trump while void | Trump revealed to all automatically |
+| Non-bid-winner taps ASK TRUMP | Trump revealed; player must play trump if held |
 | Trump played in trick | Highest trump wins |
 | No trump played | Highest lead-suit card wins |
 | Bid team scores ≥ bid | Bid team earns 1 game point |
