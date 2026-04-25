@@ -400,10 +400,9 @@ class _GameScreenState extends State<GameScreen> {
             // before the ad appears (prevents the jarring "game is exiting" feel).
             await Future.delayed(const Duration(seconds: 3));
             if (!mounted) return;
-            // Top-2 finishers get rewarded ad; 3rd place and donkey get interstitial
-            final finishIndex = state.finishOrder.indexOf(widget.playerId);
-            final isTopTwo = finishIndex >= 0 && finishIndex < 2;
-            if (isTopTwo) {
+            // Tournament winner gets rewarded ad; everyone else gets interstitial
+            final isWinner = state.tournamentWinnerId == widget.playerId;
+            if (isWinner) {
               await AdMobService.instance.showRewardedAsync(context);
             } else {
               await AdMobService.instance.showInterstitialAsync(context);

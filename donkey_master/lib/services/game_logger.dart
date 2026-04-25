@@ -145,6 +145,59 @@ class GameLogger {
         'finishOrder': finishOrder,
       });
 
+  // ── Rummy ─────────────────────────────────────────────────────────────────
+
+  Future<void> rummyGameStart({
+    required String roomId,
+    required Map<String, String> playerNames,
+    required String wildJokerRank,
+  }) async {
+    await _initRoom(roomId, 'rummy');
+    return _log(roomId, 'GAME_START', 'rummy', {
+      'players': playerNames,
+      'wildJoker': wildJokerRank,
+    });
+  }
+
+  Future<void> rummyDraw({
+    required String roomId,
+    required String playerId,
+    required String playerName,
+    required bool fromOpen,
+    String? cardDrawn,
+    required int handSizeAfter,
+  }) =>
+      _log(roomId, 'DRAW', 'rummy', {
+        'player': '$playerName ($playerId)',
+        'source': fromOpen ? 'open' : 'closed',
+        if (cardDrawn case final v?) 'card': v,
+        'handSizeAfter': handSizeAfter,
+      });
+
+  Future<void> rummyDiscard({
+    required String roomId,
+    required String playerId,
+    required String playerName,
+    required String cardLabel,
+    required int handSizeAfter,
+  }) =>
+      _log(roomId, 'DISCARD', 'rummy', {
+        'player': '$playerName ($playerId)',
+        'card': cardLabel,
+        'handSizeAfter': handSizeAfter,
+      });
+
+  Future<void> rummyGameEnd({
+    required String roomId,
+    required String winnerId,
+    required String winnerName,
+    required Map<String, int> scores,
+  }) =>
+      _log(roomId, 'GAME_END', 'rummy', {
+        'winner': '$winnerName ($winnerId)',
+        'scores': scores,
+      });
+
   // ── 28 ────────────────────────────────────────────────────────────────────
 
   Future<void> game28RoundStart({

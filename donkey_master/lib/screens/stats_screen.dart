@@ -70,7 +70,7 @@ class StatsScreen extends StatelessWidget {
                     children: [
                       Expanded(child: _KazhuthaBlock(uid: uid)),
                       const _GridDividerH(),
-                      Expanded(child: _ComingSoonBlock(emoji: '🎲', title: 'GAME 3')),
+                      Expanded(child: _Game28Block(uid: uid)),
                     ],
                   ),
                 ),
@@ -185,6 +185,60 @@ class _RummyBlock extends StatelessWidget {
                   _Seg(s.drops, Colors.redAccent),
                 ],
                 labels: const ['Won', 'Lost', 'Dropped'],
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+// ── Game 28 block ─────────────────────────────────────────────────────────────
+
+class _Game28Block extends StatelessWidget {
+  final String uid;
+  const _Game28Block({required this.uid});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<Game28Stats>(
+      stream: StatsService.instance.game28StatsStream(uid),
+      builder: (context, snap) {
+        final s = snap.data ?? const Game28Stats();
+        return _GameBlock(
+          emoji: '🃏',
+          title: 'GAME 28',
+          accentColor: const Color(0xFF00c6ff),
+          hasData: s.roundsPlayed > 0,
+          children: [
+            _MiniStat('Rounds', '${s.roundsPlayed}'),
+            _MiniStat('Won', '${s.roundsWon}', color: Colors.greenAccent.shade400),
+            _MiniStat('Bids won', '${s.bidsWon}', color: const Color(0xFFFFD700)),
+            _MiniStat('Bid success', '${s.bidsMade}/${s.bidsWon}',
+                color: Colors.amberAccent),
+            _MiniStat(
+              'Round win%',
+              '${(s.roundWinRate * 100).toStringAsFixed(0)}%',
+              color: Colors.greenAccent.shade400,
+            ),
+            _MiniStat(
+              'Bid success%',
+              '${(s.bidSuccessRate * 100).toStringAsFixed(0)}%',
+              color: Colors.amberAccent,
+            ),
+            if (s.gamesPlayed > 0)
+              _MiniStat('Games won', '${s.gamesWon}/${s.gamesPlayed}',
+                  color: const Color(0xFF00c6ff)),
+            if (s.roundsPlayed > 0) ...[
+              const SizedBox(height: 8),
+              _MiniBar(
+                segments: [
+                  _Seg(s.roundsWon, Colors.teal.shade600),
+                  _Seg((s.roundsPlayed - s.roundsWon).clamp(0, s.roundsPlayed),
+                      Colors.white24),
+                ],
+                labels: const ['Won', 'Lost'],
               ),
             ],
           ],

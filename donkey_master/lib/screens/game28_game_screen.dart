@@ -6,8 +6,12 @@ import '../services/game28_service.dart';
 import '../services/game28_bot_service.dart';
 import '../services/admob_service.dart';
 import '../services/auth_service.dart';
+import '../services/sound_service.dart';
+import '../services/stats_service.dart';
 import '../widgets/card_widget.dart';
 import '../widgets/player_avatar.dart';
+import '../widgets/ad_banner_widget.dart';
+import '../widgets/how_to_play_overlay.dart';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const _kTeamA = Color(0xFF00c6ff);
@@ -35,6 +39,10 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
   bool _trickEndHandled = false;
   Timer? _trickEndTimer;
   bool _showTrumpReveal = false;
+  bool _isMuted = false;
+  String? _lastSoundTurn; // track to fire playYourTurn only once per turn
+  bool _roundAdFired = false;
+  bool _statsRecorded = false;
 
   @override
   void initState() {
@@ -85,11 +93,22 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
       _secretSub = null;
     }
 
-    // Trump reveal notification
+    // Trump reveal notification + sound
     if (!(prev?.trumpRevealed ?? false) &&
         state.trumpRevealed &&
         state.trumpSuit != null) {
       setState(() => _showTrumpReveal = true);
+      SoundService.instance.playCut();
+    }
+
+    // Your-turn sound — fire once when play phase transitions to my turn
+    if (state.phase == Game28Phase.playing &&
+        state.currentTurn == widget.playerId) {
+      final turnKey = '${state.trickNumber}:${state.currentTurn}';
+      if (_lastSoundTurn != turnKey) {
+        _lastSoundTurn = turnKey;
+        SoundService.instance.playYourTurn();
+      }
     }
 
     // Auto-advance trickEnd for human leader
@@ -105,6 +124,42 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
         Game28Service.instance.startNextTrick(state);
       });
     }
+
+    // Ads + stats on round/game end
+    final isRoundEnd = state.phase == Game28Phase.roundEnd;
+    final isGameOver = state.phase == Game28Phase.gameOver;
+
+    if ((isRoundEnd || isGameOver) && !_roundAdFired) {
+      _roundAdFired = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted) AdMobService.instance.showRewardedAsync(context);
+        });
+      });
+    }
+
+    if ((isRoundEnd || isGameOver) && !_statsRecorded) {
+      _statsRecorded = true;
+      final uid = AuthService.instance.uid;
+      if (uid != null) {
+        final myTeam = state.players[widget.playerId]?.teamIndex;
+        final bidTeam = state.bidWinnerTeam;
+        final bidTeamPts = state.teamTrickPoints['t$bidTeam'] ?? 0;
+        final bidMet = bidTeamPts >= state.currentBid;
+        final isBidWinner = state.bidWinnerId == widget.playerId;
+        final myTeamWon = myTeam != null && bidTeam != null &&
+            ((myTeam == bidTeam && bidMet) || (myTeam != bidTeam && !bidMet));
+        StatsService.instance.recordGame28Round(
+          uid: uid,
+          roundWon: myTeamWon,
+          wasBidWinner: isBidWinner,
+          bidSucceeded: isBidWinner && bidMet,
+          gameEnded: isGameOver,
+          gameWon: isGameOver && myTeamWon,
+        );
+      }
+    }
   }
 
   // ── Card validation ───────────────────────────────────────────────────────
@@ -114,8 +169,21 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
     if (state.phase != Game28Phase.playing) return false;
     if (state.currentTurn != widget.playerId) return false;
     final leadSuit = state.leadSuit;
-    if (leadSuit == null) return true; // leader, play anything
     final hand = state.players[widget.playerId]!.hand;
+
+    if (leadSuit == null) {
+      // Bid winner cannot lead trump unless all cards in hand are trump
+      final knownTrump = _preRevealTrump;
+      if (knownTrump != null &&
+          !state.trumpRevealed &&
+          state.bidWinnerId == widget.playerId &&
+          card.suit.index == knownTrump &&
+          !hand.every((c) => c.suit.index == knownTrump)) {
+        return false;
+      }
+      return true;
+    }
+
     // Must follow lead suit if held
     final hasLead = hand.any((c) => c.suit.index == leadSuit);
     if (hasLead) return card.suit.index == leadSuit;
@@ -131,15 +199,27 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
     final state = _state;
     if (state == null) return;
 
-    // Bid winner playing trump while unrevealed → auto-reveal trump first.
-    // Covers two cases: leading with trump, or following while void in lead suit.
     final leadSuit = state.leadSuit;
     final hand = state.players[widget.playerId]?.hand ?? [];
     final card = idx < hand.length ? hand[idx] : null;
     final knownTrump = _preRevealTrump;
     final isLeading = leadSuit == null;
-    final isVoidInLead = !isLeading &&
-        !hand.any((c) => c.suit.index == leadSuit);
+    final isVoidInLead = !isLeading && !hand.any((c) => c.suit.index == leadSuit);
+    final allTrump = knownTrump != null && hand.every((c) => c.suit.index == knownTrump);
+
+    // Bid winner cannot lead trump unless every card in hand is trump
+    if (card != null &&
+        knownTrump != null &&
+        !state.trumpRevealed &&
+        state.bidWinnerId == widget.playerId &&
+        card.suit.index == knownTrump &&
+        isLeading &&
+        !allTrump) {
+      return;
+    }
+
+    // Bid winner playing trump while unrevealed → auto-reveal first.
+    // Valid cases: leading (all cards are trump) or following while void in lead.
     if (card != null &&
         knownTrump != null &&
         !state.trumpRevealed &&
@@ -148,20 +228,53 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
         (isLeading || isVoidInLead)) {
       await Game28Service.instance.askForTrump(state, widget.playerId,
           knownSuitIndex: knownTrump);
-      final fresh =
-          await Game28Service.instance.getFreshState(state.roomId);
+      final fresh = await Game28Service.instance.getFreshState(state.roomId);
       if (fresh == null) return;
       await Game28Service.instance.playCard(fresh, widget.playerId, idx);
       return;
     }
 
+    SoundService.instance.playCardSlap();
     await Game28Service.instance.playCard(state, widget.playerId, idx);
   }
 
   Future<void> _nextRound() async {
     final state = _state;
     if (state == null) return;
+    _roundAdFired = false;
+    _statsRecorded = false;
     await Game28Service.instance.startNextRound(state);
+  }
+
+  Future<void> _confirmExit() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1a0030),
+        title: const Text('Leave game?',
+            style: TextStyle(color: Colors.white, fontSize: 16)),
+        content: const Text('Your progress will be saved.',
+            style: TextStyle(color: Colors.white54, fontSize: 13)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child:
+                const Text('STAY', style: TextStyle(color: _kGold)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('LEAVE',
+                style: TextStyle(color: Colors.white54)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      await AdMobService.instance.showInterstitialAsync(context);
+      if (mounted) {
+        Navigator.of(context).popUntil((r) => r.isFirst);
+      }
+    }
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -176,17 +289,35 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
       );
     }
 
-    return WillPopScope(
-      onWillPop: () async {
-        await Game28Service.instance.leaveRoom(state.roomId, widget.playerId);
-        return true;
+    final isEndScreen = state.phase == Game28Phase.roundEnd ||
+        state.phase == Game28Phase.gameOver;
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _confirmExit();
       },
       child: Scaffold(
         backgroundColor: _kBg,
         body: SafeArea(
           child: Stack(
             children: [
-              _buildPhase(state),
+              Column(
+                children: [
+                  // Persistent toolbar — hidden on round-end / game-over screens
+                  if (!isEndScreen)
+                    _TopBar28(
+                      muted: _isMuted,
+                      onToggleMute: () => setState(() {
+                        _isMuted = !_isMuted;
+                        SoundService.instance.toggleMute();
+                      }),
+                      onHelp: () => showHowToPlay(context, game: '28'),
+                      onExit: _confirmExit,
+                    ),
+                  Expanded(child: _buildPhase(state)),
+                ],
+              ),
               if (_showTrumpReveal && state.trumpSuit != null)
                 _TrumpRevealBanner(
                   suit: Suit.values[state.trumpSuit!],
@@ -241,19 +372,74 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
           state: state,
           playerId: widget.playerId,
           onNext: _nextRound,
+          onHome: () async {
+            await AdMobService.instance.showInterstitialAsync(context);
+            if (mounted) Navigator.of(context).popUntil((r) => r.isFirst);
+          },
         );
       case Game28Phase.gameOver:
         return _GameOverView(
           state: state,
           playerId: widget.playerId,
-          onHome: () =>
-              Navigator.of(context).popUntil((r) => r.isFirst),
+          onHome: () async {
+            await AdMobService.instance.showInterstitialAsync(context);
+            if (mounted) Navigator.of(context).popUntil((r) => r.isFirst);
+          },
           onPlayAgain: _nextRound,
         );
       default:
         return const Center(
             child: CircularProgressIndicator(color: _kGold));
     }
+  }
+}
+
+// ── Top toolbar ───────────────────────────────────────────────────────────────
+
+class _TopBar28 extends StatelessWidget {
+  final bool muted;
+  final VoidCallback onToggleMute;
+  final VoidCallback onHelp;
+  final VoidCallback onExit;
+
+  const _TopBar28({
+    required this.muted,
+    required this.onToggleMute,
+    required this.onHelp,
+    required this.onExit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: Colors.black26,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          GestureDetector(
+            onTap: onHelp,
+            child: Icon(Icons.help_outline_rounded,
+                color: Colors.white.withValues(alpha: 0.5), size: 18),
+          ),
+          const SizedBox(width: 14),
+          GestureDetector(
+            onTap: onToggleMute,
+            child: Icon(
+              muted ? Icons.volume_off : Icons.volume_up,
+              color: Colors.white.withValues(alpha: 0.5),
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 14),
+          GestureDetector(
+            onTap: onExit,
+            child: Icon(Icons.exit_to_app,
+                color: Colors.white.withValues(alpha: 0.5), size: 18),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -437,6 +623,8 @@ class _BiddingView extends StatelessWidget {
 
   bool get _isMyTurn => state.biddingTurn == playerId;
   bool get _iPassed => state.passedPlayers.contains(playerId);
+  // First bidder must open — no pass allowed until someone has bid
+  bool get _canPass => state.currentBidder != null;
 
   @override
   Widget build(BuildContext context) {
@@ -691,8 +879,10 @@ class _BiddingView extends StatelessWidget {
                   ),
                 Row(
                   children: [
-                    Expanded(child: _OutlineBtn('PASS', onPass)),
-                    const SizedBox(width: 10),
+                    if (_canPass) ...[
+                      Expanded(child: _OutlineBtn('PASS', onPass)),
+                      const SizedBox(width: 10),
+                    ],
                     Expanded(
                       child: _FilledBtn(
                           'BID $minBid', () => onBid(minBid),
@@ -1261,7 +1451,8 @@ class _GameTableView extends StatelessWidget {
           onTap: onCardTap,
         ),
 
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
+        const AdBannerWidget(),
       ],
     );
   }
@@ -1273,11 +1464,13 @@ class _RoundEndView extends StatelessWidget {
   final Game28State state;
   final String playerId;
   final VoidCallback onNext;
+  final VoidCallback onHome;
 
   const _RoundEndView(
       {required this.state,
       required this.playerId,
-      required this.onNext});
+      required this.onNext,
+      required this.onHome});
 
   @override
   Widget build(BuildContext context) {
@@ -1411,6 +1604,8 @@ class _RoundEndView extends StatelessWidget {
           const SizedBox(height: 24),
 
           _FilledBtn('NEXT ROUND →', onNext, color: Colors.green.shade700),
+          const SizedBox(height: 10),
+          _OutlineBtn('HOME', onHome),
           const SizedBox(height: 16),
         ],
       ),

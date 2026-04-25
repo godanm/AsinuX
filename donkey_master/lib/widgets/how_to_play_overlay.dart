@@ -54,6 +54,71 @@ class _Game {
 
 const _games = <_Game>[
   _Game(
+    id: '28',
+    emoji: '🃏',
+    title: 'GAME 28',
+    subtitle: 'Trick-taking · 4 players · 2 teams',
+    accent: Color(0xFF00c6ff),
+    gradientColors: [Color(0xFF003a4a), Color(0xFF001a26)],
+    cards: [
+      _Card(
+        emoji: '🏆',
+        title: 'Objective',
+        body: 'Win 6 game points (or the target) before the other team. Teams bid on tricks and must score at least their bid to earn points.',
+        bullets: [
+          '4 players in 2 teams (A & B)',
+          'First team to reach the target wins',
+          'A round = one full set of 8 tricks',
+        ],
+      ),
+      _Card(
+        emoji: '🃏',
+        title: 'Cards & Points',
+        body: 'Only 8 ranks are used (J, 9, A, 10, K, Q, 8, 7). Card points are counted when you win a trick.',
+        bullets: [
+          'Jack = 3 points',
+          'Nine = 2 points',
+          'Ace = 1 point, Ten = 1 point',
+          'K, Q, 8, 7 = 0 points',
+          'Total in the deck = 28 points',
+        ],
+      ),
+      _Card(
+        emoji: '🎯',
+        title: 'Bidding',
+        body: 'Each player gets 4 cards to bid on. Bid how many card points your team will win. Highest bidder wins; remaining 4 cards are dealt after.',
+        bullets: [
+          'Bid from 14 (minimum) up to 28',
+          'First bidder must open — cannot pass',
+          'Partner rule: must bid 20+ to outbid your own partner',
+          'Bid winner secretly chooses a trump suit',
+        ],
+      ),
+      _Card(
+        emoji: '🔄',
+        title: 'Playing Tricks',
+        body: 'Follow the lead suit if you have it. The highest card of the lead suit wins — unless trump is revealed.',
+        bullets: [
+          'Trump beats any non-trump card',
+          'Bid winner cannot voluntarily lead trump',
+          'To reveal trump: be void in lead suit, then ask for trump',
+          'Once trump is revealed, it applies for the rest of the round',
+        ],
+      ),
+      _Card(
+        emoji: '📊',
+        title: 'Scoring',
+        body: 'After all 8 tricks, compare the bid team\'s card points against their bid to award game points.',
+        bullets: [
+          'Bid met: +1 game point (bid ≥ 20: +2 pts)',
+          'All 28 points (Thani!): +3 game points',
+          'Bid failed: defending team gets the game points',
+          'First team to the target score wins the game!',
+        ],
+      ),
+    ],
+  ),
+  _Game(
     id: 'kazhutha',
     emoji: '🃏',
     title: 'KAZHUTHA',
@@ -197,8 +262,11 @@ class _HowToPlayOverlayState extends State<_HowToPlayOverlay> {
     _activeGameId = widget.initialGame;
   }
 
-  _Game? get _activeGame =>
-      _activeGameId == null ? null : _games.firstWhere((g) => g.id == _activeGameId, orElse: () => _games.first);
+  _Game? get _activeGame {
+    if (_activeGameId == null) return null;
+    final match = _games.where((g) => g.id == _activeGameId).toList();
+    return match.isEmpty ? null : match.first;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -289,8 +357,7 @@ class _GameSelector extends StatelessWidget {
                           game: g,
                           onTap: () => onGameSelected(g.id),
                         )),
-                    // Placeholder tiles for future games
-                    _PlaceholderTile(emoji: '🎲', title: 'GAME 3'),
+                    // Placeholder tile for future game
                     _PlaceholderTile(emoji: '♟️', title: 'GAME 4'),
                   ],
                 ),

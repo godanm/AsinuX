@@ -89,9 +89,12 @@ class Game28BotService {
           ? 20
           : fresh.currentBid + 1;
 
+      // First bidder must open — never pass before anyone has bid
+      final isFirstBidder = fresh.currentBidder == null;
+
       if (maxBid >= minBid) {
         // Occasionally pass even when able — simulates conservative play (~15%)
-        if (_rng.nextDouble() < 0.15 && fresh.currentBid >= 14) {
+        if (!isFirstBidder && _rng.nextDouble() < 0.15 && fresh.currentBid >= 14) {
           await Game28Service.instance.placeBid(fresh, biddingTurn);
           debugPrint('[28Bot] $biddingTurn folds (bluff pass, strength=$strength)');
           return;
@@ -103,9 +106,13 @@ class Game28BotService {
         final bidValue = (minBid + actualExtra).clamp(minBid, 28);
         await Game28Service.instance.placeBid(fresh, biddingTurn, bidValue: bidValue);
         debugPrint('[28Bot] $biddingTurn bids $bidValue (strength=$strength, range=$minBid-$maxBid)');
-      } else {
+      } else if (!isFirstBidder) {
         await Game28Service.instance.placeBid(fresh, biddingTurn);
         debugPrint('[28Bot] $biddingTurn passes (strength=$strength, maxBid=$maxBid, minBid=$minBid)');
+      } else {
+        // First bidder with weak hand: bid minimum 14
+        await Game28Service.instance.placeBid(fresh, biddingTurn, bidValue: 14);
+        debugPrint('[28Bot] $biddingTurn opens at 14 (first bidder, strength=$strength)');
       }
     });
   }
@@ -183,15 +190,32 @@ class Game28BotService {
               shouldPlayTrumpWhenVoid: shouldPlayTrump);
       final chosenCard = hand[cardIdx];
 
-      // Bid-winner bot: if playing trump while unrevealed (leading OR following
-      // while void), reveal it first so playCard sees trumpRevealed=true.
-      final isBidWinnerLeadingTrump = !fresh.trumpRevealed &&
+      // Bid winner cannot lead trump unless all cards in hand are trump.
+      if (!fresh.trumpRevealed &&
+          turn == fresh.bidWinnerId &&
+          effectiveTrump != null &&
+          fresh.leadSuit == null &&
+          chosenCard.suit.index == effectiveTrump &&
+          hand.any((c) => c.suit.index != effectiveTrump)) {
+        // Re-pick: choose the lowest non-trump card to lead safely
+        final nonTrump =
+            hand.where((c) => c.suit.index != effectiveTrump).toList();
+        final altCard = nonTrump.reduce((a, b) =>
+            rankStrength28(a.rank) < rankStrength28(b.rank) ? a : b);
+        await Game28Service.instance.playCard(
+            fresh, turn, hand.indexOf(altCard));
+        return;
+      }
+
+      // Bid-winner bot: if playing trump while unrevealed (leading all-trump OR
+      // following while void), reveal it first so playCard sees trumpRevealed=true.
+      final isBidWinnerPlayingTrump = !fresh.trumpRevealed &&
           effectiveTrump != null &&
           chosenCard.suit.index == effectiveTrump &&
           (fresh.leadSuit == null ||
               !fresh.players[turn]!.hand
                   .any((c) => c.suit.index == fresh.leadSuit));
-      if (isBidWinnerLeadingTrump) {
+      if (isBidWinnerPlayingTrump) {
         await Game28Service.instance.askForTrump(fresh, turn,
             knownSuitIndex: effectiveTrump);
         final afterReveal =

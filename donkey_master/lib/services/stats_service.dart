@@ -93,6 +93,38 @@ class RummyStats {
       );
 }
 
+// ── Game 28 stats ─────────────────────────────────────────────────────────────
+
+class Game28Stats {
+  final int roundsPlayed;
+  final int roundsWon;
+  final int bidsWon;
+  final int bidsMade;
+  final int gamesPlayed;
+  final int gamesWon;
+
+  const Game28Stats({
+    this.roundsPlayed = 0,
+    this.roundsWon = 0,
+    this.bidsWon = 0,
+    this.bidsMade = 0,
+    this.gamesPlayed = 0,
+    this.gamesWon = 0,
+  });
+
+  double get roundWinRate => roundsPlayed == 0 ? 0 : roundsWon / roundsPlayed;
+  double get bidSuccessRate => bidsWon == 0 ? 0 : bidsMade / bidsWon;
+
+  factory Game28Stats.fromMap(Map<dynamic, dynamic> map) => Game28Stats(
+        roundsPlayed: (map['roundsPlayed'] as int?) ?? 0,
+        roundsWon: (map['roundsWon'] as int?) ?? 0,
+        bidsWon: (map['bidsWon'] as int?) ?? 0,
+        bidsMade: (map['bidsMade'] as int?) ?? 0,
+        gamesPlayed: (map['gamesPlayed'] as int?) ?? 0,
+        gamesWon: (map['gamesWon'] as int?) ?? 0,
+      );
+}
+
 class LeaderboardEntry {
   final String uid;
   final String name;
@@ -118,6 +150,7 @@ class StatsService {
 
   DatabaseReference _ref(String uid) => _db.ref('stats/$uid');
   DatabaseReference _rummyRef(String uid) => _db.ref('stats/$uid/rummy');
+  DatabaseReference _game28Ref(String uid) => _db.ref('stats/$uid/game28');
 
   Stream<RummyStats> rummyStatsStream(String uid) {
     return _rummyRef(uid).onValue.map((event) {
@@ -152,6 +185,34 @@ class StatsService {
       'totalPenalty': ServerValue.increment(penalty),
     });
     debugPrint('[StatsService] rummy result for $uid — won=$won dropped=$dropped penalty=$penalty');
+  }
+
+  // ── Game 28 ───────────────────────────────────────────────────────────────
+
+  Stream<Game28Stats> game28StatsStream(String uid) {
+    return _game28Ref(uid).onValue.map((event) {
+      if (!event.snapshot.exists) return const Game28Stats();
+      return Game28Stats.fromMap(event.snapshot.value as Map<dynamic, dynamic>);
+    });
+  }
+
+  Future<void> recordGame28Round({
+    required String uid,
+    required bool roundWon,
+    required bool wasBidWinner,
+    required bool bidSucceeded,
+    required bool gameEnded,
+    required bool gameWon,
+  }) async {
+    await _game28Ref(uid).update({
+      'roundsPlayed': ServerValue.increment(1),
+      if (roundWon) 'roundsWon': ServerValue.increment(1),
+      if (wasBidWinner) 'bidsWon': ServerValue.increment(1),
+      if (bidSucceeded) 'bidsMade': ServerValue.increment(1),
+      if (gameEnded) 'gamesPlayed': ServerValue.increment(1),
+      if (gameWon) 'gamesWon': ServerValue.increment(1),
+    });
+    debugPrint('[StatsService] game28 round for $uid — won=$roundWon bidWinner=$wasBidWinner bidOk=$bidSucceeded gameEnded=$gameEnded gameWon=$gameWon');
   }
 
   Future<PlayerStats> getStats(String uid) async {

@@ -12,6 +12,8 @@ import '../services/admob_service.dart';
 import '../services/auth_service.dart';
 import '../services/stats_service.dart';
 import '../widgets/how_to_play_overlay.dart';
+import '../services/sound_service.dart';
+import '../services/game_logger.dart';
 
 // ── Flying card state ─────────────────────────────────────────────────────────
 
@@ -57,6 +59,9 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
 
   bool _gameOverAdFired = false;
   bool _statsRecorded = false;
+  bool _isMuted = false;
+  bool _gameLogInitialized = false;
+  bool _gameLogEndFired = false;
 
   // Flying card animation
   _FlyCard? _flyCard;
@@ -83,13 +88,27 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
   void _onStateChange(RummyGameState? state) {
     if (!mounted) return;
     setState(() => _state = state);
-    if (state?.currentTurn == widget.playerId &&
-        state?.phase == RummyPhase.draw) {
-      HapticFeedback.mediumImpact();
+    if (state == null) return;
+
+    // Log game start once
+    if (!_gameLogInitialized) {
+      _gameLogInitialized = true;
+      final names = state.players.map((id, p) => MapEntry(id, p.name));
+      GameLogger.instance.rummyGameStart(
+        roomId: widget.roomId,
+        playerNames: names,
+        wildJokerRank: state.wildJoker.rankLabel,
+      );
     }
 
-    // Fire rewarded ad + record stats once when game over
-    if (state != null && state.phase == RummyPhase.gameOver) {
+    if (state.currentTurn == widget.playerId &&
+        state.phase == RummyPhase.draw) {
+      HapticFeedback.mediumImpact();
+      SoundService.instance.playYourTurn();
+    }
+
+    // Fire rewarded ad + record stats + log once when game over
+    if (state.phase == RummyPhase.gameOver) {
       if (!_gameOverAdFired) {
         _gameOverAdFired = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -115,10 +134,21 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
           );
         });
       }
+
+      if (!_gameLogEndFired) {
+        _gameLogEndFired = true;
+        final winner = state.winnerId ?? '';
+        final winnerName = state.players[winner]?.name ?? winner;
+        GameLogger.instance.rummyGameEnd(
+          roomId: widget.roomId,
+          winnerId: winner,
+          winnerName: winnerName,
+          scores: state.scores,
+        );
+      }
     }
 
     // Drive bot turns — only the first real player in turnOrder acts as host
-    if (state == null) return;
     final firstReal = state.turnOrder
         .firstWhere((id) => !RummyBotService.isBot(id), orElse: () => '');
     if (firstReal != widget.playerId) return;
@@ -205,6 +235,14 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
     setState(() => _busy = true);
     try {
       await RummyService.instance.drawFromClosed(widget.roomId, widget.playerId);
+      SoundService.instance.playCardSlap();
+      GameLogger.instance.rummyDraw(
+        roomId: widget.roomId,
+        playerId: widget.playerId,
+        playerName: widget.playerName,
+        fromOpen: false,
+        handSizeAfter: (_state?.players[widget.playerId]?.hand.length ?? 0),
+      );
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -214,9 +252,19 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
     if (_busy || !_isMyTurn || !_isDrawPhase) return;
     final state = _state;
     if (state?.topOfOpen == null) return;
+    final drawnCard = state!.topOfOpen?.toString();
     setState(() => _busy = true);
     try {
       await RummyService.instance.drawFromOpen(widget.roomId, widget.playerId);
+      SoundService.instance.playCardSlap();
+      GameLogger.instance.rummyDraw(
+        roomId: widget.roomId,
+        playerId: widget.playerId,
+        playerName: widget.playerName,
+        fromOpen: true,
+        cardDrawn: drawnCard,
+        handSizeAfter: (_state?.players[widget.playerId]?.hand.length ?? 0),
+      );
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -224,10 +272,22 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
 
   Future<void> _discardCard(int cardIdx) async {
     if (_busy || !_isMyTurn || !_isDiscardPhase) return;
+    final hand = _state?.players[widget.playerId]?.hand ?? [];
+    final cardLabel = cardIdx < hand.length ? hand[cardIdx].toString() : null;
     setState(() => _busy = true);
     try {
       await RummyService.instance.discardCard(
           widget.roomId, widget.playerId, cardIdx);
+      SoundService.instance.playCardSlap();
+      if (cardLabel != null) {
+        GameLogger.instance.rummyDiscard(
+          roomId: widget.roomId,
+          playerId: widget.playerId,
+          playerName: widget.playerName,
+          cardLabel: cardLabel,
+          handSizeAfter: (hand.length - 1).clamp(0, 99),
+        );
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -349,6 +409,11 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
               // ── Top bar ──────────────────────────────────────
               _TopBar(
                 wildJoker: state.wildJoker,
+                muted: _isMuted,
+                onToggleMute: () => setState(() {
+                  _isMuted = !_isMuted;
+                  SoundService.instance.toggleMute();
+                }),
                 onExit: _confirmExit,
               ),
 
@@ -518,9 +583,16 @@ class _FlyCardOverlay extends StatelessWidget {
 
 class _TopBar extends StatelessWidget {
   final RummyCard wildJoker;
+  final bool muted;
+  final VoidCallback onToggleMute;
   final VoidCallback onExit;
 
-  const _TopBar({required this.wildJoker, required this.onExit});
+  const _TopBar({
+    required this.wildJoker,
+    required this.muted,
+    required this.onToggleMute,
+    required this.onExit,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -562,6 +634,15 @@ class _TopBar extends StatelessWidget {
             onTap: () => showHowToPlay(context, game: 'rummy'),
             child: Icon(Icons.help_outline_rounded,
                 color: Colors.white.withValues(alpha: 0.45), size: 20),
+          ),
+          const SizedBox(width: 12),
+          GestureDetector(
+            onTap: onToggleMute,
+            child: Icon(
+              muted ? Icons.volume_off : Icons.volume_up,
+              color: Colors.white.withValues(alpha: 0.45),
+              size: 20,
+            ),
           ),
           const SizedBox(width: 12),
           GestureDetector(

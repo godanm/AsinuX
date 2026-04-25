@@ -152,6 +152,8 @@ class Game28Service {
     final passed = List<String>.from(state.passedPlayers);
 
     if (bidValue == null) {
+      // First bidder must open — no pass allowed before anyone has bid
+      if (state.currentBidder == null) return;
       // Pass — but last un-passed player must bid at minimum 14
       final active =
           order.where((id) => !passed.contains(id) && id != playerId).toList();
