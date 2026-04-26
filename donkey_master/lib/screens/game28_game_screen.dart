@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../models/card_model.dart';
 import '../models/game28_state.dart';
 import '../services/game28_service.dart';
@@ -43,6 +44,7 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
   String? _lastSoundTurn; // track to fire playYourTurn only once per turn
   bool _roundAdFired = false;
   bool _statsRecorded = false;
+  bool _endScreenVisible = false; // delayed: true 2s after round/game ends
 
   @override
   void initState() {
@@ -71,7 +73,16 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
       return;
     }
     final prev = _state;
-    setState(() => _state = state);
+    setState(() {
+      _state = state;
+      // Reset per-round flags when a new round starts
+      if (prev?.phase == Game28Phase.roundEnd &&
+          state.phase == Game28Phase.bidding) {
+        _endScreenVisible = false;
+        _roundAdFired = false;
+        _statsRecorded = false;
+      }
+    });
 
     // Safety net: restart bot service if host and it stopped (e.g. screen recreated)
     if (state.hostId == widget.playerId &&
@@ -131,11 +142,11 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
 
     if ((isRoundEnd || isGameOver) && !_roundAdFired) {
       _roundAdFired = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        Future.delayed(const Duration(seconds: 3), () {
-          if (mounted) AdMobService.instance.showRewardedAsync(context);
-        });
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) setState(() => _endScreenVisible = true);
+      });
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) AdMobService.instance.showRewardedAsync(context);
       });
     }
 
@@ -368,6 +379,19 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
                   _preRevealTrump ?? Game28BotService.instance.localTrumpSuit),
         );
       case Game28Phase.roundEnd:
+        if (!_endScreenVisible) {
+          return _GameTableView(
+            state: state,
+            playerId: widget.playerId,
+            effectiveTrumpSuit: state.trumpSuit ?? _preRevealTrump,
+            canPlay: _canPlay,
+            onCardTap: _playCard,
+            onAskTrump: () => Game28Service.instance.askForTrump(
+                state, widget.playerId,
+                knownSuitIndex:
+                    _preRevealTrump ?? Game28BotService.instance.localTrumpSuit),
+          );
+        }
         return _RoundEndView(
           state: state,
           playerId: widget.playerId,
@@ -378,6 +402,19 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
           },
         );
       case Game28Phase.gameOver:
+        if (!_endScreenVisible) {
+          return _GameTableView(
+            state: state,
+            playerId: widget.playerId,
+            effectiveTrumpSuit: state.trumpSuit ?? _preRevealTrump,
+            canPlay: _canPlay,
+            onCardTap: _playCard,
+            onAskTrump: () => Game28Service.instance.askForTrump(
+                state, widget.playerId,
+                knownSuitIndex:
+                    _preRevealTrump ?? Game28BotService.instance.localTrumpSuit),
+          );
+        }
         return _GameOverView(
           state: state,
           playerId: widget.playerId,
@@ -412,30 +449,34 @@ class _TopBar28 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       color: Colors.black26,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          GestureDetector(
-            onTap: onHelp,
-            child: Icon(Icons.help_outline_rounded,
-                color: Colors.white.withValues(alpha: 0.5), size: 18),
+          IconButton(
+            onPressed: onHelp,
+            icon: Icon(Icons.help_outline_rounded,
+                color: Colors.white.withValues(alpha: 0.55), size: 22),
+            padding: const EdgeInsets.all(10),
+            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
           ),
-          const SizedBox(width: 14),
-          GestureDetector(
-            onTap: onToggleMute,
-            child: Icon(
+          IconButton(
+            onPressed: onToggleMute,
+            icon: Icon(
               muted ? Icons.volume_off : Icons.volume_up,
-              color: Colors.white.withValues(alpha: 0.5),
-              size: 18,
+              color: Colors.white.withValues(alpha: 0.55),
+              size: 22,
             ),
+            padding: const EdgeInsets.all(10),
+            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
           ),
-          const SizedBox(width: 14),
-          GestureDetector(
-            onTap: onExit,
-            child: Icon(Icons.exit_to_app,
-                color: Colors.white.withValues(alpha: 0.5), size: 18),
+          IconButton(
+            onPressed: onExit,
+            icon: Icon(Icons.exit_to_app,
+                color: Colors.white.withValues(alpha: 0.55), size: 22),
+            padding: const EdgeInsets.all(10),
+            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
           ),
         ],
       ),
@@ -832,6 +873,8 @@ class _BiddingView extends StatelessWidget {
                         _tag('PASS', Colors.white24)
                       else if (isHolder)
                         _tag('${state.currentBid}', _kTeamColor(p.teamIndex))
+                      else if (isCurrentTurn && p.isBot)
+                        _ThinkingDots(color: _kGold.withValues(alpha: 0.85))
                       else if (isCurrentTurn)
                         _tag('← TURN', _kGold)
                       else
@@ -1447,6 +1490,7 @@ class _GameTableView extends StatelessWidget {
           trumpSuit: effectiveTrumpSuit,
           trumpRevealed: state.trumpRevealed,
           isBidWinner: state.bidWinnerId == playerId,
+          isMyTurn: myTurn && !isTrickEnd,
           canPlay: canPlay,
           onTap: onCardTap,
         ),
@@ -1760,44 +1804,87 @@ class _ScoreStrip extends StatelessWidget {
     final game0 = state.teamGamePoints['t0'] ?? 0;
     final game1 = state.teamGamePoints['t1'] ?? 0;
 
+    final bidTeam = state.bidWinnerTeam;
+    final bidTeamPts = bidTeam != null ? (state.teamTrickPoints['t$bidTeam'] ?? 0) : 0;
+    final bidProgress = bidTeam != null && state.currentBid > 0
+        ? (bidTeamPts / state.currentBid).clamp(0.0, 1.0)
+        : 0.0;
+    final bidColor = bidTeam != null ? _kTeamColor(bidTeam) : _kGold;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+      child: Column(
         children: [
-          Expanded(child: _TeamScore('A', pts0, game0, _kTeamA, state.bidWinnerTeam == 0)),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Column(
+          Row(
+            children: [
+              Expanded(child: _TeamScore('A', pts0, game0, _kTeamA, state.bidWinnerTeam == 0)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Column(
+                  children: [
+                    Text('BID',
+                        style: TextStyle(
+                            fontSize: 8,
+                            letterSpacing: 1,
+                            color: Colors.white.withValues(alpha: 0.3))),
+                    Text('${state.currentBid}',
+                        style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                            color: _kGold)),
+                    Text('T${state.trickNumber}/8',
+                        style: TextStyle(
+                            fontSize: 9,
+                            color: Colors.white.withValues(alpha: 0.25))),
+                    if (state.trumpRevealed && state.trumpSuit != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        _suitSymbol(Suit.values[state.trumpSuit!]),
+                        style: TextStyle(
+                            fontSize: 14,
+                            color: _suitIsRed(Suit.values[state.trumpSuit!])
+                                ? const Color(0xFFEF5350)
+                                : Colors.white),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Expanded(child: _TeamScore('B', pts1, game1, _kTeamB, state.bidWinnerTeam == 1)),
+            ],
+          ),
+          if (bidTeam != null) ...[
+            const SizedBox(height: 5),
+            Row(
               children: [
-                Text('BID',
-                    style: TextStyle(
-                        fontSize: 8,
-                        letterSpacing: 1,
-                        color: Colors.white.withValues(alpha: 0.3))),
-                Text('${state.currentBid}',
-                    style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w900,
-                        color: _kGold)),
-                Text('T${state.trickNumber}/8',
-                    style: TextStyle(
-                        fontSize: 9,
-                        color: Colors.white.withValues(alpha: 0.25))),
-                if (state.trumpRevealed && state.trumpSuit != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    _suitSymbol(Suit.values[state.trumpSuit!]),
-                    style: TextStyle(
-                        fontSize: 14,
-                        color: _suitIsRed(Suit.values[state.trumpSuit!])
-                            ? const Color(0xFFEF5350)
-                            : Colors.white),
+                Text(
+                  'Team ${bidTeam == 0 ? 'A' : 'B'} bid  ',
+                  style: TextStyle(
+                      fontSize: 8,
+                      color: bidColor.withValues(alpha: 0.65),
+                      letterSpacing: 0.3),
+                ),
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: bidProgress,
+                      backgroundColor: Colors.white.withValues(alpha: 0.1),
+                      valueColor: AlwaysStoppedAnimation<Color>(bidColor),
+                      minHeight: 5,
+                    ),
                   ),
-                ],
+                ),
+                Text(
+                  '  $bidTeamPts / ${state.currentBid}',
+                  style: TextStyle(
+                      fontSize: 8,
+                      fontWeight: FontWeight.w700,
+                      color: bidColor.withValues(alpha: 0.85)),
+                ),
               ],
             ),
-          ),
-          Expanded(child: _TeamScore('B', pts1, game1, _kTeamB, state.bidWinnerTeam == 1)),
+          ],
         ],
       ),
     );
@@ -2056,14 +2143,46 @@ class _TrickArea extends StatelessWidget {
                 ),
               ),
             ),
-          // Trick end — dim overlay
-          if (isTrickEnd)
+          // Trick end — dim overlay + winner label
+          if (isTrickEnd) ...[
             Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.black.withValues(alpha: 0.25),
               ),
             ),
+            if (state.currentTurn != null &&
+                state.players.containsKey(state.currentTurn))
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.75),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                        color: Colors.greenAccent.withValues(alpha: 0.45)),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('✓',
+                          style: TextStyle(
+                              fontSize: 12, color: Colors.greenAccent)),
+                      Text(
+                        _displayName(
+                            state.players[state.currentTurn!]!.name),
+                        style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
         ],
       ),
     );
@@ -2111,7 +2230,9 @@ class _OpponentSeat extends StatelessWidget {
         _displayName(player.name),
         style: TextStyle(
             fontSize: 9,
-            color: teamColor.withValues(alpha: 0.7),
+            color: isMyTurn && !isTrickEnd
+                ? _kGold
+                : teamColor.withValues(alpha: 0.7),
             letterSpacing: 0.3),
         overflow: TextOverflow.ellipsis,
       ),
@@ -2121,6 +2242,8 @@ class _OpponentSeat extends StatelessWidget {
             fontSize: 9,
             color: Colors.white.withValues(alpha: 0.3)),
       ),
+      if (isMyTurn && player.isBot && !isTrickEnd)
+        _ThinkingDots(color: _kGold.withValues(alpha: 0.8)),
     ];
 
     return horizontal
@@ -2134,6 +2257,7 @@ class _MyHand extends StatelessWidget {
   final int? trumpSuit;
   final bool trumpRevealed;
   final bool isBidWinner;
+  final bool isMyTurn;
   final bool Function(PlayingCard) canPlay;
   final void Function(int) onTap;
 
@@ -2142,6 +2266,7 @@ class _MyHand extends StatelessWidget {
     required this.trumpSuit,
     required this.trumpRevealed,
     required this.isBidWinner,
+    required this.isMyTurn,
     required this.canPlay,
     required this.onTap,
   });
@@ -2159,8 +2284,21 @@ class _MyHand extends StatelessWidget {
         return a.value.rank.index - b.value.rank.index;
       });
 
-    return SizedBox(
-      height: 90,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      height: 96,
+      decoration: isMyTurn
+          ? BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: _kGold.withValues(alpha: 0.28),
+                  blurRadius: 22,
+                  spreadRadius: 3,
+                ),
+              ],
+            )
+          : const BoxDecoration(),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -2177,18 +2315,20 @@ class _MyHand extends StatelessWidget {
 
           return Padding(
             padding: const EdgeInsets.only(right: 6),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Opacity(
-                  opacity: playable ? 1.0 : 0.35,
-                  child: CardWidget(
-                    card: card,
-                    width: 54,
-                    height: 78,
-                    onTap: playable ? () => onTap(origIdx) : null,
+            child: Transform.translate(
+              offset: (isMyTurn && playable) ? const Offset(0, -8) : Offset.zero,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Opacity(
+                    opacity: playable ? 1.0 : 0.35,
+                    child: CardWidget(
+                      card: card,
+                      width: 54,
+                      height: 78,
+                      onTap: playable ? () => onTap(origIdx) : null,
+                    ),
                   ),
-                ),
                 // Trump indicator
                 if (isTrump)
                   Positioned(
@@ -2232,7 +2372,8 @@ class _MyHand extends StatelessWidget {
                       ),
                     ),
                   ),
-              ],
+                ],
+              ),
             ),
           );
         },
@@ -2424,6 +2565,27 @@ class _OutlineBtn extends StatelessWidget {
                   color: Colors.white70)),
         ),
       );
+}
+
+class _ThinkingDots extends StatelessWidget {
+  final Color color;
+  const _ThinkingDots({this.color = Colors.white60});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(3, (i) => Container(
+        margin: const EdgeInsets.symmetric(horizontal: 1.5),
+        width: 3, height: 3,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      )
+          .animate(onPlay: (c) => c.repeat(reverse: false))
+          .fadeIn(delay: Duration(milliseconds: i * 220), duration: 280.ms)
+          .then()
+          .fadeOut(duration: 280.ms)),
+    );
+  }
 }
 
 class _SmallBidBtn extends StatelessWidget {

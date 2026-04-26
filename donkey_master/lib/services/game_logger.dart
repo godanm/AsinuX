@@ -24,6 +24,7 @@ class GameLogger {
 
   Future<void> _initRoom(String roomId, String gameType) async {
     if (!enabled) return;
+    if (_sessionKeys.containsKey(roomId)) return; // already initialised — don't split the log
     final ts = '${DateTime.now().toUtc().toIso8601String().split('.').first}Z';
     final sessionKey = '$roomId-started-$ts-game-$gameType';
     _sessionKeys[roomId] = sessionKey;

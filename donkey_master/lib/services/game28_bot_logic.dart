@@ -151,15 +151,32 @@ PlayingCard _pickFollowCard(
     List<PlayingCard> cards, Game28State state, int? trumpSuit) {
   final leadSuit = state.leadSuit!;
 
-  // Find current trick leader (highest-strength lead-suit card played so far)
+  // Trump overrides lead suit — check trump cards first.
   int currentWinStrength = -1;
   String? currentWinnerId;
-  for (final e in state.currentTrick.entries) {
-    if (e.value.suit.index == leadSuit) {
-      final s = rankStrength28(e.value.rank);
-      if (s > currentWinStrength) {
-        currentWinStrength = s;
-        currentWinnerId = e.key;
+  bool trumpIsWinning = false;
+
+  if (trumpSuit != null) {
+    for (final e in state.currentTrick.entries) {
+      if (e.value.suit.index == trumpSuit) {
+        final s = rankStrength28(e.value.rank);
+        if (s > currentWinStrength) {
+          currentWinStrength = s;
+          currentWinnerId = e.key;
+          trumpIsWinning = true;
+        }
+      }
+    }
+  }
+
+  if (!trumpIsWinning) {
+    for (final e in state.currentTrick.entries) {
+      if (e.value.suit.index == leadSuit) {
+        final s = rankStrength28(e.value.rank);
+        if (s > currentWinStrength) {
+          currentWinStrength = s;
+          currentWinnerId = e.key;
+        }
       }
     }
   }
@@ -174,11 +191,13 @@ PlayingCard _pickFollowCard(
   if (partnerIsWinning) {
     final partnerCard = state.currentTrick[currentWinnerId];
     if (partnerCard != null && cardPoints28(partnerCard.rank) >= 2) {
-      // Partner has J or 9 — throw our highest point card that won't take the trick
+      // Partner has J or 9 — throw our highest point card that won't take the trick.
+      // When partner won with trump, any lead-suit card we play is safe (trump beats lead).
       final safeThrow = cards
           .where((c) =>
               cardPoints28(c.rank) > 0 &&
-              rankStrength28(c.rank) < rankStrength28(partnerCard.rank))
+              (trumpIsWinning ||
+                  rankStrength28(c.rank) < rankStrength28(partnerCard.rank)))
           .toList();
       if (safeThrow.isNotEmpty) {
         return safeThrow.reduce((a, b) =>
@@ -190,7 +209,13 @@ PlayingCard _pickFollowCard(
         (a, b) => rankStrength28(a.rank) < rankStrength28(b.rank) ? a : b);
   }
 
-  // Opponent winning — try to beat with lowest winning card
+  // Opponent is winning — if by trump we can't beat it with a lead-suit card.
+  if (trumpIsWinning) {
+    return cards.reduce(
+        (a, b) => rankStrength28(a.rank) < rankStrength28(b.rank) ? a : b);
+  }
+
+  // Opponent winning with lead suit — try to beat with lowest winning card
   final canWin = cards
       .where((c) => rankStrength28(c.rank) > currentWinStrength)
       .toList();
@@ -211,17 +236,36 @@ PlayingCard _discardCard(
     List<PlayingCard> hand, Game28State state, String playerId, int? trumpSuit) {
   final leadSuit = state.leadSuit;
   if (leadSuit != null) {
+    // Trump overrides lead suit — find actual winner accounting for trump.
     String? winningId;
     int bestStrength = -1;
-    for (final e in state.currentTrick.entries) {
-      if (e.value.suit.index == leadSuit) {
-        final s = rankStrength28(e.value.rank);
-        if (s > bestStrength) {
-          bestStrength = s;
-          winningId = e.key;
+    bool trumpIsWinning = false;
+
+    if (trumpSuit != null) {
+      for (final e in state.currentTrick.entries) {
+        if (e.value.suit.index == trumpSuit) {
+          final s = rankStrength28(e.value.rank);
+          if (s > bestStrength) {
+            bestStrength = s;
+            winningId = e.key;
+            trumpIsWinning = true;
+          }
         }
       }
     }
+
+    if (!trumpIsWinning) {
+      for (final e in state.currentTrick.entries) {
+        if (e.value.suit.index == leadSuit) {
+          final s = rankStrength28(e.value.rank);
+          if (s > bestStrength) {
+            bestStrength = s;
+            winningId = e.key;
+          }
+        }
+      }
+    }
+
     if (winningId != null) {
       final myTeam = state.players[playerId]?.teamIndex;
       final winnerTeam = state.players[winningId]?.teamIndex;

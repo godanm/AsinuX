@@ -70,7 +70,7 @@ class Game28BotService {
     final player = state.players[biddingTurn];
     if (player == null || !player.isBot) return;
 
-    final delay = 800 + _rng.nextInt(1200);
+    final delay = 1000 + _rng.nextInt(2000);
     _schedule(delay, () async {
       final fresh = await Game28Service.instance.getFreshState(state.roomId);
       if (fresh == null || fresh.biddingTurn != biddingTurn) return;
@@ -126,7 +126,7 @@ class Game28BotService {
     if (winner == null || !winner.isBot) return;
     if (state.trumpSuit != null) return;
 
-    final delay = 600 + _rng.nextInt(800);
+    final delay = 1000 + _rng.nextInt(2000);
     _schedule(delay, () async {
       final fresh = await Game28Service.instance.getFreshState(state.roomId);
       if (fresh == null || fresh.bidWinnerId != winnerId) return;
@@ -147,7 +147,7 @@ class Game28BotService {
     final player = state.players[turn];
     if (player == null || !player.isBot) return;
 
-    final delay = 700 + _rng.nextInt(1300);
+    final delay = 1000 + _rng.nextInt(2000);
     _schedule(delay, () async {
       final fresh = await Game28Service.instance.getFreshState(state.roomId);
       if (fresh == null || fresh.currentTurn != turn) return;

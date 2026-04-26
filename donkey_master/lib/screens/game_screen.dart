@@ -40,6 +40,7 @@ class _GameScreenState extends State<GameScreen> {
   bool _iHaveFinished = false; // stays true even when watching after escape
   bool _roundEndAdFired = false; // prevents duplicate ad per round
   bool _gameOverAdFired = false; // prevents duplicate ad on game over
+  bool _roundEndVisible = false; // delayed: true 2s after donkey is revealed
 
   // Trick fly-out animation state
   Map<String, PlayingCard> _outgoingCards = {};
@@ -241,21 +242,24 @@ class _GameScreenState extends State<GameScreen> {
         state.finishOrder.isEmpty) {
       _announcedEscapees.clear();
       _roundEndAdFired = false;
+      _roundEndVisible = false;
       if (_iEscaped) setState(() => _iEscaped = false);
     }
 
-    // Show rewarded ad after the round fully completes (donkey determined).
-    // 3-second delay lets the round-end screen animations play before the ad appears.
-    // Guard prevents it firing again if the same state arrives multiple times.
+    // Donkey revealed: play sound immediately, then show round-end screen after 2s
+    // and fire the ad after 3s. Guard prevents repeating on duplicate state events.
     if (state.phase == GamePhase.trickEnd &&
         state.donkeyId != null &&
         !_roundEndAdFired) {
       _roundEndAdFired = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        Future.delayed(const Duration(seconds: 3), () {
-          if (mounted) AdMobService.instance.showRewardedAsync(context);
-        });
+      SoundService.instance.playDonkey();
+      HapticFeedback.heavyImpact();
+      Future.delayed(const Duration(milliseconds: 200), HapticFeedback.heavyImpact);
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) setState(() => _roundEndVisible = true);
+      });
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) AdMobService.instance.showRewardedAsync(context);
       });
     }
 
@@ -420,13 +424,9 @@ class _GameScreenState extends State<GameScreen> {
           });
         }
 
-        if (state.phase == GamePhase.trickEnd && state.donkeyId != null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            SoundService.instance.playDonkey();
-            // Strong double-buzz for donkey reveal — noticeable but not annoying
-            HapticFeedback.heavyImpact();
-            Future.delayed(const Duration(milliseconds: 200), HapticFeedback.heavyImpact);
-          });
+        if (state.phase == GamePhase.trickEnd &&
+            state.donkeyId != null &&
+            _roundEndVisible) {
           return _buildRoundEndScreen(context, state);
         }
 

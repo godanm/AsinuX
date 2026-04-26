@@ -59,6 +59,7 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
 
   bool _gameOverAdFired = false;
   bool _statsRecorded = false;
+  bool _gameOverVisible = false; // delayed: true 2s after game ends
   bool _isMuted = false;
   bool _gameLogInitialized = false;
   bool _gameLogEndFired = false;
@@ -111,11 +112,11 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
     if (state.phase == RummyPhase.gameOver) {
       if (!_gameOverAdFired) {
         _gameOverAdFired = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          Future.delayed(const Duration(seconds: 3), () {
-            if (mounted) AdMobService.instance.showRewardedAsync(context);
-          });
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) setState(() => _gameOverVisible = true);
+        });
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted) AdMobService.instance.showRewardedAsync(context);
         });
       }
 
@@ -489,7 +490,7 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
               ),
 
             // ── Game over overlay ─────────────────────────────
-            if (state.phase == RummyPhase.gameOver)
+            if (state.phase == RummyPhase.gameOver && _gameOverVisible)
               Positioned.fill(
                 child: _GameOverOverlay(
                   state: state,
