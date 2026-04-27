@@ -443,9 +443,9 @@ class TeenPattiService {
     final caller = state.players[callerId]!;
     final other = state.players[otherId]!;
 
-    // Show cost: seen-vs-seen = full stake; seen-vs-blind = half stake (rounded up)
-    final showCost = (caller.isSeen && other.isBlind)
-        ? (state.currentStake / 2).ceil()
+    // Show cost: both seen = 2× stake (video rule); one or both blind = 1× stake
+    final showCost = (caller.isSeen && other.isSeen)
+        ? state.currentStake * 2
         : state.currentStake;
 
     if (!callerId.startsWith('bot_')) {
