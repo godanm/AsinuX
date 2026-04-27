@@ -199,6 +199,155 @@ class GameLogger {
         'scores': scores,
       });
 
+  // ── Teen Patti ────────────────────────────────────────────────────────────
+
+  Future<void> tpGameStart({
+    required String roomId,
+    required int roundNumber,
+    required Map<String, String> playerNames, // id → name
+    required int bootAmount,
+    required String firstTurn,
+  }) async {
+    await _initRoom(roomId, 'teen_patti');
+    return _log(roomId, 'GAME_START', 'teen_patti', {
+      'round': roundNumber,
+      'players': playerNames,
+      'bootAmount': bootAmount,
+      'firstTurn': firstTurn,
+    });
+  }
+
+  Future<void> tpSeeCards({
+    required String roomId,
+    required String playerId,
+    required String playerName,
+    required String handLabel,
+  }) =>
+      _log(roomId, 'SEE_CARDS', 'teen_patti', {
+        'player': '$playerName ($playerId)',
+        'hand': handLabel,
+      });
+
+  Future<void> tpFold({
+    required String roomId,
+    required String playerId,
+    required String playerName,
+    required int pot,
+    required bool timeout,
+  }) =>
+      _log(roomId, 'FOLD', 'teen_patti', {
+        'player': '$playerName ($playerId)',
+        'pot': pot,
+        'timeout': timeout,
+      });
+
+  Future<void> tpBet({
+    required String roomId,
+    required String playerId,
+    required String playerName,
+    required String action, // 'CHAAL' | 'RAISE'
+    required int bet,
+    required int newStake,
+    required int potBefore,
+    required int potAfter,
+    required bool wasBlind,
+  }) =>
+      _log(roomId, action, 'teen_patti', {
+        'player': '$playerName ($playerId)',
+        'bet': bet,
+        'newStake': newStake,
+        'potBefore': potBefore,
+        'potAfter': potAfter,
+        'wasBlind': wasBlind,
+      });
+
+  Future<void> tpSideshowRequest({
+    required String roomId,
+    required String requesterId,
+    required String requesterName,
+    required String targetId,
+    required String targetName,
+  }) =>
+      _log(roomId, 'SIDESHOW_REQUEST', 'teen_patti', {
+        'requester': '$requesterName ($requesterId)',
+        'target': '$targetName ($targetId)',
+      });
+
+  Future<void> tpSideshowResult({
+    required String roomId,
+    required String requesterId,
+    required String requesterName,
+    required String responderId,
+    required String responderName,
+    required bool accepted,
+    String? loserName, // null if rejected
+    String? requesterHand,
+    String? responderHand,
+  }) =>
+      _log(roomId, 'SIDESHOW_RESULT', 'teen_patti', {
+        'requester': '$requesterName ($requesterId)',
+        'responder': '$responderName ($responderId)',
+        'accepted': accepted,
+        if (loserName != null) 'loser': loserName,
+        if (requesterHand != null) 'requesterHand': requesterHand,
+        if (responderHand != null) 'responderHand': responderHand,
+      });
+
+  Future<void> tpShow({
+    required String roomId,
+    required String callerId,
+    required String callerName,
+    required String otherId,
+    required String otherName,
+    required String? callerHand,
+    required String? otherHand,
+    required List<String> winners,
+    required int pot,
+    required int showCost,
+  }) =>
+      _log(roomId, 'SHOW', 'teen_patti', {
+        'caller': '$callerName ($callerId)',
+        'other': '$otherName ($otherId)',
+        if (callerHand != null) 'callerHand': callerHand,
+        if (otherHand != null) 'otherHand': otherHand,
+        'winners': winners,
+        'pot': pot,
+        'showCost': showCost,
+      });
+
+  Future<void> tpForceShow({
+    required String roomId,
+    required Map<String, String> hands, // id → hand label
+    required List<String> winners,
+    required int pot,
+  }) =>
+      _log(roomId, 'FORCE_SHOW', 'teen_patti', {
+        'hands': hands,
+        'winners': winners,
+        'pot': pot,
+      });
+
+  Future<void> tpPayout({
+    required String roomId,
+    required List<String> winnerNames,
+    required int pot,
+    required int share,
+  }) =>
+      _log(roomId, 'PAYOUT', 'teen_patti', {
+        'winners': winnerNames,
+        'pot': pot,
+        'share': share,
+      });
+
+  Future<void> tpAutoFold({
+    required String roomId,
+    required String playerId,
+    required String playerName,
+  }) =>
+      _log(roomId, 'AUTO_FOLD_TIMEOUT', 'teen_patti', {
+        'player': '$playerName ($playerId)',
+      });
+
   // ── 28 ────────────────────────────────────────────────────────────────────
 
   Future<void> game28RoundStart({

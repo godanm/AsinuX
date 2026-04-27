@@ -180,6 +180,76 @@ const _games = <_Game>[
     ],
   ),
   _Game(
+    id: 'teen_patti',
+    emoji: '🌹',
+    title: 'TEEN PATTI',
+    subtitle: '3-card poker · 2–6 players',
+    accent: Color(0xFF2979FF),
+    gradientColors: [Color(0xFF0D3D8B), Color(0xFF061a40)],
+    cards: [
+      _Card(
+        emoji: '🏆',
+        title: 'Objective',
+        body: 'A 3-card betting game. Each player gets three cards and bets chips into the pot. The last player standing — or the strongest hand at showdown — wins the entire pot.',
+        bullets: [
+          '2–6 players, one pot',
+          'Everyone starts Blind (cards face-down)',
+          'Fold, call (Chaal), or raise each turn',
+          'Winner takes the whole pot',
+        ],
+      ),
+      _Card(
+        emoji: '🃏',
+        title: 'Hand Rankings',
+        body: 'Hands are ranked from strongest to weakest. Suit tie-breaker order: Spades > Hearts > Diamonds > Clubs.',
+        bullets: [
+          'Trail — three of a kind (best)',
+          'Pure Sequence — straight flush (same suit)',
+          'Sequence — straight (any suits)',
+          'Color — flush (same suit, not consecutive)',
+          'Pair — two of a kind',
+          'High Card — none of the above (worst)',
+        ],
+      ),
+      _Card(
+        emoji: '👁️',
+        title: 'Blind vs Seen',
+        body: 'You start Blind — your cards are hidden even from you. Tap "See Cards" on your turn to become Seen. Playing Blind costs half as much, but you\'re betting without seeing your hand.',
+        bullets: [
+          'Blind: Chaal costs 1× stake, Raise costs 2× stake',
+          'Seen: Chaal costs 2× stake, Raise costs 4× stake',
+          'You can see your cards at any time on your turn',
+          'Once Seen, you cannot go back to Blind',
+        ],
+      ),
+      _Card(
+        emoji: '🎯',
+        title: 'Your Actions',
+        body: 'On your turn choose one action. If only 2 players remain you can also call a Show to force a reveal.',
+        bullets: [
+          'Chaal — match the current stake and stay in',
+          'Raise — double the bet and increase the stake',
+          'Fold — give up your cards and exit the round',
+          'See Cards — reveal your hand (become Seen)',
+          'Sideshow — privately compare hands with the previous player (both must be Seen, 3+ active)',
+          'Show — compare hands when only 2 players remain',
+        ],
+      ),
+      _Card(
+        emoji: '🤝',
+        title: 'Sideshow & Showdown',
+        body: 'Sideshow lets two Seen players compare hands privately — the weaker hand folds immediately. A tie means the requester folds.',
+        bullets: [
+          'Sideshow target can accept or reject',
+          'Rejection: game continues, no one folds',
+          'Show cost: both Seen = full stake; Seen vs Blind = half stake',
+          'Tie at Show: the caller loses (non-caller wins)',
+          'Pot limit hit → all active hands are revealed, best hand wins and splits ties',
+        ],
+      ),
+    ],
+  ),
+  _Game(
     id: 'rummy',
     emoji: '🀄',
     title: 'RUMMY',
@@ -352,14 +422,10 @@ class _GameSelector extends StatelessWidget {
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
                   childAspectRatio: 1.35,
-                  children: [
-                    ..._games.map((g) => _GameTile(
-                          game: g,
-                          onTap: () => onGameSelected(g.id),
-                        )),
-                    // Placeholder tile for future game
-                    _PlaceholderTile(emoji: '♟️', title: 'GAME 4'),
-                  ],
+                  children: _games.map((g) => _GameTile(
+                        game: g,
+                        onTap: () => onGameSelected(g.id),
+                      )).toList(),
                 ),
               ],
             ),
@@ -433,47 +499,6 @@ class _GameTile extends StatelessWidget {
   }
 }
 
-class _PlaceholderTile extends StatelessWidget {
-  final String emoji;
-  final String title;
-  const _PlaceholderTile({required this.emoji, required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.02),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.07),
-          style: BorderStyle.solid,
-        ),
-      ),
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(emoji, style: TextStyle(fontSize: 24, color: Colors.white.withValues(alpha: 0.2))),
-          const Spacer(),
-          Text(
-            title,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.2),
-              fontSize: 13,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Coming soon',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.15), fontSize: 10),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // ── Swipeable rule cards ──────────────────────────────────────────────────────
 

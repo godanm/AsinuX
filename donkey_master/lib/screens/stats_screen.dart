@@ -81,7 +81,7 @@ class StatsScreen extends StatelessWidget {
                     children: [
                       Expanded(child: _RummyBlock(uid: uid)),
                       const _GridDividerH(),
-                      Expanded(child: _ComingSoonBlock(emoji: '♟️', title: 'GAME 4')),
+                      Expanded(child: _TeenPattiBlock(uid: uid)),
                     ],
                   ),
                 ),
@@ -248,49 +248,45 @@ class _Game28Block extends StatelessWidget {
   }
 }
 
-// ── Coming soon block ─────────────────────────────────────────────────────────
+// ── Teen Patti block ──────────────────────────────────────────────────────────
 
-class _ComingSoonBlock extends StatelessWidget {
-  final String emoji;
-  final String title;
-  const _ComingSoonBlock({required this.emoji, required this.title});
+class _TeenPattiBlock extends StatelessWidget {
+  final String uid;
+  const _TeenPattiBlock({required this.uid});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white.withValues(alpha: 0.01),
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(emoji, style: const TextStyle(fontSize: 14)),
-              const SizedBox(width: 6),
-              Text(
-                title,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.5,
-                ),
+    return StreamBuilder<TeenPattiStats>(
+      stream: StatsService.instance.teenPattiStatsStream(uid),
+      builder: (context, snap) {
+        final s = snap.data ?? const TeenPattiStats();
+        return _GameBlock(
+          emoji: '♟️',
+          title: 'TEEN PATTI',
+          accentColor: const Color(0xFF7B2FBE),
+          hasData: s.roundsPlayed > 0,
+          children: [
+            _MiniStat('Rounds', '${s.roundsPlayed}'),
+            _MiniStat('Won', '${s.roundsWon}', color: Colors.greenAccent.shade400),
+            _MiniStat(
+              'Win rate',
+              '${(s.winRate * 100).toStringAsFixed(0)}%',
+              color: Colors.greenAccent.shade400,
+            ),
+            _MiniStat('Chips won', '${s.totalChipsWon}', color: const Color(0xFFFFD700)),
+            if (s.roundsPlayed > 0) ...[
+              const SizedBox(height: 8),
+              _MiniBar(
+                segments: [
+                  _Seg(s.roundsWon, const Color(0xFF7B2FBE)),
+                  _Seg((s.roundsPlayed - s.roundsWon).clamp(0, s.roundsPlayed), Colors.white24),
+                ],
+                labels: const ['Won', 'Lost'],
               ),
             ],
-          ),
-          Expanded(
-            child: Center(
-              child: Text(
-                'Coming soon',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+          ],
+        );
+      },
     );
   }
 }

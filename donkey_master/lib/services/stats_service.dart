@@ -125,6 +125,28 @@ class Game28Stats {
       );
 }
 
+// ── Teen Patti stats ──────────────────────────────────────────────────────────
+
+class TeenPattiStats {
+  final int roundsPlayed;
+  final int roundsWon;
+  final int totalChipsWon;
+
+  const TeenPattiStats({
+    this.roundsPlayed = 0,
+    this.roundsWon = 0,
+    this.totalChipsWon = 0,
+  });
+
+  double get winRate => roundsPlayed == 0 ? 0 : roundsWon / roundsPlayed;
+
+  factory TeenPattiStats.fromMap(Map<dynamic, dynamic> map) => TeenPattiStats(
+        roundsPlayed: (map['roundsPlayed'] as int?) ?? 0,
+        roundsWon: (map['roundsWon'] as int?) ?? 0,
+        totalChipsWon: (map['totalChipsWon'] as int?) ?? 0,
+      );
+}
+
 class LeaderboardEntry {
   final String uid;
   final String name;
@@ -151,6 +173,7 @@ class StatsService {
   DatabaseReference _ref(String uid) => _db.ref('stats/$uid');
   DatabaseReference _rummyRef(String uid) => _db.ref('stats/$uid/rummy');
   DatabaseReference _game28Ref(String uid) => _db.ref('stats/$uid/game28');
+  DatabaseReference _teenPattiRef(String uid) => _db.ref('stats/$uid/teen_patti');
 
   Stream<RummyStats> rummyStatsStream(String uid) {
     return _rummyRef(uid).onValue.map((event) {
@@ -185,6 +208,28 @@ class StatsService {
       'totalPenalty': ServerValue.increment(penalty),
     });
     debugPrint('[StatsService] rummy result for $uid — won=$won dropped=$dropped penalty=$penalty');
+  }
+
+  // ── Teen Patti ────────────────────────────────────────────────────────────
+
+  Stream<TeenPattiStats> teenPattiStatsStream(String uid) {
+    return _teenPattiRef(uid).onValue.map((event) {
+      if (!event.snapshot.exists) return const TeenPattiStats();
+      return TeenPattiStats.fromMap(event.snapshot.value as Map<dynamic, dynamic>);
+    });
+  }
+
+  Future<void> recordTeenPattiRound({
+    required String uid,
+    required bool won,
+    required int potShare,
+  }) async {
+    await _teenPattiRef(uid).update({
+      'roundsPlayed': ServerValue.increment(1),
+      if (won) 'roundsWon': ServerValue.increment(1),
+      if (won && potShare > 0) 'totalChipsWon': ServerValue.increment(potShare),
+    });
+    debugPrint('[StatsService] teen_patti round for $uid — won=$won potShare=$potShare');
   }
 
   // ── Game 28 ───────────────────────────────────────────────────────────────

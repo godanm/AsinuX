@@ -99,6 +99,32 @@
       ".write": "auth != null"
     },
 
+    // ── Teen Patti rooms ──────────────────────────────────────────────────────
+    "teen_patti_rooms": {
+      "$roomId": {
+        ".read":  "auth != null && root.child('teen_patti_rooms').child($roomId).child('players').child(auth.uid).exists()",
+        ".write": "auth != null && (root.child('teen_patti_rooms').child($roomId).child('players').child(auth.uid).exists() || newData.child('players').child(auth.uid).exists())"
+      }
+    },
+
+    // ── Teen Patti card secrets ────────────────────────────────────────────────
+    // Write at $roomId level so startGame/startNextRound can .remove() the whole node.
+    // Read stays at $playerId level: own cards only; host can also read bot slots.
+    "teen_patti_secrets": {
+      "$roomId": {
+        ".write": "auth != null && root.child('teen_patti_rooms').child($roomId).child('players').child(auth.uid).exists()",
+        "$playerId": {
+          ".read": "auth != null && (auth.uid == $playerId || ($playerId.matches(/^bot_/) && root.child('teen_patti_rooms').child($roomId).child('players').child(auth.uid).exists()))"
+        }
+      }
+    },
+
+    // ── Teen Patti room code lookup ───────────────────────────────────────────
+    "teen_patti_codes": {
+      ".read":  "auth != null",
+      ".write": "auth != null"
+    },
+
     // ── Game logs ─────────────────────────────────────────────────────────────
     "gamelogs": {
       "$roomId": {

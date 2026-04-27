@@ -12,6 +12,7 @@ import '../widgets/player_avatar.dart';
 import 'matchmaking_screen.dart';
 import 'rummy_matchmaking_screen.dart';
 import 'game28_matchmaking_screen.dart';
+import 'teen_patti_matchmaking_screen.dart';
 import 'stats_screen.dart';
 // import 'leaderboard_screen.dart'; // TODO: re-enable with leaderboard
 
@@ -342,9 +343,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                     accentColor: const Color(0xFF2979FF),
                                     gradientColors: const [Color(0xFF0D3D8B), Color(0xFF061a40)],
                                     suits: const ['♠', '♣', '♥', '♦'],
-                                    enabled: false,
-                                    comingSoon: true,
-                                    onTap: () {},
+                                    enabled: _nameLoaded,
+                                    comingSoon: false,
+                                    onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (_) => TeenPattiMatchmakingScreen(playerName: _playerName)),
+                                    ),
                                   ).animate().fadeIn(delay: 760.ms, duration: 500.ms).slideY(begin: 0.1),
                                 ),
                               ],
