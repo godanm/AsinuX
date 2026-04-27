@@ -311,6 +311,132 @@ const _games = <_Game>[
       ),
     ],
   ),
+  _Game(
+    id: 'blackjack',
+    emoji: '🃏',
+    title: 'BLACKJACK',
+    subtitle: 'Beat the dealer · 1 player vs house',
+    accent: Color(0xFFFFD700),
+    gradientColors: [Color(0xFF3D2800), Color(0xFF1A1000)],
+    cards: [
+      _Card(
+        emoji: '🏆',
+        title: 'Objective',
+        body: 'Beat the dealer by getting a hand value closer to 21 without going over. You play against the house — not other players.',
+        bullets: [
+          'Get closer to 21 than the dealer',
+          'Go over 21 and you "bust" — instant loss',
+          'Dealer busts? You win automatically',
+          'Equal totals = push (bet returned)',
+        ],
+      ),
+      _Card(
+        emoji: '🃏',
+        title: 'Card Values',
+        body: 'Number cards are worth their face value. Face cards are worth 10. Aces are flexible.',
+        bullets: [
+          '2–10 = face value',
+          'Jack, Queen, King = 10',
+          'Ace = 11 or 1 — whichever keeps you under 21',
+          'Ace + any 10-value card = Blackjack (best hand!)',
+        ],
+      ),
+      _Card(
+        emoji: '🎯',
+        title: 'Your Actions',
+        body: 'After the deal you have three moves. Choose wisely based on your total and the dealer\'s visible card.',
+        bullets: [
+          'Hit — draw another card',
+          'Stand — keep your hand and end your turn',
+          'Double Down — double your bet, draw exactly one card, then stand (only on first two cards)',
+        ],
+      ),
+      _Card(
+        emoji: '🤖',
+        title: 'Dealer Rules',
+        body: 'The dealer follows fixed rules — no strategy, no choices. One of the dealer\'s two cards is hidden until your turn ends.',
+        bullets: [
+          'Dealer always hits until reaching 17 or more',
+          'Dealer stands on 17 and above',
+          'Hidden card is revealed after you stand or bust',
+        ],
+      ),
+      _Card(
+        emoji: '💰',
+        title: 'Payouts',
+        body: 'Your winnings depend on how you won. Blackjack pays a bonus over a regular win.',
+        bullets: [
+          'Regular win → +1× your bet',
+          'Blackjack (Ace + 10-value) → +1.5× your bet',
+          'Push (tie) → bet returned, no gain or loss',
+          'Bust or lower total → lose your bet',
+        ],
+      ),
+    ],
+  ),
+  _Game(
+    id: 'bluff',
+    emoji: '🤫',
+    title: 'BLUFF',
+    subtitle: 'Deception · 4 players',
+    accent: Color(0xFFAB47BC),
+    gradientColors: [Color(0xFF2D0040), Color(0xFF130020)],
+    cards: [
+      _Card(
+        emoji: '🏆',
+        title: 'Objective',
+        body: 'Be the first player to get rid of all your cards. The catch — you can lie about what you play, and everyone else can call you out.',
+        bullets: [
+          '4 players, full 52-card deck dealt evenly',
+          'Cards are played face-down — no one sees what you really put down',
+          'First to empty their hand wins',
+        ],
+      ),
+      _Card(
+        emoji: '🃏',
+        title: 'Playing a Turn',
+        body: 'On your turn, place 1 to 4 cards face-down on the pile and declare their rank. The declared rank must be one step higher than the previous player\'s declared rank.',
+        bullets: [
+          'Declare a rank: e.g. "Two 8s" or "One King"',
+          'Rank must follow the sequence (previous + 1)',
+          'After King the sequence resets to Ace',
+          'You may tell the truth or lie — that\'s the game',
+        ],
+      ),
+      _Card(
+        emoji: '😤',
+        title: 'Calling Bluff',
+        body: 'Any player can shout "Bluff!" after someone plays. The cards just played are flipped over and checked.',
+        bullets: [
+          'Bluffer caught → bluffer picks up the entire pile',
+          'Challenge was wrong → challenger picks up the entire pile',
+          'Either way the pile resets and the next turn begins',
+        ],
+      ),
+      _Card(
+        emoji: '🎭',
+        title: 'When to Bluff',
+        body: 'Bluffing is the heart of the game. Lie when you don\'t have the required rank. Tell the truth when you do — or when a lie would be too obvious.',
+        bullets: [
+          'Watch how many cards others pick up — big hands = desperate plays',
+          'Bluff when you\'re running low and need to dump cards fast',
+          'Call bluff on unusually large plays (4 of the same rank is rare)',
+          'Poker face matters — bots never flinch!',
+        ],
+      ),
+      _Card(
+        emoji: '💡',
+        title: 'Tips & Strategy',
+        body: 'The best Bluff players balance deception with credibility. Getting caught too often means a mountain of cards.',
+        bullets: [
+          'Don\'t bluff every turn — build trust, then strike',
+          'Call bluff early in the game when the pile is small (low risk)',
+          'Save your real cards for when the sequence matches',
+          'Watch opponents\' hesitation before they play',
+        ],
+      ),
+    ],
+  ),
 ];
 
 // ── Root overlay widget ───────────────────────────────────────────────────────

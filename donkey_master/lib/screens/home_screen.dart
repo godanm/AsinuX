@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
@@ -13,8 +15,13 @@ import 'matchmaking_screen.dart';
 import 'rummy_matchmaking_screen.dart';
 import 'game28_matchmaking_screen.dart';
 import 'teen_patti_matchmaking_screen.dart';
+import 'blackjack_game_screen.dart';
+import 'bluff_game_screen.dart';
 import 'stats_screen.dart';
 // import 'leaderboard_screen.dart'; // TODO: re-enable with leaderboard
+
+// ── Paste Play Store URL here once the app is approved ───────────────────────
+const _kPlayStoreUrl = '';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,10 +32,12 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String _playerName = '';
+  String _uid = '';
   bool _nameLoaded = false;
   AvatarPreset _avatar = const AvatarPreset(colorIndex: -1, iconIndex: -1);
   PlayerStats _stats = const PlayerStats();
   StreamSubscription<PlayerStats>? _statsSubscription;
+  bool _appBannerDismissed = false;
 
   @override
   void initState() {
@@ -80,8 +89,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadName() async {
     final name = await AuthService.instance.getOrCreateDisplayName();
     if (mounted) setState(() { _playerName = name; _nameLoaded = true; });
-    // Subscribe to stats stream so the header updates in real-time after games.
     final user = await AuthService.instance.signInAnonymously();
+    if (mounted) setState(() => _uid = user.uid);
     _statsSubscription?.cancel();
     _statsSubscription = StatsService.instance.statsStream(user.uid).listen((stats) {
       if (mounted) setState(() => _stats = stats);
@@ -354,6 +363,57 @@ class _HomeScreenState extends State<HomeScreen> {
                               ],
                             ),
 
+                            const SizedBox(height: 12),
+
+                            // ── Row 3: Blackjack + Bluff ──────────────
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _GameCard(
+                                    emoji: '🃏',
+                                    title: 'BLACKJACK',
+                                    subtitle: 'Beat the dealer · Blackjack pays 3:2',
+                                    accentColor: const Color(0xFFFFD700),
+                                    gradientColors: const [Color(0xFF3D2800), Color(0xFF1A1000)],
+                                    suits: const ['♠', '♥', '♦', '♣'],
+                                    enabled: _nameLoaded,
+                                    comingSoon: false,
+                                    onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => BlackjackGameScreen(
+                                          playerId: _uid,
+                                          playerName: _playerName,
+                                        ),
+                                      ),
+                                    ),
+                                  ).animate().fadeIn(delay: 880.ms, duration: 500.ms).slideY(begin: 0.1),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _GameCard(
+                                    emoji: '🤫',
+                                    title: 'BLUFF',
+                                    subtitle: 'Deception · 4 players',
+                                    accentColor: const Color(0xFFAB47BC),
+                                    gradientColors: const [Color(0xFF2D0040), Color(0xFF130020)],
+                                    suits: const ['🃏', '🃏', '🃏', '🃏'],
+                                    enabled: _nameLoaded,
+                                    comingSoon: false,
+                                    onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => BluffGameScreen(
+                                          playerId: _uid,
+                                          playerName: _playerName,
+                                        ),
+                                      ),
+                                    ),
+                                  ).animate().fadeIn(delay: 1000.ms, duration: 500.ms).slideY(begin: 0.1),
+                                ),
+                              ],
+                            ),
+
                             const SizedBox(height: 16),
                           ],
                         ),
@@ -362,6 +422,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
+                if (kIsWeb && _kPlayStoreUrl.isNotEmpty && !_appBannerDismissed)
+                  _AppStoreBanner(onDismiss: () => setState(() => _appBannerDismissed = true)),
                 const AdBannerWidget(),
               ],
             ),
@@ -841,6 +903,56 @@ class _ShimmerState extends State<_Shimmer> with SingleTickerProviderStateMixin 
             _anim.value,
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ── Play Store banner (web only, shown when _kPlayStoreUrl is set) ─────────────
+
+class _AppStoreBanner extends StatelessWidget {
+  final VoidCallback onDismiss;
+  const _AppStoreBanner({required this.onDismiss});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1a2a00), Color(0xFF0d1800)],
+        ),
+        border: Border(top: BorderSide(color: const Color(0xFF76FF03).withValues(alpha: 0.25))),
+      ),
+      child: Row(
+        children: [
+          const Text('📱', style: TextStyle(fontSize: 20)),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Text(
+              'Play on Android — get the app',
+              style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+            ),
+          ),
+          GestureDetector(
+            onTap: () => launchUrl(Uri.parse(_kPlayStoreUrl), mode: LaunchMode.externalApplication),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              decoration: BoxDecoration(
+                color: const Color(0xFF76FF03),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text('INSTALL',
+                  style: TextStyle(color: Colors.black, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1)),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: onDismiss,
+            child: Icon(Icons.close_rounded, color: Colors.white.withValues(alpha: 0.3), size: 18),
+          ),
+        ],
       ),
     );
   }

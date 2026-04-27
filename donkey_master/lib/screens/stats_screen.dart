@@ -60,28 +60,45 @@ class StatsScreen extends StatelessWidget {
 
           const Divider(color: Colors.white10, height: 1),
 
-          // ── 2×2 stats grid ────────────────────────────────────
+          // ── Stats grid (2×2 + full-width Blackjack) ──────────
           Expanded(
-            child: Row(
+            child: Column(
               children: [
-                // Left column
+                // 2×2 grid
                 Expanded(
-                  child: Column(
+                  child: Row(
                     children: [
-                      Expanded(child: _KazhuthaBlock(uid: uid)),
-                      const _GridDividerH(),
-                      Expanded(child: _Game28Block(uid: uid)),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Expanded(child: _KazhuthaBlock(uid: uid)),
+                            const _GridDividerH(),
+                            Expanded(child: _Game28Block(uid: uid)),
+                          ],
+                        ),
+                      ),
+                      const _GridDividerV(),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Expanded(child: _RummyBlock(uid: uid)),
+                            const _GridDividerH(),
+                            Expanded(child: _TeenPattiBlock(uid: uid)),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                const _GridDividerV(),
-                // Right column
-                Expanded(
-                  child: Column(
+                // Blackjack + Bluff row
+                const _GridDividerH(),
+                SizedBox(
+                  height: 155,
+                  child: Row(
                     children: [
-                      Expanded(child: _RummyBlock(uid: uid)),
-                      const _GridDividerH(),
-                      Expanded(child: _TeenPattiBlock(uid: uid)),
+                      Expanded(child: _BlackjackBlock(uid: uid)),
+                      const _GridDividerV(),
+                      Expanded(child: _BluffBlock(uid: uid)),
                     ],
                   ),
                 ),
@@ -280,6 +297,100 @@ class _TeenPattiBlock extends StatelessWidget {
                 segments: [
                   _Seg(s.roundsWon, const Color(0xFF7B2FBE)),
                   _Seg((s.roundsPlayed - s.roundsWon).clamp(0, s.roundsPlayed), Colors.white24),
+                ],
+                labels: const ['Won', 'Lost'],
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+// ── Blackjack block ───────────────────────────────────────────────────────────
+
+class _BlackjackBlock extends StatelessWidget {
+  final String uid;
+  const _BlackjackBlock({required this.uid});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<BlackjackStats>(
+      stream: StatsService.instance.blackjackStatsStream(uid),
+      builder: (context, snap) {
+        final s = snap.data ?? const BlackjackStats();
+        return _GameBlock(
+          emoji: '🃏',
+          title: 'BLACKJACK',
+          accentColor: const Color(0xFFFFD700),
+          hasData: s.handsPlayed > 0,
+          children: [
+            _MiniStat('Hands', '${s.handsPlayed}'),
+            _MiniStat('Wins', '${s.wins}', color: Colors.greenAccent.shade400),
+            _MiniStat('Losses', '${s.losses}', color: Colors.redAccent),
+            _MiniStat('Blackjacks', '${s.blackjacks}', color: const Color(0xFFFFD700)),
+            _MiniStat(
+              'Win rate',
+              '${(s.winRate * 100).toStringAsFixed(0)}%',
+              color: Colors.greenAccent.shade400,
+            ),
+            _MiniStat(
+              'Net chips',
+              '${s.totalChipsWon >= 0 ? '+' : ''}${s.totalChipsWon}',
+              color: s.totalChipsWon >= 0 ? Colors.greenAccent.shade400 : Colors.redAccent,
+            ),
+            if (s.handsPlayed > 0) ...[
+              const SizedBox(height: 8),
+              _MiniBar(
+                segments: [
+                  _Seg(s.wins, const Color(0xFFFFD700)),
+                  _Seg(s.pushes, Colors.white24),
+                  _Seg(s.losses, Colors.redAccent),
+                ],
+                labels: const ['Won', 'Push', 'Lost'],
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+// ── Bluff block ───────────────────────────────────────────────────────────────
+
+class _BluffBlock extends StatelessWidget {
+  final String uid;
+  const _BluffBlock({required this.uid});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<BluffStats>(
+      stream: StatsService.instance.bluffStatsStream(uid),
+      builder: (context, snap) {
+        final s = snap.data ?? const BluffStats();
+        return _GameBlock(
+          emoji: '🤫',
+          title: 'BLUFF',
+          accentColor: const Color(0xFFAB47BC),
+          hasData: s.gamesPlayed > 0,
+          children: [
+            _MiniStat('Games', '${s.gamesPlayed}'),
+            _MiniStat('Wins', '${s.wins}', color: Colors.greenAccent.shade400),
+            _MiniStat('Win rate', '${(s.winRate * 100).toStringAsFixed(0)}%',
+                color: Colors.greenAccent.shade400),
+            _MiniStat('Bluffs tried', '${s.bluffsAttempted}',
+                color: const Color(0xFFAB47BC)),
+            _MiniStat('Caught', '${s.bluffsCaught}', color: Colors.redAccent),
+            _MiniStat('Succeeded', '${s.bluffsSucceeded}',
+                color: Colors.greenAccent.shade400),
+            if (s.gamesPlayed > 0) ...[
+              const SizedBox(height: 8),
+              _MiniBar(
+                segments: [
+                  _Seg(s.wins, const Color(0xFFAB47BC)),
+                  _Seg((s.gamesPlayed - s.wins).clamp(0, s.gamesPlayed), Colors.white24),
                 ],
                 labels: const ['Won', 'Lost'],
               ),

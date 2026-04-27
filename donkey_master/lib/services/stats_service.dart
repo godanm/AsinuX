@@ -147,6 +147,67 @@ class TeenPattiStats {
       );
 }
 
+// ── Bluff stats (stub — populated when the game is built) ────────────────────
+
+class BluffStats {
+  final int gamesPlayed;
+  final int wins;
+  final int bluffsAttempted;
+  final int bluffsCaught;
+  final int bluffsSucceeded;
+
+  const BluffStats({
+    this.gamesPlayed = 0,
+    this.wins = 0,
+    this.bluffsAttempted = 0,
+    this.bluffsCaught = 0,
+    this.bluffsSucceeded = 0,
+  });
+
+  double get winRate => gamesPlayed == 0 ? 0 : wins / gamesPlayed;
+  double get bluffSuccessRate =>
+      bluffsAttempted == 0 ? 0 : bluffsSucceeded / bluffsAttempted;
+
+  factory BluffStats.fromMap(Map<dynamic, dynamic> map) => BluffStats(
+        gamesPlayed: (map['gamesPlayed'] as int?) ?? 0,
+        wins: (map['wins'] as int?) ?? 0,
+        bluffsAttempted: (map['bluffsAttempted'] as int?) ?? 0,
+        bluffsCaught: (map['bluffsCaught'] as int?) ?? 0,
+        bluffsSucceeded: (map['bluffsSucceeded'] as int?) ?? 0,
+      );
+}
+
+// ── Blackjack stats ───────────────────────────────────────────────────────────
+
+class BlackjackStats {
+  final int handsPlayed;
+  final int wins;
+  final int losses;
+  final int pushes;
+  final int blackjacks;
+  final int totalChipsWon;
+
+  const BlackjackStats({
+    this.handsPlayed = 0,
+    this.wins = 0,
+    this.losses = 0,
+    this.pushes = 0,
+    this.blackjacks = 0,
+    this.totalChipsWon = 0,
+  });
+
+  double get winRate => handsPlayed == 0 ? 0 : wins / handsPlayed;
+
+  factory BlackjackStats.fromMap(Map<dynamic, dynamic> map) => BlackjackStats(
+        handsPlayed: (map['handsPlayed'] as int?) ?? 0,
+        wins: (map['wins'] as int?) ?? 0,
+        losses: (map['losses'] as int?) ?? 0,
+        pushes: (map['pushes'] as int?) ?? 0,
+        blackjacks: (map['blackjacks'] as int?) ?? 0,
+        totalChipsWon: (map['totalChipsWon'] as int?) ?? 0,
+      );
+}
+
 class LeaderboardEntry {
   final String uid;
   final String name;
@@ -174,6 +235,32 @@ class StatsService {
   DatabaseReference _rummyRef(String uid) => _db.ref('stats/$uid/rummy');
   DatabaseReference _game28Ref(String uid) => _db.ref('stats/$uid/game28');
   DatabaseReference _teenPattiRef(String uid) => _db.ref('stats/$uid/teen_patti');
+  DatabaseReference _blackjackRef(String uid) => _db.ref('stats/$uid/blackjack');
+  DatabaseReference _bluffRef(String uid) => _db.ref('stats/$uid/bluff');
+
+  Stream<BluffStats> bluffStatsStream(String uid) {
+    return _bluffRef(uid).onValue.map((event) {
+      if (!event.snapshot.exists) return const BluffStats();
+      return BluffStats.fromMap(event.snapshot.value as Map<dynamic, dynamic>);
+    });
+  }
+
+  Future<void> recordBluffGame({
+    required String uid,
+    required bool won,
+    required int bluffsAttempted,
+    required int bluffsCaught,
+    required int bluffsSucceeded,
+  }) async {
+    await _bluffRef(uid).update({
+      'gamesPlayed': ServerValue.increment(1),
+      if (won) 'wins': ServerValue.increment(1),
+      if (bluffsAttempted > 0) 'bluffsAttempted': ServerValue.increment(bluffsAttempted),
+      if (bluffsCaught > 0) 'bluffsCaught': ServerValue.increment(bluffsCaught),
+      if (bluffsSucceeded > 0) 'bluffsSucceeded': ServerValue.increment(bluffsSucceeded),
+    });
+    debugPrint('[StatsService] bluff game for $uid — won=$won bluffs=$bluffsAttempted caught=$bluffsCaught succeeded=$bluffsSucceeded');
+  }
 
   Stream<RummyStats> rummyStatsStream(String uid) {
     return _rummyRef(uid).onValue.map((event) {
@@ -230,6 +317,34 @@ class StatsService {
       if (won && potShare > 0) 'totalChipsWon': ServerValue.increment(potShare),
     });
     debugPrint('[StatsService] teen_patti round for $uid — won=$won potShare=$potShare');
+  }
+
+  // ── Blackjack ─────────────────────────────────────────────────────────────
+
+  Stream<BlackjackStats> blackjackStatsStream(String uid) {
+    return _blackjackRef(uid).onValue.map((event) {
+      if (!event.snapshot.exists) return const BlackjackStats();
+      return BlackjackStats.fromMap(event.snapshot.value as Map<dynamic, dynamic>);
+    });
+  }
+
+  Future<void> recordBlackjackRound({
+    required String uid,
+    required bool won,
+    required bool isPush,
+    required bool isBlackjack,
+    required int chipsDelta,
+  }) async {
+    await _blackjackRef(uid).update({
+      'handsPlayed': ServerValue.increment(1),
+      if (won) 'wins': ServerValue.increment(1),
+      if (!won && !isPush) 'losses': ServerValue.increment(1),
+      if (isPush) 'pushes': ServerValue.increment(1),
+      if (isBlackjack) 'blackjacks': ServerValue.increment(1),
+      'totalChipsWon': ServerValue.increment(chipsDelta),
+    });
+    await _ref(uid).update({'totalPoints': ServerValue.increment(chipsDelta)});
+    debugPrint('[StatsService] blackjack round for $uid — won=$won push=$isPush bj=$isBlackjack delta=$chipsDelta');
   }
 
   // ── Game 28 ───────────────────────────────────────────────────────────────
