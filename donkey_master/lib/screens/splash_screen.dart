@@ -88,7 +88,7 @@ class _SplashScreenState extends State<SplashScreen>
                 colors: [Color(0xFFE63946), Color(0xFFFF6B6B)],
               ).createShader(bounds),
               child: const Text(
-                'AsinuX',
+                'Tricksy',
                 style: TextStyle(
                   fontSize: 52,
                   fontWeight: FontWeight.w900,
@@ -101,7 +101,7 @@ class _SplashScreenState extends State<SplashScreen>
             const SizedBox(height: 8),
 
             Text(
-              "Don't be the AsinuX!",
+              "Outsmart the table.",
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.white.withValues(alpha: 0.4),

@@ -77,7 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: const Color(0xFF1a000e),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
-          'Do you know how to play AsinuX?',
+          'New to Tricksy?',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17),
         ),
         actions: [
@@ -338,7 +338,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 stops: [0.0, 0.6, 1.0],
                               ).createShader(bounds),
                               child: const Text(
-                                'AsinuX',
+                                'Tricksy',
                                 style: TextStyle(
                                   fontSize: 58,
                                   fontWeight: FontWeight.w900,
@@ -348,7 +348,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.15),
                             Text(
-                              '— THE CARD GAME —',
+                              '— CARD GAMES —',
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w400,
@@ -735,7 +735,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
           const SizedBox(height: 16),
           Center(
             child: Text(
-              _kAppVersion.isNotEmpty ? 'AsinuX $_kAppVersion' : 'AsinuX',
+              _kAppVersion.isNotEmpty ? 'Tricksy $_kAppVersion' : 'Tricksy',
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.2),
                 fontSize: 11,

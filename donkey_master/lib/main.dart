@@ -39,7 +39,7 @@ class _DonkeyMasterAppState extends State<DonkeyMasterApp>
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'AsinuX',
+      title: 'Tricksy',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
