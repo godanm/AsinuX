@@ -62,7 +62,13 @@
         "source": "/about",
         "destination": "/about.html"
       },
-{
+      { "source": "/how-to-play/kazhutha",  "destination": "/how-to-play/kazhutha.html" },
+      { "source": "/how-to-play/rummy",     "destination": "/how-to-play/rummy.html" },
+      { "source": "/how-to-play/game-28",   "destination": "/how-to-play/game-28.html" },
+      { "source": "/how-to-play/teen-patti","destination": "/how-to-play/teen-patti.html" },
+      { "source": "/how-to-play/blackjack", "destination": "/how-to-play/blackjack.html" },
+      { "source": "/how-to-play/bluff",     "destination": "/how-to-play/bluff.html" },
+      {
         "source": "**",
         "destination": "/index.html"
       }

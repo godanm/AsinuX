@@ -73,12 +73,16 @@ class _BluffGameScreenState extends State<BluffGameScreen> {
   int _bluffsCaught = 0;
   int _bluffsSucceeded = 0;
   bool _statsRecorded = false;
+  int _totalPoints = 0;
 
   @override
   void initState() {
     super.initState();
     AdMobService.instance.suppressAppOpenAd = true;
     _newGame();
+    StatsService.instance.getStats(widget.playerId).then((s) {
+      if (mounted) setState(() => _totalPoints = s.totalPoints);
+    });
   }
 
   @override
@@ -264,6 +268,9 @@ class _BluffGameScreenState extends State<BluffGameScreen> {
         bluffsCaught: _bluffsCaught,
         bluffsSucceeded: _bluffsSucceeded,
       );
+      StatsService.instance.getStats(widget.playerId).then((s) {
+        if (mounted) setState(() => _totalPoints = s.totalPoints);
+      });
     }
     setState(() {
       _phase = _Phase.gameOver;
@@ -285,11 +292,20 @@ class _BluffGameScreenState extends State<BluffGameScreen> {
     return _rng.nextDouble() < prob;
   }
 
+  void _leaveGame() {
+    AdMobService.instance.showInterstitialAsync(context).then((_) {
+      if (mounted) Navigator.pop(context);
+    });
+  }
+
   // ── Build ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) { if (!didPop) _leaveGame(); },
+      child: Scaffold(
       backgroundColor: const Color(0xFF0d0008),
       body: SafeArea(
         child: Column(
@@ -320,7 +336,7 @@ class _BluffGameScreenState extends State<BluffGameScreen> {
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildHeader() {
@@ -330,12 +346,30 @@ class _BluffGameScreenState extends State<BluffGameScreen> {
         children: [
           IconButton(
             icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white54, size: 20),
-            onPressed: () => Navigator.pop(context),
+            onPressed: _leaveGame,
           ),
           const Spacer(),
           const Text('BLUFF',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.white)),
           const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            decoration: BoxDecoration(
+              color: _accent.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: _accent.withValues(alpha: 0.4)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('⭐', style: TextStyle(fontSize: 12)),
+                const SizedBox(width: 4),
+                Text('$_totalPoints',
+                    style: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white)),
+              ],
+            ),
+          ),
           IconButton(
             icon: Icon(_isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded, color: Colors.white54, size: 22),
             onPressed: () => setState(() { _isMuted = !_isMuted; SoundService.instance.toggleMute(); }),
@@ -678,7 +712,7 @@ class _BluffGameScreenState extends State<BluffGameScreen> {
                 ),
                 const SizedBox(height: 10),
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: _leaveGame,
                   child: Text('Back to Home',
                       style: TextStyle(color: Colors.white.withValues(alpha: 0.45))),
                 ),

@@ -60,6 +60,7 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
   bool _gameOverAdFired = false;
   bool _statsRecorded = false;
   bool _gameOverVisible = false; // delayed: true 2s after game ends
+  bool _bonusAdUsed = false;
   bool _isMuted = false;
   bool _gameLogInitialized = false;
   bool _gameLogEndFired = false;
@@ -497,6 +498,13 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
                   myId: widget.playerId,
                   onPlayAgain: () => Navigator.of(context)
                       .popUntil((r) => r.isFirst),
+                  onWatchAd: _bonusAdUsed ? null : () {
+                    final ctx = context;
+                    AdMobService.instance.showRewardedAsync(ctx, () {
+                      StatsService.instance.awardBonusPoints(widget.playerId, 100);
+                      if (mounted) setState(() => _bonusAdUsed = true);
+                    });
+                  },
                 ),
               ),
           ],
@@ -1593,11 +1601,13 @@ class _GameOverOverlay extends StatelessWidget {
   final RummyGameState state;
   final String myId;
   final VoidCallback onPlayAgain;
+  final VoidCallback? onWatchAd;
 
   const _GameOverOverlay({
     required this.state,
     required this.myId,
     required this.onPlayAgain,
+    this.onWatchAd,
   });
 
   @override
@@ -1714,6 +1724,24 @@ class _GameOverOverlay extends StatelessWidget {
               }),
 
               const SizedBox(height: 20),
+              if (iWon && onWatchAd != null) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.play_circle_outline, size: 16),
+                    label: const Text('Watch ad — +100 bonus pts'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.amberAccent,
+                      side: const BorderSide(color: Colors.amberAccent),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                    ),
+                    onPressed: onWatchAd,
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
               SizedBox(
                 width: double.infinity,
                 height: 48,

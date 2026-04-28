@@ -45,6 +45,7 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
   bool _roundAdFired = false;
   bool _statsRecorded = false;
   bool _endScreenVisible = false; // delayed: true 2s after round/game ends
+  bool _roundBonusAdUsed = false;
 
   @override
   void initState() {
@@ -81,6 +82,7 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
         _endScreenVisible = false;
         _roundAdFired = false;
         _statsRecorded = false;
+        _roundBonusAdUsed = false;
       }
     });
 
@@ -400,6 +402,15 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
             await AdMobService.instance.showInterstitialAsync(context);
             if (mounted) Navigator.of(context).popUntil((r) => r.isFirst);
           },
+          onWatchAd: _roundBonusAdUsed ? null : () {
+            final ctx = context;
+            final uid = AuthService.instance.uid;
+            if (uid == null) return;
+            AdMobService.instance.showRewardedAsync(ctx, () {
+              StatsService.instance.awardBonusPoints(uid, 30);
+              if (mounted) setState(() => _roundBonusAdUsed = true);
+            });
+          },
         );
       case Game28Phase.gameOver:
         if (!_endScreenVisible) {
@@ -452,8 +463,15 @@ class _TopBar28 extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       color: Colors.black26,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
         children: [
+          const Spacer(),
+          const Text('GAME 28',
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2,
+                  color: Colors.white)),
+          const Spacer(),
           IconButton(
             onPressed: onHelp,
             icon: Icon(Icons.help_outline_rounded,
@@ -1509,12 +1527,15 @@ class _RoundEndView extends StatelessWidget {
   final String playerId;
   final VoidCallback onNext;
   final VoidCallback onHome;
+  final VoidCallback? onWatchAd;
 
-  const _RoundEndView(
-      {required this.state,
-      required this.playerId,
-      required this.onNext,
-      required this.onHome});
+  const _RoundEndView({
+    required this.state,
+    required this.playerId,
+    required this.onNext,
+    required this.onHome,
+    this.onWatchAd,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1647,6 +1668,20 @@ class _RoundEndView extends StatelessWidget {
 
           const SizedBox(height: 24),
 
+          if (iWon && onWatchAd != null) ...[
+            OutlinedButton.icon(
+              icon: const Icon(Icons.play_circle_outline, size: 16),
+              label: const Text('Watch ad — +30 bonus pts'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.amberAccent,
+                side: const BorderSide(color: Colors.amberAccent),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              ),
+              onPressed: onWatchAd,
+            ),
+            const SizedBox(height: 10),
+          ],
           _FilledBtn('NEXT ROUND →', onNext, color: Colors.green.shade700),
           const SizedBox(height: 10),
           _OutlineBtn('HOME', onHome),

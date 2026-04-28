@@ -104,7 +104,7 @@ class AdMobService {
           _isInterstitialReady = false;
           _interstitialLoadCompleter?.complete();
           _interstitialLoadCompleter = null;
-          Future.delayed(const Duration(minutes: 1), _loadInterstitial);
+          Future.delayed(const Duration(seconds: 30), _loadInterstitial);
         },
       ),
     );
@@ -183,8 +183,8 @@ class AdMobService {
   }
 
   /// Show rewarded interstitial. Falls back to standard interstitial if not ready.
-  /// Also waits for in-flight loads before giving up.
-  Future<void> showRewardedAsync([BuildContext? context]) async {
+  /// [onRewarded] fires only when the user completes the ad and earns the reward.
+  Future<void> showRewardedAsync([BuildContext? context, VoidCallback? onRewarded]) async {
     debugPrint('[AdMob] showRewardedAsync — rewarded=$_isRewardedReady interstitial=$_isInterstitialReady');
 
     // Wait for rewarded to finish loading if it isn't ready yet
@@ -219,10 +219,14 @@ class AdMobService {
           if (!completer.isCompleted) completer.complete();
         },
       );
-      _rewardedAd!.show(onUserEarnedReward: (ad, reward) {});
+      _rewardedAd!.show(onUserEarnedReward: (ad, reward) { onRewarded?.call(); });
       await completer.future;
+    } else if (onRewarded != null) {
+      // User explicitly requested a rewarded ad — deliver the reward even if
+      // the rewarded unit is unavailable, so the promised bonus is never lost.
+      onRewarded.call();
     } else {
-      // Rewarded unavailable — fall back to interstitial
+      // System-initiated (round-end) with no reward callback — fall back to interstitial.
       await showInterstitialAsync();
     }
   }

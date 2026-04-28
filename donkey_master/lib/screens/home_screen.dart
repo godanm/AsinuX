@@ -38,10 +38,20 @@ class _HomeScreenState extends State<HomeScreen> {
   PlayerStats _stats = const PlayerStats();
   StreamSubscription<PlayerStats>? _statsSubscription;
   bool _appBannerDismissed = false;
+  bool _suppressFirstLaunch = false;
+
+  static const _kDeepLinkPaths = {
+    '/kazhutha', '/rummy', '/game-28', '/teen-patti', '/blackjack', '/bluff',
+  };
 
   @override
   void initState() {
     super.initState();
+    // Detect deep link synchronously before the first-launch dialog is scheduled,
+    // so we can suppress it when the user arrived via a game URL.
+    if (kIsWeb && _kDeepLinkPaths.contains(Uri.base.path.toLowerCase())) {
+      _suppressFirstLaunch = true;
+    }
     _loadName();
     _loadAvatar();
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkFirstLaunch());
@@ -54,6 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _checkFirstLaunch() async {
+    if (_suppressFirstLaunch) return;
     final prefs = await SharedPreferences.getInstance();
     final seen = prefs.getBool('how_to_play_seen') ?? false;
     if (seen || !mounted) return;
@@ -103,6 +114,28 @@ class _HomeScreenState extends State<HomeScreen> {
       final fresh = await StatsService.instance.getStats(user.uid);
       if (mounted) setState(() => _stats = fresh);
     });
+    // Web deep-link: navigate to the requested game once auth is ready.
+    if (kIsWeb && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _handleWebDeepLink());
+    }
+  }
+
+  void _handleWebDeepLink() {
+    if (!mounted) return;
+    switch (Uri.base.path.toLowerCase()) {
+      case '/kazhutha':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => MatchmakingScreen(playerName: _playerName)));
+      case '/rummy':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => RummyMatchmakingScreen(playerName: _playerName)));
+      case '/game-28':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => Game28MatchmakingScreen(playerName: _playerName)));
+      case '/teen-patti':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => TeenPattiMatchmakingScreen(playerName: _playerName)));
+      case '/blackjack':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => BlackjackGameScreen(playerId: _uid, playerName: _playerName)));
+      case '/bluff':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => BluffGameScreen(playerId: _uid, playerName: _playerName)));
+    }
   }
 
   Future<void> _loadAvatar() async {

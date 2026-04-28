@@ -44,8 +44,10 @@ class AdMobService {
   Future<void> showInterstitialAsync([BuildContext? context]) =>
       showRoundEndAd(context);
 
-  Future<void> showRewardedAsync([BuildContext? context]) =>
-      showRoundEndAd(context);
+  Future<void> showRewardedAsync([BuildContext? context, VoidCallback? onRewarded]) async {
+    await showRoundEndAd(context);
+    onRewarded?.call();
+  }
 
   dynamic createBannerAd([dynamic size]) => null;
 }

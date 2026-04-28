@@ -258,13 +258,22 @@ class _BlackjackGameScreenState extends State<BlackjackGameScreen> {
     });
   }
 
+  void _leaveGame() {
+    AdMobService.instance.showInterstitialAsync(context).then((_) {
+      if (mounted) Navigator.pop(context);
+    });
+  }
+
   // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF060e06),
-      body: SafeArea(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) { if (!didPop) _leaveGame(); },
+      child: Scaffold(
+        backgroundColor: const Color(0xFF060e06),
+        body: SafeArea(
         child: Column(
           children: [
             _buildHeader(),
@@ -292,7 +301,7 @@ class _BlackjackGameScreenState extends State<BlackjackGameScreen> {
           ],
         ),
       ),
-    );
+    ));
   }
 
   // ── Header ────────────────────────────────────────────────────────────────
@@ -305,7 +314,7 @@ class _BlackjackGameScreenState extends State<BlackjackGameScreen> {
           IconButton(
             icon: const Icon(Icons.arrow_back_ios_new_rounded,
                 color: Colors.white54, size: 20),
-            onPressed: () => Navigator.pop(context),
+            onPressed: _leaveGame,
           ),
           const Spacer(),
           const Text('BLACKJACK',

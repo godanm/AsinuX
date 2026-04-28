@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>How to Play — Kazhutha &amp; Rummy Rules, Strategy &amp; Tips</title>
-  <meta name="description" content="Learn how to play Kazhutha and Rummy. Complete rules, strategy guides, scoring, and tips for both games on kazhutha.app." />
-  <meta name="keywords" content="kazhutha, rummy, how to play kazhutha, how to play rummy, donkey card game, indian card game rules, vettu card game, 13-card rummy" />
-  <meta property="og:title" content="How to Play — Kazhutha &amp; Rummy Rules" />
-  <meta property="og:description" content="Complete rules for Kazhutha and 13-card Rummy — the two games on kazhutha.app." />
+  <title>How to Play — Kazhutha, Rummy, Game 28, Teen Patti, Blackjack &amp; Bluff</title>
+  <meta name="description" content="Learn how to play all 6 games on kazhutha.app — Kazhutha, Rummy, Game 28, Teen Patti, Blackjack, and Bluff. Complete rules, strategy guides, and tips." />
+  <meta name="keywords" content="kazhutha, rummy, game 28, teen patti, blackjack, bluff, how to play, south indian card games, donkey card game, indian card game rules" />
+  <meta property="og:title" content="How to Play — All 6 Games on Kazhutha.app" />
+  <meta property="og:description" content="Complete rules for Kazhutha, Rummy, Game 28, Teen Patti, Blackjack, and Bluff — all six games on kazhutha.app." />
   <meta property="og:url" content="https://www.kazhutha.app/how-to-play" />
   <meta property="og:type" content="article" />
   <link rel="canonical" href="https://www.kazhutha.app/how-to-play" />
@@ -57,10 +57,10 @@
       text-align: center;
     }
     .hero-suits {
-      font-size: 30px;
+      font-size: 26px;
       margin-bottom: 14px;
       opacity: 0.6;
-      letter-spacing: 8px;
+      letter-spacing: 6px;
     }
     .hero h1 {
       font-size: clamp(26px, 5vw, 44px);
@@ -82,46 +82,46 @@
     /* ── Game tab switcher ── */
     .tab-bar {
       display: flex;
+      flex-wrap: wrap;
       justify-content: center;
-      gap: 12px;
+      gap: 10px;
       padding: 28px 24px 0;
-      max-width: 780px;
+      max-width: 860px;
       margin: 0 auto;
     }
     .tab-btn {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 10px 28px;
+      gap: 7px;
+      padding: 9px 20px;
       border-radius: 50px;
       border: 1px solid;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 800;
-      letter-spacing: 1.2px;
+      letter-spacing: 1px;
       cursor: pointer;
       transition: all 0.18s;
       text-transform: uppercase;
     }
-    .tab-btn.kazhutha {
-      border-color: rgba(230,57,70,0.35);
-      color: rgba(230,57,70,0.55);
-      background: transparent;
-    }
-    .tab-btn.kazhutha.active {
-      background: rgba(230,57,70,0.15);
-      border-color: rgba(230,57,70,0.7);
-      color: #E63946;
-    }
-    .tab-btn.rummy {
-      border-color: rgba(21,101,192,0.35);
-      color: rgba(79,195,247,0.55);
-      background: transparent;
-    }
-    .tab-btn.rummy.active {
-      background: rgba(21,101,192,0.15);
-      border-color: rgba(79,195,247,0.6);
-      color: #4FC3F7;
-    }
+
+    /* Kazhutha — red */
+    .tab-btn.kazhutha { border-color: rgba(230,57,70,0.35); color: rgba(230,57,70,0.55); background: transparent; }
+    .tab-btn.kazhutha.active { background: rgba(230,57,70,0.15); border-color: rgba(230,57,70,0.7); color: #E63946; }
+    /* Rummy — blue */
+    .tab-btn.rummy { border-color: rgba(21,101,192,0.35); color: rgba(79,195,247,0.55); background: transparent; }
+    .tab-btn.rummy.active { background: rgba(21,101,192,0.15); border-color: rgba(79,195,247,0.6); color: #4FC3F7; }
+    /* Game 28 — teal */
+    .tab-btn.game28 { border-color: rgba(38,166,154,0.35); color: rgba(38,166,154,0.55); background: transparent; }
+    .tab-btn.game28.active { background: rgba(38,166,154,0.15); border-color: rgba(38,166,154,0.7); color: #26A69A; }
+    /* Teen Patti — amber */
+    .tab-btn.teen-patti { border-color: rgba(255,179,0,0.35); color: rgba(255,179,0,0.55); background: transparent; }
+    .tab-btn.teen-patti.active { background: rgba(255,179,0,0.12); border-color: rgba(255,179,0,0.7); color: #FFB300; }
+    /* Blackjack — purple */
+    .tab-btn.blackjack { border-color: rgba(124,77,255,0.35); color: rgba(124,77,255,0.55); background: transparent; }
+    .tab-btn.blackjack.active { background: rgba(124,77,255,0.12); border-color: rgba(124,77,255,0.7); color: #7C4DFF; }
+    /* Bluff — orange */
+    .tab-btn.bluff { border-color: rgba(255,109,0,0.35); color: rgba(255,109,0,0.55); background: transparent; }
+    .tab-btn.bluff.active { background: rgba(255,109,0,0.12); border-color: rgba(255,109,0,0.7); color: #FF6D00; }
 
     /* ── Layout ── */
     .container {
@@ -143,10 +143,18 @@
     }
     h2:first-child { margin-top: 0; }
     .section-kazhutha h2 { border-bottom: 2px solid rgba(230,57,70,0.3); }
-    .section-rummy h2 { border-bottom: 2px solid rgba(21,101,192,0.35); }
+    .section-rummy h2    { border-bottom: 2px solid rgba(21,101,192,0.35); }
+    .section-game28 h2   { border-bottom: 2px solid rgba(38,166,154,0.3); }
+    .section-teen-patti h2 { border-bottom: 2px solid rgba(255,179,0,0.25); }
+    .section-blackjack h2  { border-bottom: 2px solid rgba(124,77,255,0.3); }
+    .section-bluff h2      { border-bottom: 2px solid rgba(255,109,0,0.3); }
 
-    h3.kaz { font-size: 17px; font-weight: 700; color: #E63946; margin: 26px 0 10px; }
-    h3.rum { font-size: 17px; font-weight: 700; color: #4FC3F7; margin: 26px 0 10px; }
+    h3.kaz  { font-size: 17px; font-weight: 700; color: #E63946; margin: 26px 0 10px; }
+    h3.rum  { font-size: 17px; font-weight: 700; color: #4FC3F7; margin: 26px 0 10px; }
+    h3.g28  { font-size: 17px; font-weight: 700; color: #26A69A; margin: 26px 0 10px; }
+    h3.tp   { font-size: 17px; font-weight: 700; color: #FFB300; margin: 26px 0 10px; }
+    h3.bj   { font-size: 17px; font-weight: 700; color: #7C4DFF; margin: 26px 0 10px; }
+    h3.blf  { font-size: 17px; font-weight: 700; color: #FF6D00; margin: 26px 0 10px; }
 
     p { color: rgba(240,230,238,0.8); margin-bottom: 16px; }
 
@@ -174,9 +182,17 @@
       font-size: 14px;
     }
     .section-kazhutha thead { background: rgba(230,57,70,0.12); }
-    .section-kazhutha th { color: #E63946; border-bottom: 1px solid rgba(230,57,70,0.3); }
-    .section-rummy thead { background: rgba(21,101,192,0.12); }
-    .section-rummy th { color: #4FC3F7; border-bottom: 1px solid rgba(21,101,192,0.3); }
+    .section-kazhutha th   { color: #E63946; border-bottom: 1px solid rgba(230,57,70,0.3); }
+    .section-rummy thead   { background: rgba(21,101,192,0.12); }
+    .section-rummy th      { color: #4FC3F7; border-bottom: 1px solid rgba(21,101,192,0.3); }
+    .section-game28 thead  { background: rgba(38,166,154,0.12); }
+    .section-game28 th     { color: #26A69A; border-bottom: 1px solid rgba(38,166,154,0.3); }
+    .section-teen-patti thead { background: rgba(255,179,0,0.10); }
+    .section-teen-patti th    { color: #FFB300; border-bottom: 1px solid rgba(255,179,0,0.3); }
+    .section-blackjack thead  { background: rgba(124,77,255,0.10); }
+    .section-blackjack th     { color: #7C4DFF; border-bottom: 1px solid rgba(124,77,255,0.3); }
+    .section-bluff thead  { background: rgba(255,109,0,0.10); }
+    .section-bluff th     { color: #FF6D00; border-bottom: 1px solid rgba(255,109,0,0.3); }
     th {
       padding: 11px 16px;
       text-align: left;
@@ -188,32 +204,54 @@
       color: rgba(240,230,238,0.8);
     }
     tr:last-child td { border-bottom: none; }
-    .pts { color: #FFD700; font-weight: 700; }
+    .pts     { color: #FFD700; font-weight: 700; }
     .pts-neg { color: #ff6b6b; font-weight: 700; }
+    .pts-g28 { color: #26A69A; font-weight: 700; }
 
-    /* ── Highlight box ── */
+    /* ── Highlight boxes ── */
     .highlight-kaz {
       background: rgba(230,57,70,0.08);
       border: 1px solid rgba(230,57,70,0.3);
-      border-radius: 14px;
-      padding: 18px 22px;
-      margin: 18px 0;
+      border-radius: 14px; padding: 18px 22px; margin: 18px 0;
     }
     .highlight-rum {
       background: rgba(21,101,192,0.08);
       border: 1px solid rgba(21,101,192,0.3);
-      border-radius: 14px;
-      padding: 18px 22px;
-      margin: 18px 0;
+      border-radius: 14px; padding: 18px 22px; margin: 18px 0;
     }
-    .highlight-kaz p, .highlight-rum p { margin: 0; font-size: 14px; }
+    .highlight-g28 {
+      background: rgba(38,166,154,0.08);
+      border: 1px solid rgba(38,166,154,0.3);
+      border-radius: 14px; padding: 18px 22px; margin: 18px 0;
+    }
+    .highlight-tp {
+      background: rgba(255,179,0,0.07);
+      border: 1px solid rgba(255,179,0,0.3);
+      border-radius: 14px; padding: 18px 22px; margin: 18px 0;
+    }
+    .highlight-bj {
+      background: rgba(124,77,255,0.07);
+      border: 1px solid rgba(124,77,255,0.3);
+      border-radius: 14px; padding: 18px 22px; margin: 18px 0;
+    }
+    .highlight-blf {
+      background: rgba(255,109,0,0.07);
+      border: 1px solid rgba(255,109,0,0.3);
+      border-radius: 14px; padding: 18px 22px; margin: 18px 0;
+    }
+    .highlight-kaz p, .highlight-rum p, .highlight-g28 p,
+    .highlight-tp p, .highlight-bj p, .highlight-blf p { margin: 0; font-size: 14px; }
     .highlight-kaz strong { color: #E63946; }
     .highlight-rum strong { color: #4FC3F7; }
+    .highlight-g28 strong { color: #26A69A; }
+    .highlight-tp  strong { color: #FFB300; }
+    .highlight-bj  strong { color: #7C4DFF; }
+    .highlight-blf strong { color: #FF6D00; }
 
     /* ── Tip grid ── */
     .tip-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
       gap: 14px;
       margin-top: 14px;
     }
@@ -239,14 +277,12 @@
       text-align: center;
       margin-top: 56px;
     }
-    .cta-kaz {
-      background: linear-gradient(135deg, #2a0010, #1a000a);
-      border: 1px solid rgba(230,57,70,0.3);
-    }
-    .cta-rum {
-      background: linear-gradient(135deg, #050d26, #0a1a4a);
-      border: 1px solid rgba(21,101,192,0.3);
-    }
+    .cta-kaz { background: linear-gradient(135deg, #2a0010, #1a000a); border: 1px solid rgba(230,57,70,0.3); }
+    .cta-rum { background: linear-gradient(135deg, #050d26, #0a1a4a); border: 1px solid rgba(21,101,192,0.3); }
+    .cta-g28 { background: linear-gradient(135deg, #001a18, #000e0d); border: 1px solid rgba(38,166,154,0.3); }
+    .cta-tp  { background: linear-gradient(135deg, #1a1200, #0d0800); border: 1px solid rgba(255,179,0,0.3); }
+    .cta-bj  { background: linear-gradient(135deg, #0a0015, #05000d); border: 1px solid rgba(124,77,255,0.3); }
+    .cta-blf { background: linear-gradient(135deg, #1a0700, #0d0400); border: 1px solid rgba(255,109,0,0.3); }
     .cta h2 { border: none !important; margin: 0 0 10px; }
     .cta p { margin-bottom: 22px; }
     .cta a {
@@ -261,6 +297,10 @@
     }
     .cta-kaz a { background: #E63946; box-shadow: 0 0 28px rgba(230,57,70,0.4); }
     .cta-rum a { background: #1565C0; box-shadow: 0 0 28px rgba(21,101,192,0.4); }
+    .cta-g28 a { background: #26A69A; box-shadow: 0 0 28px rgba(38,166,154,0.4); }
+    .cta-tp  a { background: #FF8F00; box-shadow: 0 0 28px rgba(255,143,0,0.4); }
+    .cta-bj  a { background: #7C4DFF; box-shadow: 0 0 28px rgba(124,77,255,0.4); }
+    .cta-blf a { background: #FF6D00; box-shadow: 0 0 28px rgba(255,109,0,0.4); }
 
     /* ── Footer ── */
     footer {
@@ -277,8 +317,8 @@
   {
     "@context": "https://schema.org",
     "@type": "Article",
-    "headline": "How to Play Kazhutha and Rummy — Complete Rules and Strategy Guide",
-    "description": "Learn how to play Kazhutha (the South Indian trick-taking card game) and 13-card Rummy. Full rules, scoring, and strategy.",
+    "headline": "How to Play — Complete Rules and Strategy Guide for All 6 Games",
+    "description": "Learn how to play Kazhutha, Rummy, Game 28, Teen Patti, Blackjack, and Bluff on kazhutha.app. Full rules, scoring, and strategy.",
     "url": "https://www.kazhutha.app/how-to-play",
     "publisher": {
       "@type": "Organization",
@@ -310,29 +350,29 @@
   </nav>
 
   <div class="hero">
-    <div class="hero-suits">🃏 &nbsp; 🀄</div>
+    <div class="hero-suits">🃏 🀄 🎯 🎴 ♠ 🤫</div>
     <h1>How to Play</h1>
-    <p>Rules, strategy &amp; tips for Kazhutha and Rummy.</p>
+    <p>Rules, strategy &amp; tips for all 6 games.</p>
   </div>
 
   <!-- Tab switcher -->
   <div class="tab-bar">
-    <button class="tab-btn kazhutha active" onclick="switchGame('kazhutha')">
-      🃏 Kazhutha
-    </button>
-    <button class="tab-btn rummy" onclick="switchGame('rummy')">
-      🀄 Rummy
-    </button>
+    <button class="tab-btn kazhutha active" onclick="switchGame('kazhutha')">🃏 Kazhutha</button>
+    <button class="tab-btn rummy"           onclick="switchGame('rummy')">🀄 Rummy</button>
+    <button class="tab-btn game28"          onclick="switchGame('game28')">🎯 Game 28</button>
+    <button class="tab-btn teen-patti"      onclick="switchGame('teen-patti')">🎴 Teen Patti</button>
+    <button class="tab-btn blackjack"       onclick="switchGame('blackjack')">♠ Blackjack</button>
+    <button class="tab-btn bluff"           onclick="switchGame('bluff')">🤫 Bluff</button>
   </div>
 
   <div class="container">
 
-    <!-- ══ KAZHUTHA SECTION ══════════════════════════════════════════════════ -->
+    <!-- ══ KAZHUTHA ══════════════════════════════════════════════════════════ -->
     <div id="section-kazhutha" class="game-section section-kazhutha visible">
 
       <h2>What is Kazhutha?</h2>
       <p>Kazhutha (கழுதை · കഴുത) is a traditional South Indian card game popular in Tamil Nadu and Kerala. The name literally means <strong>"Donkey"</strong> — the player who fails to empty their hand last earns that title and is eliminated. It is a trick-taking game for 4 players using a standard 52-card deck, combining skill, memory, and strategy.</p>
-      <p>Also known regionally as <em>Donkey</em>, <em>Kalutai</em>, or <em>Kattai</em>, the game rewards players who can read the table, manage hand efficiently, and use the Vettu (cut) tactically to force opponents into picking up cards.</p>
+      <p>Also known regionally as <em>Donkey</em>, <em>Kalutai</em>, or <em>Kattai</em>, the game rewards players who can read the table, manage their hand efficiently, and use the Vettu (cut) tactically to force opponents into picking up cards.</p>
 
       <h2>Setup</h2>
       <ul class="rule-list">
@@ -396,7 +436,6 @@
         <p>The <strong>Vettu</strong> is the heart of Kazhutha. When you cut, the player holding the <strong>highest lead-suit card</strong> — not you — picks up all the cards on the table. This can instantly balloon their hand from a few cards to ten or more.</p>
       </div>
       <p>Unlike traditional trick-taking games, there is no trump suit. Any card from any other suit can cut. The only requirement is that you genuinely have no cards in the lead suit. Playing a cut when you actually have the lead suit is a foul.</p>
-      <p>Skilled players deliberately deplete specific suits early so they can cut at critical moments — especially when an opponent is close to escaping.</p>
 
       <h2>Escaping the Round</h2>
       <p>Your primary goal is to <strong>empty your hand</strong> before the other players. As soon as you play your last card, you <em>escape</em> and earn points based on your finishing position.</p>
@@ -443,9 +482,6 @@
         </div>
       </div>
 
-      <h3 class="kaz">Mid Game (8–4 cards)</h3>
-      <p>Use cuts aggressively to slow down whoever is closest to escaping. If you are in the lead, try to escape before opponents can set up cuts against you.</p>
-
       <h3 class="kaz">Late Game (3 or fewer cards)</h3>
       <p>Play conservatively. Avoid leading a suit where someone might cut you back. If you are behind, a well-timed cut on the leader is your only lifeline.</p>
 
@@ -456,11 +492,7 @@
       </div>
       <div class="faq-item">
         <h4>What happens if two people cut in the same trick?</h4>
-        <p>Both cards are still played. The player holding the highest lead-suit card picks up all cards including both cuts. The cutter who played first leads the next trick.</p>
-      </div>
-      <div class="faq-item">
-        <h4>Does the rank of the card matter?</h4>
-        <p>Only to determine which lead-suit player picks up on a cut. Rank does not win tricks — following suit is all that matters in normal play.</p>
+        <p>Both cards are still played. The player holding the highest lead-suit card picks up all cards including both cuts.</p>
       </div>
       <div class="faq-item">
         <h4>How many rounds does a game last?</h4>
@@ -476,7 +508,7 @@
     </div><!-- /kazhutha -->
 
 
-    <!-- ══ RUMMY SECTION ═════════════════════════════════════════════════════ -->
+    <!-- ══ RUMMY ════════════════════════════════════════════════════════════ -->
     <div id="section-rummy" class="game-section section-rummy">
 
       <h2>What is Rummy?</h2>
@@ -503,7 +535,7 @@
           <span class="rule-emoji">🃏</span>
           <div class="rule-text">
             <strong>Wild Joker</strong>
-            <span>The rank of the face-up card becomes the Wild Joker rank for this game. All four suits of that rank (e.g. all 7s) act as jokers — plus the printed Jokers (★).</span>
+            <span>The rank of the face-up card becomes the Wild Joker rank. All four suits of that rank (e.g. all 7s) act as jokers — plus the printed Jokers (★).</span>
           </div>
         </li>
       </ul>
@@ -514,7 +546,7 @@
           <span class="rule-emoji">📥</span>
           <div class="rule-text">
             <strong>Draw</strong>
-            <span>Take the top card from either the closed deck (face-down, unknown) or the open deck (face-up, visible to all). Drawing from the open deck reveals your strategy to opponents.</span>
+            <span>Take the top card from either the closed deck (face-down) or the open deck (face-up, visible to all).</span>
           </div>
         </li>
         <li>
@@ -534,7 +566,6 @@
       </ul>
 
       <h2>Melds — Sequences &amp; Sets</h2>
-
       <div class="highlight-rum">
         <p><strong>You need at least 1 pure sequence (no jokers) and at least 2 sequences total</strong> for a valid declaration. Without these, the declaration is invalid.</p>
       </div>
@@ -542,25 +573,17 @@
       <h3 class="rum">Pure Sequence</h3>
       <p>3 or more cards of the same suit in consecutive rank order — <strong>no jokers</strong>.</p>
       <ul class="rule-list">
-        <li><span class="rule-emoji">✅</span><div class="rule-text"><strong>Valid</strong><span>5♥ 6♥ 7♥ &nbsp;·&nbsp; 10♠ J♠ Q♠ K♠ &nbsp;·&nbsp; A♦ 2♦ 3♦</span></div></li>
-        <li><span class="rule-emoji">❌</span><div class="rule-text"><strong>Invalid (joker used)</strong><span>5♥ [JKR] 7♥ — jokers make this an impure sequence, not a pure one</span></div></li>
+        <li><span class="rule-emoji">✅</span><div class="rule-text"><strong>Valid</strong><span>5♥ 6♥ 7♥ &nbsp;·&nbsp; 10♠ J♠ Q♠ K♠</span></div></li>
+        <li><span class="rule-emoji">❌</span><div class="rule-text"><strong>Invalid (joker used)</strong><span>5♥ [JKR] 7♥ — jokers make this an impure sequence</span></div></li>
       </ul>
 
       <h3 class="rum">Impure Sequence</h3>
       <p>3 or more consecutive same-suit cards where <strong>one or more jokers substitute</strong> for missing cards.</p>
-      <ul class="rule-list">
-        <li><span class="rule-emoji">✅</span><div class="rule-text"><strong>Valid</strong><span>5♥ [JKR] 7♥ &nbsp;·&nbsp; 8♠ 9♠ [★] J♠</span></div></li>
-      </ul>
 
       <h3 class="rum">Set</h3>
       <p>3 or 4 cards of the <strong>same rank from different suits</strong>. Jokers can substitute for missing suits.</p>
-      <ul class="rule-list">
-        <li><span class="rule-emoji">✅</span><div class="rule-text"><strong>Valid</strong><span>K♠ K♥ K♦ &nbsp;·&nbsp; 9♠ 9♥ [JKR] 9♣</span></div></li>
-        <li><span class="rule-emoji">❌</span><div class="rule-text"><strong>Invalid</strong><span>K♠ K♠ K♥ — cannot use two cards of the same suit in a set</span></div></li>
-      </ul>
 
       <h2>Drop Rules</h2>
-      <p>You can drop out of the round at any point to limit your penalty — but you cannot win.</p>
       <table>
         <thead>
           <tr><th>Drop Type</th><th>Penalty</th><th>When</th></tr>
@@ -571,41 +594,20 @@
           <tr><td>Invalid declaration</td><td class="pts-neg">80 pts</td><td>Declaring with an invalid hand</td></tr>
         </tbody>
       </table>
-      <p>If the score limit (typically 80 pts) is reached, the player is eliminated. Dropping early is better than being forced to declare an invalid hand.</p>
 
       <h2>Scoring</h2>
-      <p>Card point values for unmelded cards:</p>
       <table>
         <thead>
-          <tr><th>Card</th><th>Points</th></tr>
+          <tr><th>Card</th><th>Points (unmelded)</th></tr>
         </thead>
         <tbody>
           <tr><td>A, K, Q, J</td><td class="pts-neg">10 pts each</td></tr>
-          <tr><td>10, 9, 8 … 2</td><td class="pts-neg">Face value (10, 9, 8 … 2)</td></tr>
-          <tr><td>Joker (printed ★)</td><td class="pts">0 pts</td></tr>
-          <tr><td>Wild Joker card</td><td class="pts">0 pts</td></tr>
+          <tr><td>10, 9, 8 … 2</td><td class="pts-neg">Face value</td></tr>
+          <tr><td>Joker (printed ★ or Wild)</td><td class="pts">0 pts</td></tr>
           <tr><td>Maximum per game</td><td class="pts-neg">80 pts</td></tr>
         </tbody>
       </table>
       <p>The winner scores 0. All other players score the sum of their unmelded card points, capped at 80.</p>
-
-      <h2>Joker Rules</h2>
-      <ul class="rule-list">
-        <li>
-          <span class="rule-emoji">★</span>
-          <div class="rule-text">
-            <strong>Printed Joker</strong>
-            <span>Can substitute for any card in any meld. Worth 0 points. Cannot be used in the pure sequence.</span>
-          </div>
-        </li>
-        <li>
-          <span class="rule-emoji">🃏</span>
-          <div class="rule-text">
-            <strong>Wild Joker</strong>
-            <span>All cards of the designated rank (all four suits) act as jokers. They are worth 0 points when used as a substitute. They can be used as their actual card in a pure sequence only if played in their natural suit position.</span>
-          </div>
-        </li>
-      </ul>
 
       <h2>Strategy Tips</h2>
       <div class="tip-grid">
@@ -629,34 +631,6 @@
           <h4>Drop when far behind</h4>
           <p>If you have a terrible hand after 2–3 turns, a 40-pt middle drop beats a likely 80-pt invalid declaration.</p>
         </div>
-        <div class="tip-card">
-          <div class="tip-icon">♠</div>
-          <h4>Discard high cards early</h4>
-          <p>Aces, Kings, Queens, and Jacks cost 10 pts each if unmelded. Discard them early if they don't fit your melds.</p>
-        </div>
-        <div class="tip-card">
-          <div class="tip-icon">🧩</div>
-          <h4>Build connected cards</h4>
-          <p>Keep cards that connect to two possible sequences — e.g., a 7 can pair with 5–6, 6–8, or 8–9 of the same suit.</p>
-        </div>
-      </div>
-
-      <h2>Frequently Asked Questions</h2>
-      <div class="faq-item">
-        <h4>Can I use a Wild Joker in a pure sequence?</h4>
-        <p>Only if it is placed in its actual suit position (e.g. if 7 is the wild joker, 6♥ 7♥ 8♥ is still a pure sequence because 7♥ plays as itself). Using it as a substitute for a different card breaks the pure sequence.</p>
-      </div>
-      <div class="faq-item">
-        <h4>How many jokers can I use in one meld?</h4>
-        <p>At most 2 jokers in a single meld (for example, a 3-card sequence can have at most 2 jokers so there is at least 1 natural card).</p>
-      </div>
-      <div class="faq-item">
-        <h4>What happens if I declare with an invalid hand?</h4>
-        <p>You receive an 80-point penalty and are out of the round. The game continues for the remaining players.</p>
-      </div>
-      <div class="faq-item">
-        <h4>Can I rearrange cards before declaring?</h4>
-        <p>Yes — you can sort and rearrange your hand at any time. Only the groupings matter when you declare.</p>
       </div>
 
       <div class="cta cta-rum">
@@ -666,6 +640,522 @@
       </div>
 
     </div><!-- /rummy -->
+
+
+    <!-- ══ GAME 28 ════════════════════════════════════════════════════════════ -->
+    <div id="section-game28" class="game-section section-game28">
+
+      <h2>What is Game 28?</h2>
+      <p>Game 28 is a beloved South Indian trick-taking and bidding card game, widely played in Kerala and Tamil Nadu. The name comes from the total point value available in each hand — <strong>28 points</strong>, distributed among four special cards: Jack (3 pts), Nine (2 pts), Ace (1 pt), and Ten (1 pt).</p>
+      <p>Four players form two teams of two, sitting across from each other. One team bids for how many of the 28 points they will collect; the other team tries to prevent them from reaching that total.</p>
+
+      <h2>Setup</h2>
+      <ul class="rule-list">
+        <li>
+          <span class="rule-emoji">👥</span>
+          <div class="rule-text">
+            <strong>Players &amp; Teams</strong>
+            <span>4 players in 2 teams of 2. Partners sit opposite each other.</span>
+          </div>
+        </li>
+        <li>
+          <span class="rule-emoji">🃏</span>
+          <div class="rule-text">
+            <strong>The Deck</strong>
+            <span>32 cards: 7, 8, 9, 10, J, Q, K, A of all 4 suits. Each player receives 8 cards.</span>
+          </div>
+        </li>
+        <li>
+          <span class="rule-emoji">🏆</span>
+          <div class="rule-text">
+            <strong>Point Cards</strong>
+            <span>Only four cards carry points — Jack (3), Nine (2), Ace (1), Ten (1). Total in play: 28. All other cards (K, Q, 8, 7) score zero.</span>
+          </div>
+        </li>
+      </ul>
+
+      <h2>Bidding</h2>
+      <div class="highlight-g28">
+        <p>Bidding starts at <strong>16</strong> (the minimum — a team needs more than half the 28 points). Players raise the bid until one team passes. The team with the highest bid must reach their declared total.</p>
+      </div>
+      <ul class="rule-list">
+        <li>
+          <span class="rule-emoji">🔢</span>
+          <div class="rule-text">
+            <strong>Bid Range</strong>
+            <span>16 to 28. You can also bid "Double" (guaranteeing all 28 points) for higher stakes.</span>
+          </div>
+        </li>
+        <li>
+          <span class="rule-emoji">🃏</span>
+          <div class="rule-text">
+            <strong>Trump Declaration</strong>
+            <span>After winning the bid, the bidding team privately decides the trump suit. Trump is only revealed when a player cannot follow the lead suit.</span>
+          </div>
+        </li>
+      </ul>
+
+      <h2>How a Trick Works</h2>
+      <ul class="rule-list">
+        <li>
+          <span class="rule-emoji">1️⃣</span>
+          <div class="rule-text">
+            <strong>Lead a card</strong>
+            <span>The current leader plays one card face-up; all others must follow the same suit if they can.</span>
+          </div>
+        </li>
+        <li>
+          <span class="rule-emoji">♠</span>
+          <div class="rule-text">
+            <strong>Trump beats all</strong>
+            <span>If you can't follow suit, you may play a trump card. Trump always beats any non-trump card; highest trump wins the trick.</span>
+          </div>
+        </li>
+        <li>
+          <span class="rule-emoji">🏆</span>
+          <div class="rule-text">
+            <strong>Trick winner</strong>
+            <span>Highest card of the lead suit wins (if no trump was played). Trick winner leads the next trick.</span>
+          </div>
+        </li>
+      </ul>
+
+      <h2>Point Values</h2>
+      <table>
+        <thead>
+          <tr><th>Card</th><th>Points</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Jack (J)</td><td class="pts-g28">3 pts</td></tr>
+          <tr><td>Nine (9)</td><td class="pts-g28">2 pts</td></tr>
+          <tr><td>Ace (A)</td><td class="pts-g28">1 pt</td></tr>
+          <tr><td>Ten (10)</td><td class="pts-g28">1 pt</td></tr>
+          <tr><td>K, Q, 8, 7</td><td class="pts">0 pts</td></tr>
+          <tr><td><strong>Total in play</strong></td><td class="pts-g28"><strong>28 pts</strong></td></tr>
+        </tbody>
+      </table>
+
+      <h2>Winning the Round</h2>
+      <p>At the end of all 8 tricks, both teams count their collected points. If the bidding team reaches their declared total, they win the round. If they fall short, the defending team wins.</p>
+
+      <h2>App Scoring</h2>
+      <table>
+        <thead>
+          <tr><th>Outcome</th><th>Points</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Win a round</td><td class="pts">+30 pts</td></tr>
+          <tr><td>Lose a round</td><td class="pts-neg">−20 pts</td></tr>
+          <tr><td>Win the game</td><td class="pts">+100 pts bonus</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Strategy Tips</h2>
+      <div class="tip-grid">
+        <div class="tip-card">
+          <div class="tip-icon">🃏</div>
+          <h4>Protect your Jacks</h4>
+          <p>The Jack is worth 3 points — more than any other card. Lead with lower cards in the same suit to draw out opponents' trumps before playing your Jack.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon">🤫</div>
+          <h4>Delay revealing trump</h4>
+          <p>As the bidding team, hold trump as long as possible. Revealing it too early lets the defenders avoid leading into it.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon">🤝</div>
+          <h4>Signal your partner</h4>
+          <p>Lead a point card you don't need when your partner is winning a trick — it signals them to take the trick and keeps the points in your team.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon">🛡️</div>
+          <h4>Defend by splitting point tricks</h4>
+          <p>As the defending team, aim to ensure point-heavy tricks fall across both your players so the bidding team can't collect enough to meet their bid.</p>
+        </div>
+      </div>
+
+      <div class="cta cta-g28">
+        <h2>Ready to Play Game 28?</h2>
+        <p>Team up and bid — can you reach your declared total?</p>
+        <a href="/">Play Game 28 Free →</a>
+      </div>
+
+    </div><!-- /game28 -->
+
+
+    <!-- ══ TEEN PATTI ═════════════════════════════════════════════════════════ -->
+    <div id="section-teen-patti" class="game-section section-teen-patti">
+
+      <h2>What is Teen Patti?</h2>
+      <p>Teen Patti (तीन पत्ती · "Three Cards") is India's most popular gambling card game, often called the Indian Poker. Players are dealt 3 cards each and bet on who holds the strongest hand. The game blends luck, strategy, and the art of reading your opponents.</p>
+      <p>On kazhutha.app, you play against bot opponents. The pot grows with each round of betting — the player with the best hand at showdown, or the last one standing after all others fold, wins the pot.</p>
+
+      <h2>Setup</h2>
+      <ul class="rule-list">
+        <li>
+          <span class="rule-emoji">🎴</span>
+          <div class="rule-text">
+            <strong>Deck &amp; Players</strong>
+            <span>Standard 52-card deck (no jokers). 2–6 players, each dealt 3 cards face-down.</span>
+          </div>
+        </li>
+        <li>
+          <span class="rule-emoji">💰</span>
+          <div class="rule-text">
+            <strong>Boot (Ante)</strong>
+            <span>All players put a fixed boot amount into the pot before cards are dealt. This is the minimum stake.</span>
+          </div>
+        </li>
+        <li>
+          <span class="rule-emoji">🙈</span>
+          <div class="rule-text">
+            <strong>Blind vs Seen</strong>
+            <span>You can choose to play <em>blind</em> (bet without looking at your cards, half the cost) or <em>seen</em> (after looking, double the current stake).</span>
+          </div>
+        </li>
+      </ul>
+
+      <h2>Hand Rankings</h2>
+      <div class="highlight-tp">
+        <p><strong>Highest to lowest:</strong> Trail → Pure Sequence → Sequence → Color → Pair → High Card</p>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Hand</th><th>Description</th><th>Example</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Trail (Trio)</strong></td><td>Three of the same rank</td><td>A♠ A♥ A♦</td></tr>
+          <tr><td><strong>Pure Sequence</strong></td><td>Three consecutive same-suit cards</td><td>J♠ Q♠ K♠</td></tr>
+          <tr><td><strong>Sequence (Run)</strong></td><td>Three consecutive cards (mixed suits)</td><td>9♠ 10♥ J♦</td></tr>
+          <tr><td><strong>Color (Flush)</strong></td><td>Three same-suit cards (non-consecutive)</td><td>2♣ 7♣ K♣</td></tr>
+          <tr><td><strong>Pair</strong></td><td>Two cards of same rank</td><td>8♠ 8♥ 3♦</td></tr>
+          <tr><td><strong>High Card</strong></td><td>None of the above</td><td>A♠ 7♥ 3♦</td></tr>
+        </tbody>
+      </table>
+
+      <h2>How to Play</h2>
+      <ul class="rule-list">
+        <li>
+          <span class="rule-emoji">💸</span>
+          <div class="rule-text">
+            <strong>Chaal (Call)</strong>
+            <span>Match the current bet to stay in the round. Seen players pay double the blind bet amount.</span>
+          </div>
+        </li>
+        <li>
+          <span class="rule-emoji">🏳️</span>
+          <div class="rule-text">
+            <strong>Fold</strong>
+            <span>Give up your hand and forfeit your bets. Folding ends your participation in this round.</span>
+          </div>
+        </li>
+        <li>
+          <span class="rule-emoji">🎯</span>
+          <div class="rule-text">
+            <strong>Show (Sideshow)</strong>
+            <span>Request to compare cards with the previous player. The lower hand folds. Both must be "seen" players to request a show.</span>
+          </div>
+        </li>
+        <li>
+          <span class="rule-emoji">🏆</span>
+          <div class="rule-text">
+            <strong>Winning</strong>
+            <span>If all but one player folds, that player wins the pot. Otherwise, the player with the highest-ranking hand at showdown wins.</span>
+          </div>
+        </li>
+      </ul>
+
+      <h2>App Scoring</h2>
+      <p>Your in-app points reflect your share of the pot when you win a round. Fold to protect your points; stay in when you have a strong hand or a good read on your opponents.</p>
+
+      <h2>Strategy Tips</h2>
+      <div class="tip-grid">
+        <div class="tip-card">
+          <div class="tip-icon">🙈</div>
+          <h4>Play blind longer</h4>
+          <p>Playing blind costs half — it projects confidence and keeps your options open without giving away whether you looked at your cards.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon">📊</div>
+          <h4>Pot odds matter</h4>
+          <p>If the pot is large relative to the call amount, even a moderate hand is worth staying in. Don't fold prematurely when the value is there.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon">😐</div>
+          <h4>Be consistent</h4>
+          <p>Against bots, vary your bet sizing regardless of hand strength. Predictable betting patterns (big = strong, small = weak) are easy to exploit.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon">🏳️</div>
+          <h4>Fold weak hands early</h4>
+          <p>High Card and weak Pairs rarely win multi-player showdowns. Fold early to limit losses; the pot will be there next round.</p>
+        </div>
+      </div>
+
+      <div class="cta cta-tp">
+        <h2>Ready to Play Teen Patti?</h2>
+        <p>Three cards. One pot. Do you have what it takes?</p>
+        <a href="/">Play Teen Patti Free →</a>
+      </div>
+
+    </div><!-- /teen-patti -->
+
+
+    <!-- ══ BLACKJACK ══════════════════════════════════════════════════════════ -->
+    <div id="section-blackjack" class="game-section section-blackjack">
+
+      <h2>What is Blackjack?</h2>
+      <p>Blackjack (also known as <strong>21</strong>) is the world's most popular casino card game. Your goal is simple: build a hand closer to 21 than the dealer without going over. On kazhutha.app, you play against a dealer bot using standard casino rules.</p>
+      <p>Unlike most card games, Blackjack is a game of you vs the house — there are no other player hands to beat. The basic strategy is well-established, and following it consistently is the most effective way to play.</p>
+
+      <h2>Card Values</h2>
+      <table>
+        <thead>
+          <tr><th>Card</th><th>Value</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>2 through 10</td><td>Face value (2 = 2, 10 = 10)</td></tr>
+          <tr><td>Jack, Queen, King</td><td class="pts">10 each</td></tr>
+          <tr><td>Ace</td><td class="pts">1 or 11 (whichever benefits you)</td></tr>
+        </tbody>
+      </table>
+
+      <h2>How to Play</h2>
+      <ul class="rule-list">
+        <li>
+          <span class="rule-emoji">🃏</span>
+          <div class="rule-text">
+            <strong>Deal</strong>
+            <span>You receive 2 cards face-up. The dealer receives 2 cards — one face-up, one face-down (the hole card).</span>
+          </div>
+        </li>
+        <li>
+          <span class="rule-emoji">👆</span>
+          <div class="rule-text">
+            <strong>Hit</strong>
+            <span>Draw one more card. You can hit as many times as you like, but going over 21 is a Bust — you lose immediately.</span>
+          </div>
+        </li>
+        <li>
+          <span class="rule-emoji">✋</span>
+          <div class="rule-text">
+            <strong>Stand</strong>
+            <span>End your turn with your current hand. The dealer then plays.</span>
+          </div>
+        </li>
+        <li>
+          <span class="rule-emoji">✌️</span>
+          <div class="rule-text">
+            <strong>Double Down</strong>
+            <span>Double your bet and receive exactly one more card — then you must stand. Best used when you have 10 or 11.</span>
+          </div>
+        </li>
+        <li>
+          <span class="rule-emoji">🏦</span>
+          <div class="rule-text">
+            <strong>Dealer Rules</strong>
+            <span>The dealer must hit until reaching 17 or higher. The dealer stands on 17 (including Soft 17). No choice — dealer plays by fixed rules.</span>
+          </div>
+        </li>
+      </ul>
+
+      <h2>Blackjack — Special Hand</h2>
+      <div class="highlight-bj">
+        <p>A <strong>Blackjack</strong> is an Ace + any 10-value card on your first two cards. It pays <strong>2× your bet</strong> and beats the dealer's 21 (unless the dealer also has Blackjack — that's a push).</p>
+      </div>
+
+      <h2>Payouts</h2>
+      <table>
+        <thead>
+          <tr><th>Result</th><th>Payout</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Blackjack (A + 10-value on first 2 cards)</td><td class="pts">+2× bet</td></tr>
+          <tr><td>Win (beat dealer without busting)</td><td class="pts">+1× bet</td></tr>
+          <tr><td>Push (tie)</td><td>Bet returned</td></tr>
+          <tr><td>Bust or dealer beats you</td><td class="pts-neg">−1× bet</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Basic Strategy</h2>
+      <div class="tip-grid">
+        <div class="tip-card">
+          <div class="tip-icon">📉</div>
+          <h4>Hard 8 or less: always Hit</h4>
+          <p>You can't bust by drawing one card on 11 or less. Hit until you reach a standing total.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon">✋</div>
+          <h4>Hard 17+: always Stand</h4>
+          <p>The risk of busting outweighs the potential gain. Stand and let the dealer take the risk.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon">✌️</div>
+          <h4>Double Down on 10 or 11</h4>
+          <p>Against a dealer showing 2–9, doubling down on 10 or 11 maximises expected value since you're likely to land a strong hand.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon">🃏</div>
+          <h4>Soft hand: be aggressive</h4>
+          <p>A soft hand (with an Ace counting as 11) can't bust on one draw. Hit or double more freely on soft 13–17.</p>
+        </div>
+      </div>
+
+      <h2>Frequently Asked Questions</h2>
+      <div class="faq-item">
+        <h4>What is a "soft" hand?</h4>
+        <p>A hand containing an Ace counted as 11. E.g., Ace + 6 = Soft 17. It's "soft" because drawing a high card just flips the Ace to 1 instead of busting you.</p>
+      </div>
+      <div class="faq-item">
+        <h4>What happens if dealer and I both get Blackjack?</h4>
+        <p>It's a push — your bet is returned. Neither player wins.</p>
+      </div>
+      <div class="faq-item">
+        <h4>Can I double down after hitting?</h4>
+        <p>No. Double Down is only available on your first two cards.</p>
+      </div>
+
+      <div class="cta cta-bj">
+        <h2>Ready to Play Blackjack?</h2>
+        <p>Beat the dealer. Don't bust. Simple as that.</p>
+        <a href="/">Play Blackjack Free →</a>
+      </div>
+
+    </div><!-- /blackjack -->
+
+
+    <!-- ══ BLUFF ═══════════════════════════════════════════════════════════════ -->
+    <div id="section-bluff" class="game-section section-bluff">
+
+      <h2>What is Bluff?</h2>
+      <p>Bluff (also known as <em>Cheat</em> or <em>I Doubt It</em>) is a social deception card game where players take turns placing cards face-down while claiming a specific rank — but they can lie. The goal is to be the first to empty your hand, by bluffing convincingly or by catching others in the act.</p>
+      <p>It is one of the few card games where your worst cards can be your most powerful weapons — any card can pass for any rank if no one calls your bluff.</p>
+
+      <h2>Setup</h2>
+      <ul class="rule-list">
+        <li>
+          <span class="rule-emoji">🃏</span>
+          <div class="rule-text">
+            <strong>Deck &amp; Players</strong>
+            <span>Standard 52-card deck. 2–6 players; cards are dealt as evenly as possible.</span>
+          </div>
+        </li>
+        <li>
+          <span class="rule-emoji">🔢</span>
+          <div class="rule-text">
+            <strong>Starting Rank</strong>
+            <span>The game starts with rank 2. Each turn the declared rank increments — 2, 3, 4 … K, A, then back to 2.</span>
+          </div>
+        </li>
+        <li>
+          <span class="rule-emoji">🎯</span>
+          <div class="rule-text">
+            <strong>Goal</strong>
+            <span>Empty your hand before everyone else. The first player to play their last card wins.</span>
+          </div>
+        </li>
+      </ul>
+
+      <h2>How to Play</h2>
+      <ul class="rule-list">
+        <li>
+          <span class="rule-emoji">🃏</span>
+          <div class="rule-text">
+            <strong>Your Turn</strong>
+            <span>Play 1–4 cards face-down onto the discard pile and announce how many cards of the current rank you played (e.g. "Two Fives"). You can lie.</span>
+          </div>
+        </li>
+        <li>
+          <span class="rule-emoji">🤫</span>
+          <div class="rule-text">
+            <strong>Calling Bluff</strong>
+            <span>Any player can call "Bluff!" before the next turn. The played cards are revealed:</span>
+          </div>
+        </li>
+        <li>
+          <span class="rule-emoji">😳</span>
+          <div class="rule-text">
+            <strong>If you were bluffing</strong>
+            <span>You pick up the entire discard pile and add it to your hand.</span>
+          </div>
+        </li>
+        <li>
+          <span class="rule-emoji">😤</span>
+          <div class="rule-text">
+            <strong>If you were honest</strong>
+            <span>The player who called bluff picks up the entire discard pile.</span>
+          </div>
+        </li>
+        <li>
+          <span class="rule-emoji">▶️</span>
+          <div class="rule-text">
+            <strong>No call</strong>
+            <span>If nobody calls bluff, the cards stay in the pile and the next player takes their turn with the next rank.</span>
+          </div>
+        </li>
+      </ul>
+
+      <h2>Winning</h2>
+      <div class="highlight-blf">
+        <p>The first player to play all their cards wins. <strong>Note:</strong> if your last play is called — and you were bluffing — you must pick up the pile. The game continues until your last honest play goes unchallenged.</p>
+      </div>
+
+      <h2>App Scoring</h2>
+      <table>
+        <thead>
+          <tr><th>Outcome</th><th>Points</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Win a game</td><td class="pts">+150 pts</td></tr>
+          <tr><td>Lose</td><td>No change</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Strategy Tips</h2>
+      <div class="tip-grid">
+        <div class="tip-card">
+          <div class="tip-icon">🎭</div>
+          <h4>Bluff on ranks you partly hold</h4>
+          <p>If you play one genuine 5 and one bluff card claiming "two fives," a reveal still shows at least one honest card — harder to catch.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon">📦</div>
+          <h4>Call when pile is big</h4>
+          <p>A wrong call costs you a huge pile. Wait for a player who dumps 3–4 cards of a rank they've already exhausted earlier in the game.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon">🏃</div>
+          <h4>Dump cards in groups</h4>
+          <p>When it's your rank, play as many as you can — real and bluffed — to reduce your hand quickly and pressure others to call or let it slide.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon">🧠</div>
+          <h4>Track played ranks</h4>
+          <p>Each rank has 4 cards. If you've seen three 7s already, a player claiming two more 7s is almost certainly bluffing. Call it.</p>
+        </div>
+      </div>
+
+      <h2>Frequently Asked Questions</h2>
+      <div class="faq-item">
+        <h4>Can I play zero cards on my turn?</h4>
+        <p>No. You must play at least one card each turn, honest or bluffed.</p>
+      </div>
+      <div class="faq-item">
+        <h4>What if my last card is called and I was bluffing?</h4>
+        <p>You pick up the entire pile and the game continues — you haven't won yet.</p>
+      </div>
+      <div class="faq-item">
+        <h4>Can multiple people call bluff?</h4>
+        <p>Only one player's call is actioned — the first one to call. In the app, any player can call before the next turn begins.</p>
+      </div>
+
+      <div class="cta cta-blf">
+        <h2>Ready to Play Bluff?</h2>
+        <p>Lie well. Call smart. Empty your hand first.</p>
+        <a href="/">Play Bluff Free →</a>
+      </div>
+
+    </div><!-- /bluff -->
 
   </div><!-- /container -->
 
@@ -681,9 +1171,10 @@
       document.querySelector('.tab-btn.' + game).classList.add('active');
     }
 
-    // Auto-select tab from URL hash: /how-to-play#rummy
+    // Auto-select tab from URL hash: /how-to-play#blackjack
     const hash = location.hash.replace('#', '');
-    if (hash === 'rummy' || hash === 'kazhutha') switchGame(hash);
+    const validGames = ['kazhutha', 'rummy', 'game28', 'teen-patti', 'blackjack', 'bluff'];
+    if (validGames.includes(hash)) switchGame(hash);
   </script>
 
 </body>

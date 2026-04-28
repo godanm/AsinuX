@@ -2,6 +2,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 
 const _startingPoints = 10000;
+const _kPointsFloor = 500;
 
 // Points delta by finish position (0-indexed: 0=first, 1=second, 2=third, 3=donkey)
 // Positive = gain, negative = loss
@@ -238,6 +239,19 @@ class StatsService {
   DatabaseReference _blackjackRef(String uid) => _db.ref('stats/$uid/blackjack');
   DatabaseReference _bluffRef(String uid) => _db.ref('stats/$uid/bluff');
 
+  /// Public entry point for rewarded-ad bonuses.
+  Future<void> awardBonusPoints(String uid, int amount) => _applyPointsDelta(uid, amount);
+
+  /// Reads current totalPoints, applies [delta], clamps to [_kPointsFloor..999999],
+  /// and writes back. No-ops when delta is 0.
+  Future<void> _applyPointsDelta(String uid, int delta) async {
+    if (delta == 0) return;
+    final snap = await _ref(uid).child('totalPoints').get();
+    final current = snap.exists ? (snap.value as int? ?? _kPointsFloor) : _startingPoints;
+    final updated = (current + delta).clamp(_kPointsFloor, 999999);
+    await _ref(uid).update({'totalPoints': updated});
+  }
+
   Stream<BluffStats> bluffStatsStream(String uid) {
     return _bluffRef(uid).onValue.map((event) {
       if (!event.snapshot.exists) return const BluffStats();
@@ -259,6 +273,7 @@ class StatsService {
       if (bluffsCaught > 0) 'bluffsCaught': ServerValue.increment(bluffsCaught),
       if (bluffsSucceeded > 0) 'bluffsSucceeded': ServerValue.increment(bluffsSucceeded),
     });
+    await _applyPointsDelta(uid, won ? 150 : 0);
     debugPrint('[StatsService] bluff game for $uid — won=$won bluffs=$bluffsAttempted caught=$bluffsCaught succeeded=$bluffsSucceeded');
   }
 
@@ -294,6 +309,7 @@ class StatsService {
       if (invalidDeclare) 'invalidDeclarations': ServerValue.increment(1),
       'totalPenalty': ServerValue.increment(penalty),
     });
+    await _applyPointsDelta(uid, won ? 100 : -penalty);
     debugPrint('[StatsService] rummy result for $uid — won=$won dropped=$dropped penalty=$penalty');
   }
 
@@ -316,6 +332,7 @@ class StatsService {
       if (won) 'roundsWon': ServerValue.increment(1),
       if (won && potShare > 0) 'totalChipsWon': ServerValue.increment(potShare),
     });
+    await _applyPointsDelta(uid, won ? potShare : 0);
     debugPrint('[StatsService] teen_patti round for $uid — won=$won potShare=$potShare');
   }
 
@@ -343,7 +360,7 @@ class StatsService {
       if (isBlackjack) 'blackjacks': ServerValue.increment(1),
       'totalChipsWon': ServerValue.increment(chipsDelta),
     });
-    await _ref(uid).update({'totalPoints': ServerValue.increment(chipsDelta)});
+    await _applyPointsDelta(uid, chipsDelta);
     debugPrint('[StatsService] blackjack round for $uid — won=$won push=$isPush bj=$isBlackjack delta=$chipsDelta');
   }
 
@@ -372,7 +389,9 @@ class StatsService {
       if (gameEnded) 'gamesPlayed': ServerValue.increment(1),
       if (gameWon) 'gamesWon': ServerValue.increment(1),
     });
-    debugPrint('[StatsService] game28 round for $uid — won=$roundWon bidWinner=$wasBidWinner bidOk=$bidSucceeded gameEnded=$gameEnded gameWon=$gameWon');
+    final pts28 = (roundWon ? 30 : -20) + (gameWon ? 100 : 0);
+    await _applyPointsDelta(uid, pts28);
+    debugPrint('[StatsService] game28 round for $uid — won=$roundWon bidWinner=$wasBidWinner bidOk=$bidSucceeded gameEnded=$gameEnded gameWon=$gameWon pts=$pts28');
   }
 
   Future<PlayerStats> getStats(String uid) async {
@@ -458,7 +477,7 @@ class StatsService {
       // First-time players start at 10K; existing players get incremented.
       final snap = await _ref(statsId).child('totalPoints').get();
       final currentPoints = snap.exists ? (snap.value as int? ?? 0) : _startingPoints;
-      final newPoints = (currentPoints + delta).clamp(0, 999999);
+      final newPoints = (currentPoints + delta).clamp(_kPointsFloor, 999999);
 
       await _ref(statsId).update({
         'roundsPlayed': ServerValue.increment(1),

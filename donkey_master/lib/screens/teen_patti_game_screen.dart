@@ -166,7 +166,9 @@ class _TeenPattiGameScreenState extends State<TeenPattiGameScreen> {
   void _leaveGame() {
     TeenPattiBotService.instance.stop();
     TeenPattiService.instance.leaveRoom(widget.roomId, widget.playerId);
-    Navigator.pop(context);
+    AdMobService.instance.showInterstitialAsync(context).then((_) {
+      if (mounted) Navigator.pop(context);
+    });
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -183,8 +185,11 @@ class _TeenPattiGameScreenState extends State<TeenPattiGameScreen> {
       );
     }
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF0a0008),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) { if (!didPop) _leaveGame(); },
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0a0008),
       body: SafeArea(
         child: Stack(
           fit: StackFit.expand,
@@ -214,7 +219,7 @@ class _TeenPattiGameScreenState extends State<TeenPattiGameScreen> {
           ],
         ),
       ),
-    );
+    ));
   }
 
   // ── Header ────────────────────────────────────────────────────────────────

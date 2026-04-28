@@ -41,6 +41,7 @@ class _GameScreenState extends State<GameScreen> {
   bool _roundEndAdFired = false; // prevents duplicate ad per round
   bool _gameOverAdFired = false; // prevents duplicate ad on game over
   bool _roundEndVisible = false; // delayed: true 2s after donkey is revealed
+  bool _roundBonusAdUsed = false; // true once donkey watches the recovery ad
 
   // Trick fly-out animation state
   Map<String, PlayingCard> _outgoingCards = {};
@@ -90,9 +91,9 @@ class _GameScreenState extends State<GameScreen> {
     }
     BotService.instance.stop();
     await FirebaseService.instance.leaveRoom(widget.roomId, widget.playerId);
-    if (mounted) {
-      Navigator.of(context).popUntil((route) => route.isFirst);
-    }
+    if (!mounted) return;
+    await AdMobService.instance.showInterstitialAsync(context);
+    if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   Future<bool> _confirmExit(BuildContext context) async {
@@ -134,7 +135,6 @@ class _GameScreenState extends State<GameScreen> {
       ),
     );
     if (confirmed == true) {
-      await AdMobService.instance.showInterstitialAsync(context);
       await _exitGame();
     }
     return false;
@@ -243,6 +243,7 @@ class _GameScreenState extends State<GameScreen> {
       _announcedEscapees.clear();
       _roundEndAdFired = false;
       _roundEndVisible = false;
+      _roundBonusAdUsed = false;
       if (_iEscaped) setState(() => _iEscaped = false);
     }
 
@@ -715,6 +716,27 @@ class _GameScreenState extends State<GameScreen> {
                               duration: 300.ms,
                               curve: Curves.elasticOut,
                             ),
+                      ],
+
+                      if (iAmDonkey && !_roundBonusAdUsed) ...[
+                        const SizedBox(height: 20),
+                        OutlinedButton.icon(
+                          icon: const Icon(Icons.play_circle_outline, size: 16),
+                          label: const Text('Watch ad — recover 25 pts'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.amberAccent,
+                            side: const BorderSide(color: Colors.amberAccent),
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          ),
+                          onPressed: () {
+                            final ctx = context;
+                            AdMobService.instance.showRewardedAsync(ctx, () {
+                              StatsService.instance.awardBonusPoints(widget.playerId, 25);
+                              if (mounted) setState(() => _roundBonusAdUsed = true);
+                            });
+                          },
+                        ).animate().fadeIn(delay: 1500.ms, duration: 400.ms),
                       ],
 
                       const SizedBox(height: 32),
