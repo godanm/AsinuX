@@ -102,6 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mounted) setState(() { _playerName = name; _nameLoaded = true; });
     final user = await AuthService.instance.signInAnonymously();
     if (mounted) setState(() => _uid = user.uid);
+    StatsService.instance.updateDisplayName(user.uid, name);
     _statsSubscription?.cancel();
     _statsSubscription = StatsService.instance.statsStream(user.uid).listen((stats) {
       if (mounted) setState(() => _stats = stats);

@@ -242,6 +242,14 @@ class StatsService {
   /// Public entry point for rewarded-ad bonuses.
   Future<void> awardBonusPoints(String uid, int amount) => _applyPointsDelta(uid, amount);
 
+  /// Syncs the player's display name to their stats node. Called on every app
+  /// open so the leaderboard shows a real name even for players who have never
+  /// played Kazhutha (the only game that previously wrote displayName).
+  Future<void> updateDisplayName(String uid, String name) async {
+    if (uid.isEmpty || name.isEmpty) return;
+    await _ref(uid).update({'displayName': name});
+  }
+
   /// Reads current totalPoints, applies [delta], clamps to [_kPointsFloor..999999],
   /// and writes back. No-ops when delta is 0.
   Future<void> _applyPointsDelta(String uid, int delta) async {
