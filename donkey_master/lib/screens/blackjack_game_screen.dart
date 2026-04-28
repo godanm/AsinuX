@@ -489,13 +489,13 @@ class _BlackjackGameScreenState extends State<BlackjackGameScreen> {
       );
     }
 
-    // Out of chips
-    if (_chips <= 0) {
+    // Out of chips (or below minimum bet — player would be stuck otherwise)
+    if (_chips < _betOptions.first) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           children: [
-            Text('Out of chips!',
+            Text(_chips <= 0 ? 'Out of chips!' : 'Not enough to bet!',
                 style: TextStyle(
                     color: Colors.red.shade400,
                     fontWeight: FontWeight.w700)),
