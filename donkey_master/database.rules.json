@@ -23,6 +23,7 @@
     // ── Player stats & leaderboard ────────────────────────────────────────────
     "stats": {
       ".read": "auth != null",
+      ".indexOn": ["totalPoints"],
       "$uid": {
         ".write": "auth != null && (auth.uid == $uid || $uid.matches(/^npc_/))"
       }
