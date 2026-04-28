@@ -18,7 +18,7 @@ import 'teen_patti_matchmaking_screen.dart';
 import 'blackjack_game_screen.dart';
 import 'bluff_game_screen.dart';
 import 'stats_screen.dart';
-// import 'leaderboard_screen.dart'; // TODO: re-enable with leaderboard
+import 'leaderboard_screen.dart';
 
 // ── Paste Play Store URL here once the app is approved ───────────────────────
 const _kPlayStoreUrl = '';
@@ -288,6 +288,15 @@ class _HomeScreenState extends State<HomeScreen> {
                           if (!mounted) return;
                           Navigator.push(context, MaterialPageRoute(
                             builder: (_) => StatsScreen(uid: user.uid, playerName: _playerName),
+                          ));
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.emoji_events_rounded, color: Colors.white54, size: 24),
+                        tooltip: 'Leaderboard',
+                        onPressed: () {
+                          Navigator.push(context, MaterialPageRoute(
+                            builder: (_) => LeaderboardScreen(currentUid: _uid, currentPlayerName: _playerName),
                           ));
                         },
                       ),
