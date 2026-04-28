@@ -201,6 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _playerName = name;
             _avatar = avatar;
           });
+          StatsService.instance.updateDisplayName(_uid, name);
         },
       ),
     );

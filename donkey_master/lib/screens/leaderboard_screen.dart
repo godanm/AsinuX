@@ -19,6 +19,7 @@ class LeaderboardScreen extends StatefulWidget {
 
 class _LeaderboardScreenState extends State<LeaderboardScreen> {
   List<LeaderboardEntry>? _entries;
+  LeaderboardEntry? _myEntry; // non-null when current user is outside top 50
   bool _loading = true;
   String? _error;
 
@@ -29,10 +30,22 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   }
 
   Future<void> _load() async {
-    if (mounted) setState(() { _loading = true; _error = null; });
+    if (mounted) setState(() { _loading = true; _error = null; _myEntry = null; });
     try {
-      final entries = await StatsService.instance.topPlayers(limit: 20);
-      if (mounted) setState(() { _entries = entries; _loading = false; });
+      final entries = await StatsService.instance.topPlayers(limit: 50);
+      LeaderboardEntry? myEntry;
+      if (widget.currentUid.isNotEmpty &&
+          !entries.any((e) => e.uid == widget.currentUid)) {
+        final myStats = await StatsService.instance.getStats(widget.currentUid);
+        myEntry = LeaderboardEntry(
+          uid: widget.currentUid,
+          name: widget.currentPlayerName.isNotEmpty ? widget.currentPlayerName : widget.currentUid.substring(0, 6),
+          totalPoints: myStats.totalPoints,
+          wins: myStats.wins,
+          gamesPlayed: myStats.gamesPlayed,
+        );
+      }
+      if (mounted) setState(() { _entries = entries; _myEntry = myEntry; _loading = false; });
     } catch (e) {
       if (mounted) setState(() { _error = e.toString(); _loading = false; });
     }
@@ -63,7 +76,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: Colors.white54),
             onPressed: () {
-              setState(() { _loading = true; _entries = null; });
+              setState(() { _loading = true; _entries = null; _myEntry = null; });
               _load();
             },
           ),
@@ -153,6 +166,26 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               entry: e.value,
               isMe: e.value.uid == widget.currentUid,
             ).animate(delay: Duration(milliseconds: e.key * 30)).fadeIn(duration: 250.ms).slideX(begin: 0.03, end: 0)),
+
+        // ── Your rank (outside top 50) ─────────────────────────
+        if (_myEntry != null) ...[
+          const SizedBox(height: 12),
+          const Divider(color: Colors.white10, height: 1),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Text(
+              'YOUR RANKING',
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.25), fontSize: 10, letterSpacing: 1.5),
+            ),
+          ),
+          _EntryTile(
+            rank: entries.length + 1,
+            entry: _myEntry!,
+            isMe: true,
+            rankLabel: '#${entries.length}+',
+          ).animate().fadeIn(duration: 300.ms).slideX(begin: 0.03, end: 0),
+        ],
       ],
     );
   }
@@ -296,8 +329,9 @@ class _EntryTile extends StatelessWidget {
   final int rank;
   final LeaderboardEntry entry;
   final bool isMe;
+  final String? rankLabel;
 
-  const _EntryTile({required this.rank, required this.entry, required this.isMe});
+  const _EntryTile({required this.rank, required this.entry, required this.isMe, this.rankLabel});
 
   @override
   Widget build(BuildContext context) {
@@ -321,7 +355,7 @@ class _EntryTile extends StatelessWidget {
           SizedBox(
             width: 36,
             child: Text(
-              '#$rank',
+              rankLabel ?? '#$rank',
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.35),
                 fontWeight: FontWeight.bold,
