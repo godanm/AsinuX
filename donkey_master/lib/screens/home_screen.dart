@@ -113,11 +113,40 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) return;
       final fresh = await StatsService.instance.getStats(user.uid);
       if (mounted) setState(() => _stats = fresh);
+      _maybeShowPlayStorePrompt(fresh);
     });
     // Web deep-link: navigate to the requested game once auth is ready.
     if (kIsWeb && mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _handleWebDeepLink());
     }
+  }
+
+  Future<void> _maybeShowPlayStorePrompt(PlayerStats stats) async {
+    if (!kIsWeb || _kPlayStoreUrl.isEmpty || stats.gamesPlayed == 0 || !mounted) return;
+    final prefs = await SharedPreferences.getInstance();
+    // User already tapped "Get it on Google Play" — never show again.
+    if (prefs.getBool('ps_prompt_converted') ?? false) return;
+    // Respect snooze: "Maybe later" hides it for 2 days.
+    final snoozedUntil = prefs.getInt('ps_prompt_snoozed_until') ?? 0;
+    if (DateTime.now().millisecondsSinceEpoch < snoozedUntil) return;
+    await Future.delayed(const Duration(milliseconds: 800));
+    if (!mounted) return;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _PlayStorePrompt(
+        onInstall: () async {
+          final p = await SharedPreferences.getInstance();
+          await p.setBool('ps_prompt_converted', true);
+        },
+        onSnooze: () async {
+          final p = await SharedPreferences.getInstance();
+          final until = DateTime.now().add(const Duration(days: 2)).millisecondsSinceEpoch;
+          await p.setInt('ps_prompt_snoozed_until', until);
+        },
+      ),
+    );
   }
 
   void _handleWebDeepLink() {
@@ -984,6 +1013,87 @@ class _AppStoreBanner extends StatelessWidget {
           GestureDetector(
             onTap: onDismiss,
             child: Icon(Icons.close_rounded, color: Colors.white.withValues(alpha: 0.3), size: 18),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Play Store install prompt (web only, shown once after first game) ─────────
+
+class _PlayStorePrompt extends StatelessWidget {
+  const _PlayStorePrompt({required this.onInstall, required this.onSnooze});
+
+  final VoidCallback onInstall;
+  final VoidCallback onSnooze;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF1a000e),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(
+          top:   BorderSide(color: Color(0x55E63946)),
+          left:  BorderSide(color: Color(0x55E63946)),
+          right: BorderSide(color: Color(0x55E63946)),
+        ),
+      ),
+      padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(context).viewInsets.bottom + 36),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 36, height: 4,
+            decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+          ),
+          const SizedBox(height: 24),
+          const Text('📱', style: TextStyle(fontSize: 44)),
+          const SizedBox(height: 16),
+          const Text(
+            'Enjoying the games?',
+            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Get the Android app for a smoother experience — faster load, no browser, and play anywhere.',
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.55), fontSize: 14, height: 1.55),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 28),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE63946),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                elevation: 0,
+              ),
+              icon: const Icon(Icons.android_rounded, size: 20),
+              label: const Text(
+                'Get it on Google Play',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, letterSpacing: 0.5),
+              ),
+              onPressed: () {
+                onInstall();
+                Navigator.pop(context);
+                launchUrl(Uri.parse(_kPlayStoreUrl), mode: LaunchMode.externalApplication);
+              },
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextButton(
+            onPressed: () {
+              onSnooze();
+              Navigator.pop(context);
+            },
+            child: Text(
+              'Maybe later',
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 13),
+            ),
           ),
         ],
       ),
