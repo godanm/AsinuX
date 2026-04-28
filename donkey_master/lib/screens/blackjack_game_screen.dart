@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../models/card_model.dart';
 import '../services/admob_service.dart';
+import '../services/game_logger.dart';
 import '../services/sound_service.dart';
 import '../services/stats_service.dart';
 import '../widgets/ad_banner_widget.dart';
@@ -75,6 +76,7 @@ class _BlackjackGameScreenState extends State<BlackjackGameScreen> {
   bool _isMuted = false;
   bool _statsRecorded = false;
   int _handCount = 0;
+  late String _bjSessionKey;
 
   static const _accent = Color(0xFFFFD700);
   static const _betOptions = [25, 50, 100, 250, 500];
@@ -83,6 +85,7 @@ class _BlackjackGameScreenState extends State<BlackjackGameScreen> {
   void initState() {
     super.initState();
     AdMobService.instance.suppressAppOpenAd = true;
+    _bjSessionKey = '${widget.playerId}_bj_${DateTime.now().millisecondsSinceEpoch}';
     _deck = _freshDeck();
     _loadChips();
   }
@@ -97,6 +100,11 @@ class _BlackjackGameScreenState extends State<BlackjackGameScreen> {
     final stats = await StatsService.instance.getStats(widget.playerId);
     if (mounted) {
       setState(() => _chips = stats.totalPoints > 0 ? stats.totalPoints : 1000);
+      GameLogger.instance.bjGameStart(
+        sessionKey: _bjSessionKey,
+        playerName: widget.playerName,
+        chips: _chips,
+      );
     }
   }
 
@@ -124,6 +132,14 @@ class _BlackjackGameScreenState extends State<BlackjackGameScreen> {
       _statsRecorded = false;
     });
     SoundService.instance.playCardSlap();
+    GameLogger.instance.bjRoundStart(
+      sessionKey: _bjSessionKey,
+      bet: _bet,
+      chips: _chips,
+      playerHand: GameLogger.handLabel(_playerHand),
+      playerValue: _handValue(_playerHand),
+      dealerVisible: GameLogger.cardLabel(_dealerHand.first),
+    );
 
     // Check player blackjack — reveal dealer card and check for dealer blackjack
     if (_isBlackjack(_playerHand)) {
@@ -149,6 +165,12 @@ class _BlackjackGameScreenState extends State<BlackjackGameScreen> {
       _playerHand = [..._playerHand, _dealCard()];
       _busy = false;
     });
+    GameLogger.instance.bjAction(
+      sessionKey: _bjSessionKey,
+      action: 'HIT',
+      hand: GameLogger.handLabel(_playerHand),
+      value: _handValue(_playerHand),
+    );
     if (_handValue(_playerHand) > 21) {
       await Future.delayed(const Duration(milliseconds: 400));
       await _endRound(_Result.bust);
@@ -157,6 +179,12 @@ class _BlackjackGameScreenState extends State<BlackjackGameScreen> {
 
   Future<void> _stand() async {
     if (_busy || _phase != _Phase.playerTurn) return;
+    GameLogger.instance.bjAction(
+      sessionKey: _bjSessionKey,
+      action: 'STAND',
+      hand: GameLogger.handLabel(_playerHand),
+      value: _handValue(_playerHand),
+    );
     await _runDealer();
   }
 
@@ -168,6 +196,12 @@ class _BlackjackGameScreenState extends State<BlackjackGameScreen> {
       _busy = true;
       _playerHand = [..._playerHand, _dealCard()];
     });
+    GameLogger.instance.bjAction(
+      sessionKey: _bjSessionKey,
+      action: 'DOUBLE_DOWN',
+      hand: GameLogger.handLabel(_playerHand),
+      value: _handValue(_playerHand),
+    );
     await Future.delayed(const Duration(milliseconds: 500));
     if (_handValue(_playerHand) > 21) {
       await _endRound(_Result.bust);
@@ -237,6 +271,16 @@ class _BlackjackGameScreenState extends State<BlackjackGameScreen> {
         chipsDelta: delta,
       );
     }
+    GameLogger.instance.bjRoundEnd(
+      sessionKey: _bjSessionKey,
+      result: res.name.toUpperCase(),
+      delta: delta,
+      playerHand: GameLogger.handLabel(_playerHand),
+      playerValue: _handValue(_playerHand),
+      dealerHand: GameLogger.handLabel(_dealerHand),
+      dealerValue: _handValue(_dealerHand),
+      chipsAfter: _chips,
+    );
 
     _handCount++;
     if ((res == _Result.win || res == _Result.blackjack) &&

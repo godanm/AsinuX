@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../models/card_model.dart';
 import '../services/admob_service.dart';
+import '../services/game_logger.dart';
 import '../services/sound_service.dart';
 import '../services/stats_service.dart';
 import '../widgets/ad_banner_widget.dart';
@@ -74,12 +75,14 @@ class _BluffGameScreenState extends State<BluffGameScreen> {
   int _bluffsSucceeded = 0;
   bool _statsRecorded = false;
   int _totalPoints = 0;
+  late String _bluffSessionKey;
 
   @override
   void initState() {
     super.initState();
     AdMobService.instance.suppressAppOpenAd = true;
     _newGame();
+    _logGameStart();
     StatsService.instance.getStats(widget.playerId).then((s) {
       if (mounted) setState(() => _totalPoints = s.totalPoints);
     });
@@ -92,6 +95,7 @@ class _BluffGameScreenState extends State<BluffGameScreen> {
   }
 
   void _newGame() {
+    _bluffSessionKey = '${widget.playerId}_bluff_${DateTime.now().millisecondsSinceEpoch}';
     final deck = [
       for (final s in Suit.values)
         for (final r in Rank.values) PlayingCard(suit: s, rank: r),
@@ -114,6 +118,14 @@ class _BluffGameScreenState extends State<BluffGameScreen> {
     _phase = _Phase.playerTurn;
     _status = 'Your turn — play Aces';
     _overlayMsg = '';
+  }
+
+  void _logGameStart() {
+    GameLogger.instance.bluffGameStart(
+      sessionKey: _bluffSessionKey,
+      playerName: widget.playerName,
+      botNames: _players.skip(1).map((p) => p.name).toList(),
+    );
   }
 
   Rank get _currentRank => _rankCycle[_rankIdx % 13];
@@ -141,6 +153,15 @@ class _BluffGameScreenState extends State<BluffGameScreen> {
       _phase = _Phase.botCallWindow;
     });
     SoundService.instance.playCardSlap();
+    GameLogger.instance.bluffPlay(
+      sessionKey: _bluffSessionKey,
+      playerName: widget.playerName,
+      cardCount: played.length,
+      claimedRank: _rl(rank),
+      isBluff: isBluff,
+      pileAfter: _pile.length,
+      handAfter: human.hand.length,
+    );
 
     if (human.hand.isEmpty) { await _handleWin(0); return; }
 
@@ -183,6 +204,13 @@ class _BluffGameScreenState extends State<BluffGameScreen> {
       _phase = _Phase.bluffResult;
     });
     SoundService.instance.playDonkey();
+    GameLogger.instance.bluffCall(
+      sessionKey: _bluffSessionKey,
+      callerName: _players[callerIdx].name,
+      wasHonest: honest,
+      loserName: loserName,
+      pileSize: _pile.length,
+    );
     await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
 
@@ -251,6 +279,15 @@ class _BluffGameScreenState extends State<BluffGameScreen> {
       _phase = _Phase.humanCallWindow;
     });
     SoundService.instance.playCardSlap();
+    GameLogger.instance.bluffPlay(
+      sessionKey: _bluffSessionKey,
+      playerName: bot.name,
+      cardCount: toPlay.length,
+      claimedRank: _rl(rank),
+      isBluff: _lastWasBluff,
+      pileAfter: _pile.length,
+      handAfter: bot.hand.length,
+    );
 
     if (bot.hand.isEmpty) { await _handleWin(_turnIdx); return; }
   }
@@ -276,6 +313,14 @@ class _BluffGameScreenState extends State<BluffGameScreen> {
       _phase = _Phase.gameOver;
       _overlayMsg = humanWon ? '🎉 You won!' : '${_players[winnerIdx].name} wins!';
     });
+    GameLogger.instance.bluffGameEnd(
+      sessionKey: _bluffSessionKey,
+      winnerName: _players[winnerIdx].name,
+      humanWon: humanWon,
+      bluffsAttempted: _bluffsAttempted,
+      bluffsCaught: _bluffsCaught,
+      bluffsSucceeded: _bluffsSucceeded,
+    );
     if (humanWon) {
       SoundService.instance.playEscape();
       Future.delayed(const Duration(seconds: 2), () {
@@ -705,7 +750,10 @@ class _BluffGameScreenState extends State<BluffGameScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    onPressed: () => setState(_newGame),
+                    onPressed: () {
+                      setState(_newGame);
+                      _logGameStart();
+                    },
                     child: const Text('PLAY AGAIN',
                         style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 1)),
                   ),

@@ -34,6 +34,9 @@ class GameLogger {
   String _cardStr(PlayingCard c) => '${c.rank.name}_of_${c.suit.name}';
   String _handStr(List<PlayingCard> hand) => hand.map(_cardStr).join(', ');
 
+  static String cardLabel(PlayingCard c) => '${c.rank.name}_of_${c.suit.name}';
+  static String handLabel(List<PlayingCard> hand) => hand.map(cardLabel).join(', ');
+
   Future<void> _log(
     String roomId,
     String event,
@@ -451,5 +454,128 @@ class GameLogger {
         'isThani': isThani,
         'gamePointsAwarded': gamePointsAwarded,
         'teamGamePoints': teamGamePoints,
+      });
+
+  // ── Blackjack ─────────────────────────────────────────────────────────────
+
+  Future<void> bjGameStart({
+    required String sessionKey,
+    required String playerName,
+    required int chips,
+  }) async {
+    await _initRoom(sessionKey, 'blackjack');
+    return _log(sessionKey, 'GAME_START', 'blackjack', {
+      'player': playerName,
+      'chips': chips,
+    });
+  }
+
+  Future<void> bjRoundStart({
+    required String sessionKey,
+    required int bet,
+    required int chips,
+    required String playerHand,
+    required int playerValue,
+    required String dealerVisible,
+  }) =>
+      _log(sessionKey, 'ROUND_START', 'blackjack', {
+        'bet': bet,
+        'chips': chips,
+        'playerHand': playerHand,
+        'playerValue': playerValue,
+        'dealerVisible': dealerVisible,
+      });
+
+  Future<void> bjAction({
+    required String sessionKey,
+    required String action, // 'HIT' | 'STAND' | 'DOUBLE_DOWN'
+    required String hand,
+    required int value,
+  }) =>
+      _log(sessionKey, action, 'blackjack', {
+        'hand': hand,
+        'value': value,
+      });
+
+  Future<void> bjRoundEnd({
+    required String sessionKey,
+    required String result,
+    required int delta,
+    required String playerHand,
+    required int playerValue,
+    required String dealerHand,
+    required int dealerValue,
+    required int chipsAfter,
+  }) =>
+      _log(sessionKey, 'ROUND_END', 'blackjack', {
+        'result': result,
+        'delta': delta,
+        'playerHand': playerHand,
+        'playerValue': playerValue,
+        'dealerHand': dealerHand,
+        'dealerValue': dealerValue,
+        'chipsAfter': chipsAfter,
+      });
+
+  // ── Bluff ─────────────────────────────────────────────────────────────────
+
+  Future<void> bluffGameStart({
+    required String sessionKey,
+    required String playerName,
+    required List<String> botNames,
+  }) async {
+    await _initRoom(sessionKey, 'bluff');
+    return _log(sessionKey, 'GAME_START', 'bluff', {
+      'player': playerName,
+      'bots': botNames,
+    });
+  }
+
+  Future<void> bluffPlay({
+    required String sessionKey,
+    required String playerName,
+    required int cardCount,
+    required String claimedRank,
+    required bool isBluff,
+    required int pileAfter,
+    required int handAfter,
+  }) =>
+      _log(sessionKey, 'PLAY', 'bluff', {
+        'player': playerName,
+        'cardCount': cardCount,
+        'claimedRank': claimedRank,
+        'isBluff': isBluff,
+        'pileAfter': pileAfter,
+        'handAfter': handAfter,
+      });
+
+  Future<void> bluffCall({
+    required String sessionKey,
+    required String callerName,
+    required bool wasHonest,
+    required String loserName,
+    required int pileSize,
+  }) =>
+      _log(sessionKey, 'CALL_BLUFF', 'bluff', {
+        'caller': callerName,
+        'wasHonest': wasHonest,
+        'loser': loserName,
+        'pileSize': pileSize,
+      });
+
+  Future<void> bluffGameEnd({
+    required String sessionKey,
+    required String winnerName,
+    required bool humanWon,
+    required int bluffsAttempted,
+    required int bluffsCaught,
+    required int bluffsSucceeded,
+  }) =>
+      _log(sessionKey, 'GAME_END', 'bluff', {
+        'winner': winnerName,
+        'humanWon': humanWon,
+        'bluffsAttempted': bluffsAttempted,
+        'bluffsCaught': bluffsCaught,
+        'bluffsSucceeded': bluffsSucceeded,
       });
 }
