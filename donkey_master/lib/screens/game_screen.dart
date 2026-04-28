@@ -225,7 +225,10 @@ class _GameScreenState extends State<GameScreen> {
         SoundService.instance.playEscape();
         if (id == widget.playerId) {
           HapticFeedback.heavyImpact(); // strong buzz: you escaped!
-          setState(() { _iEscaped = true; _iHaveFinished = true; });
+          setState(() => _iHaveFinished = true);
+          Future.delayed(const Duration(milliseconds: 2500), () {
+            if (mounted) setState(() => _iEscaped = true);
+          });
         } else {
           final name = state.players[id]?.name ?? '';
           setState(() => _escapeeMessage = '✅ $name escaped!');
