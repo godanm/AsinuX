@@ -1030,15 +1030,22 @@ class _MyHand extends StatelessWidget {
         .where((s) => groups[s]!.isNotEmpty)
         .toList();
 
-    const double cardH = 85.0;
-    const double peekH = 22.0;
-
     return Container(
       color: const Color(0xFF090c25),
       padding: const EdgeInsets.fromLTRB(6, 8, 6, 8),
       child: LayoutBuilder(builder: (context, constraints) {
-        final colH = (MediaQuery.of(context).size.height * 0.26)
-            .clamp(120.0, 200.0);
+        // Use actual available height rather than a screen-height fraction.
+        final availH = constraints.maxHeight;
+
+        // Header row height: ~28px (text 13 + vertical padding 6*2 + SizedBox 4)
+        const headerH = 32.0;
+
+        // Card height: fill ~55% of available space, clamped for readability.
+        final cardH = (availH * 0.55).clamp(58.0, 88.0);
+
+        // Stack area height = whatever is left after the header.
+        final colH = (availH - headerH).clamp(cardH, availH);
+
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: suits.map((suit) {
@@ -1052,6 +1059,13 @@ class _MyHand extends StatelessWidget {
               _ => '★',
             };
             final count = cards.length;
+
+            // Peek height: spread cards evenly in the available stack area so
+            // the last card is never clipped. At least 12px so the rank/suit
+            // label at the top corner of each card is always readable.
+            final double peekH = count <= 1
+                ? 0
+                : ((colH - cardH) / (count - 1)).clamp(12.0, 26.0);
             final double offset = count <= 1 ? 0 : peekH;
 
             final ordered = List<MapEntry<int, MapEntry<int, RummyCard>>>.from(
