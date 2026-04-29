@@ -151,6 +151,26 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     return ListView(
       padding: const EdgeInsets.only(bottom: 32),
       children: [
+        // ── Your rank (outside top 50) — shown at top so it's always visible ──
+        if (_myEntry != null) ...[
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Text(
+              'YOUR RANKING',
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.25), fontSize: 10, letterSpacing: 1.5),
+            ),
+          ),
+          _EntryTile(
+            rank: entries.length + 1,
+            entry: _myEntry!,
+            isMe: true,
+            rankLabel: '#${entries.length}+',
+          ).animate().fadeIn(duration: 300.ms).slideX(begin: 0.03, end: 0),
+          const SizedBox(height: 12),
+          const Divider(color: Colors.white10, height: 1),
+        ],
+
         // ── Podium (top 3) ─────────────────────────────────────
         _Podium(top3: top3, currentUid: widget.currentUid)
             .animate()
@@ -166,26 +186,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               entry: e.value,
               isMe: e.value.uid == widget.currentUid,
             ).animate(delay: Duration(milliseconds: e.key * 30)).fadeIn(duration: 250.ms).slideX(begin: 0.03, end: 0)),
-
-        // ── Your rank (outside top 50) ─────────────────────────
-        if (_myEntry != null) ...[
-          const SizedBox(height: 12),
-          const Divider(color: Colors.white10, height: 1),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Text(
-              'YOUR RANKING',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.25), fontSize: 10, letterSpacing: 1.5),
-            ),
-          ),
-          _EntryTile(
-            rank: entries.length + 1,
-            entry: _myEntry!,
-            isMe: true,
-            rankLabel: '#${entries.length}+',
-          ).animate().fadeIn(duration: 300.ms).slideX(begin: 0.03, end: 0),
-        ],
       ],
     );
   }
