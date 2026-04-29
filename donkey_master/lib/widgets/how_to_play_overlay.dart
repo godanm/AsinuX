@@ -121,7 +121,7 @@ const _games = <_Game>[
   _Game(
     id: 'kazhutha',
     emoji: '🃏',
-    title: 'KAZHUTHA',
+    title: 'DONKEY',
     subtitle: 'Trick-taking · 4 players',
     accent: Color(0xFFE63946),
     gradientColors: [Color(0xFF5c0a1a), Color(0xFF2a0010)],

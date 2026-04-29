@@ -163,7 +163,7 @@ hold(icon_frame, 4.5)
 
 games = [
     {
-        'name':  'Kazhutha',
+        'name':  'Donkey',
         'sub':   'The Classic Trick-Taking Game',
         'desc':  ['Lead tricks, shed your cards.', 'Don\'t be the last one holding.'],
         'suit':  '♣',

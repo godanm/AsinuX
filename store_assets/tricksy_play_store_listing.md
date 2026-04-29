@@ -16,7 +16,7 @@ Tricksy brings six classic card games together in one app — play online agains
 
 🃏 THE GAMES
 
-Kazhutha (Donkey)
+Donkey
 The classic trick-taking game. Lead tricks, shed your cards, and escape before the last player gets stuck as the Donkey. Fast, strategic, and ruthless.
 
 Rummy
@@ -53,7 +53,7 @@ Six games. One leaderboard. Outsmart the table.
 `Games → Card`
 
 ## Tags
-`card game, multiplayer, rummy, teen patti, blackjack, bluff, kazhutha, 28`
+`card game, multiplayer, donkey, rummy, teen patti, blackjack, bluff, 28`
 
 ## Privacy Policy URL
 ```

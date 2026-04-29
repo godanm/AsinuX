@@ -365,7 +365,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Expanded(
                                   child: _GameCard(
                                     emoji: '🃏',
-                                    title: 'KAZHUTHA',
+                                    title: 'DONKEY',
                                     subtitle: 'Trick-taking · 4 players',
                                     accentColor: const Color(0xFFFF1744),
                                     gradientColors: const [Color(0xFF8B0020), Color(0xFF400010)],
