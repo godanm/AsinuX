@@ -17,32 +17,24 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _donkeyController;
+class _SplashScreenState extends State<SplashScreen> {
   bool _ready = false;
 
   @override
   void initState() {
     super.initState();
-    _donkeyController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    )..repeat(reverse: true);
     _init();
   }
 
   Future<void> _init() async {
     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-    FirebaseAnalytics.instance; // activate analytics collection on all platforms
-    // On web, persist auth across browser restarts so returning users keep their profile
+    FirebaseAnalytics.instance;
     if (kIsWeb) {
       await FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
     }
     if (!kIsWeb) await AdMobService.instance.initialize();
     await SoundService.instance.initialize();
-    // Minimum splash time so animation is visible
-    await Future.delayed(const Duration(milliseconds: 1800));
+    await Future.delayed(const Duration(milliseconds: 2000));
     if (mounted) setState(() => _ready = true);
     await Future.delayed(const Duration(milliseconds: 400));
     if (mounted) {
@@ -59,66 +51,92 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   @override
-  void dispose() {
-    _donkeyController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0d0007),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Donkey emoji with bounce
-            AnimatedBuilder(
-              animation: _donkeyController,
-              builder: (context, child) => Transform.translate(
-                offset: Offset(0, -12 * _donkeyController.value),
-                child: const Text('🫏', style: TextStyle(fontSize: 96)),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Title
-            ShaderMask(
-              shaderCallback: (bounds) => const LinearGradient(
-                colors: [Color(0xFFE63946), Color(0xFFFF6B6B)],
-              ).createShader(bounds),
-              child: const Text(
-                'Tricksy',
-                style: TextStyle(
-                  fontSize: 52,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 4,
-                  color: Colors.white,
+      backgroundColor: const Color(0xFF1a0008),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment(0, -0.2),
+            radius: 1.2,
+            colors: [Color(0xFF3d0018), Color(0xFF0d0006)],
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // App icon
+              Container(
+                width: 140,
+                height: 140,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(32),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFE63946).withValues(alpha: 0.35),
+                      blurRadius: 40,
+                      spreadRadius: 4,
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
                 ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(32),
+                  child: Image.asset(
+                    'assets/images/tricksy_icon.jpg',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              )
+                  .animate()
+                  .fadeIn(duration: 600.ms)
+                  .scale(begin: const Offset(0.8, 0.8), end: const Offset(1, 1), duration: 600.ms, curve: Curves.easeOutBack),
+
+              const SizedBox(height: 32),
+
+              // Title
+              ShaderMask(
+                shaderCallback: (bounds) => const LinearGradient(
+                  colors: [Color(0xFFFFD250), Color(0xFFFFA040)],
+                ).createShader(bounds),
+                child: const Text(
+                  'Tricksy',
+                  style: TextStyle(
+                    fontSize: 52,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 4,
+                    color: Colors.white,
+                  ),
+                ),
+              ).animate().fadeIn(delay: 300.ms, duration: 500.ms).slideY(begin: 0.15, end: 0),
+
+              const SizedBox(height: 8),
+
+              Text(
+                'Outsmart the table.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white.withValues(alpha: 0.45),
+                  fontStyle: FontStyle.italic,
+                  letterSpacing: 1,
+                ),
+              ).animate().fadeIn(delay: 600.ms, duration: 500.ms),
+
+              const SizedBox(height: 56),
+
+              // Loading dots
+              AnimatedOpacity(
+                opacity: _ready ? 0 : 1,
+                duration: const Duration(milliseconds: 300),
+                child: _LoadingDots(),
               ),
-            ).animate().fadeIn(delay: 300.ms, duration: 500.ms).slideY(begin: 0.2),
-
-            const SizedBox(height: 8),
-
-            Text(
-              "Outsmart the table.",
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.white.withValues(alpha: 0.4),
-                fontStyle: FontStyle.italic,
-                letterSpacing: 1,
-              ),
-            ).animate().fadeIn(delay: 600.ms, duration: 500.ms),
-
-            const SizedBox(height: 48),
-
-            // Loading dots
-            AnimatedOpacity(
-              opacity: _ready ? 0 : 1,
-              duration: const Duration(milliseconds: 300),
-              child: _LoadingDots(),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -162,7 +180,7 @@ class _LoadingDotsState extends State<_LoadingDots> {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: active
-                ? const Color(0xFFE63946)
+                ? const Color(0xFFFFD250)
                 : Colors.white.withValues(alpha: 0.2),
           ),
         );
