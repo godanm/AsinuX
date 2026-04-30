@@ -144,6 +144,9 @@ class Game28State {
   final int roundNumber;
   final int targetScore; // first team to this wins the game
 
+  // Thani: set when a player bids 28 (declared solo sweep)
+  final bool isThaniRound;
+
   const Game28State({
     required this.roomId,
     required this.roomCode,
@@ -170,6 +173,7 @@ class Game28State {
     this.teamGamePoints = const {'t0': 0, 't1': 0},
     this.roundNumber = 0,
     this.targetScore = 6,
+    this.isThaniRound = false,
   });
 
   List<Game28Player> get orderedPlayers => playerOrder
@@ -205,6 +209,7 @@ class Game28State {
     Map<String, int>? teamGamePoints,
     int? roundNumber,
     int? targetScore,
+    bool? isThaniRound,
   }) =>
       Game28State(
         roomId: roomId,
@@ -233,6 +238,7 @@ class Game28State {
         teamGamePoints: teamGamePoints ?? this.teamGamePoints,
         roundNumber: roundNumber ?? this.roundNumber,
         targetScore: targetScore ?? this.targetScore,
+        isThaniRound: isThaniRound ?? this.isThaniRound,
       );
 
   Map<String, dynamic> toMap() => {
@@ -261,6 +267,7 @@ class Game28State {
         'teamGamePoints': teamGamePoints,
         'roundNumber': roundNumber,
         'targetScore': targetScore,
+        'isThaniRound': isThaniRound,
       };
 
   factory Game28State.fromMap(Map<dynamic, dynamic> map) {
@@ -316,6 +323,7 @@ class Game28State {
       },
       roundNumber: (map['roundNumber'] as num?)?.toInt() ?? 0,
       targetScore: (map['targetScore'] as num?)?.toInt() ?? 6,
+      isThaniRound: map['isThaniRound'] as bool? ?? false,
     );
   }
 }

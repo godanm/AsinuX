@@ -131,6 +131,7 @@ class Game28Service {
       'currentTurn': null,
       'pendingDeck': pendingDeck.map((c) => c.toMap()).toList(),
       'teamTrickPoints': {'t0': 0, 't1': 0},
+      'isThaniRound': false,
       'players': updatedPlayers.map((k, v) => MapEntry(k, v.toMap())),
     });
     GameLogger.instance.game28RoundStart(
@@ -182,6 +183,22 @@ class Game28Service {
         final myTeam = state.players[playerId]?.teamIndex;
         if (holderTeam != null && myTeam != null &&
             holderTeam == myTeam && bidValue < 20) return;
+      }
+
+      // Thani declaration — bid of 28 ends bidding immediately
+      if (bidValue == 28) {
+        await _ref(state.roomId).update({
+          'currentBid': 28,
+          'currentBidder': playerId,
+          'passedPlayers': passed,
+          'phase': Game28Phase.trumpSelection.index,
+          'bidWinnerId': playerId,
+          'bidWinnerTeam': state.players[playerId]!.teamIndex,
+          'biddingTurn': null,
+          'isThaniRound': true,
+        });
+        debugPrint('[28] THANI declared by $playerId — bidding ends immediately');
+        return;
       }
 
       // Update current bid holder
@@ -531,7 +548,8 @@ class Game28Service {
     if (bidMet) {
       gamePointsToAward = isThani ? 3 : (state.currentBid >= 20 ? 2 : 1);
     } else {
-      gamePointsToAward = state.currentBid >= 20 ? 2 : 1;
+      // Declared Thani that failed → opponents get 3 game pts as penalty
+      gamePointsToAward = state.isThaniRound ? 3 : (state.currentBid >= 20 ? 2 : 1);
     }
 
     final newGamePoints = Map<String, int>.from(state.teamGamePoints);

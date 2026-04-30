@@ -1071,15 +1071,39 @@ class _TrumpSelectionView extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('${state.currentBid} pts',
-                            style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w900,
-                                color: _kGold)),
-                        Text('Your team must score ≥${state.currentBid} to win',
-                            style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.white.withValues(alpha: 0.5))),
+                        Row(
+                          children: [
+                            Text('${state.currentBid} pts',
+                                style: const TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w900,
+                                    color: _kGold)),
+                            if (state.isThaniRound) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: _kGold.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(5),
+                                  border: Border.all(color: _kGold.withValues(alpha: 0.5)),
+                                ),
+                                child: const Text('✦ THANI',
+                                    style: TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w900,
+                                        color: _kGold,
+                                        letterSpacing: 1.5)),
+                              ),
+                            ],
+                          ],
+                        ),
+                        Text(
+                          state.isThaniRound
+                              ? 'Win ALL 28 points — or lose 3 game pts!'
+                              : 'Your team must score ≥${state.currentBid} to win',
+                          style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.white.withValues(alpha: 0.5))),
                       ],
                     ),
                   ),
@@ -1570,13 +1594,14 @@ class _RoundEndView extends StatelessWidget {
                     style: const TextStyle(fontSize: 36)),
                 const SizedBox(height: 6),
                 Builder(builder: (_) {
-                  final isThani = bidTeamPts == 28;
-                  final gp = isThani ? 3
-                      : (state.currentBid >= 20 ? 2 : 1);
+                  final isThani = bidTeamPts == 28; // achieved all 28 pts
+                  final gp = bidMet
+                      ? (isThani ? 3 : (state.currentBid >= 20 ? 2 : 1))
+                      : (state.isThaniRound ? 3 : (state.currentBid >= 20 ? 2 : 1));
                   final winTeamIdx = bidMet ? bidTeam : 1 - bidTeam;
                   return Column(
                     children: [
-                      if (isThani)
+                      if (isThani || state.isThaniRound)
                         Container(
                           margin: const EdgeInsets.only(bottom: 6),
                           padding: const EdgeInsets.symmetric(
@@ -1857,11 +1882,28 @@ class _ScoreStrip extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Column(
                   children: [
-                    Text('BID',
-                        style: TextStyle(
-                            fontSize: 8,
-                            letterSpacing: 1,
-                            color: Colors.white.withValues(alpha: 0.3))),
+                    if (state.isThaniRound)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: _kGold.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: _kGold.withValues(alpha: 0.5)),
+                        ),
+                        child: const Text('✦ THANI',
+                            style: TextStyle(
+                                fontSize: 7,
+                                fontWeight: FontWeight.w900,
+                                color: _kGold,
+                                letterSpacing: 1.5)),
+                      )
+                    else
+                      Text('BID',
+                          style: TextStyle(
+                              fontSize: 8,
+                              letterSpacing: 1,
+                              color: Colors.white.withValues(alpha: 0.3))),
                     Text('${state.currentBid}',
                         style: const TextStyle(
                             fontSize: 15,
