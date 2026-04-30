@@ -194,6 +194,7 @@ class _BlackjackGameScreenState extends State<BlackjackGameScreen> {
     setState(() {
       _bet *= 2;
       _busy = true;
+      _phase = _Phase.dealerTurn; // collapse action buttons immediately
       _playerHand = [..._playerHand, _dealCard()];
     });
     GameLogger.instance.bjAction(
@@ -202,7 +203,7 @@ class _BlackjackGameScreenState extends State<BlackjackGameScreen> {
       hand: GameLogger.handLabel(_playerHand),
       value: _handValue(_playerHand),
     );
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 900));
     if (_handValue(_playerHand) > 21) {
       await _endRound(_Result.bust);
     } else {
