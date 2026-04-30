@@ -53,12 +53,12 @@ class AdMobService {
   //       paste the IDs below. Until filled in, all placements fall back to the
   //       shared unit so existing behaviour is unchanged.
   static const _androidRewardedIds = <String, String>{
-    'kazhutha':  '', // TODO: Kazhutha_Rewarded (Android)
-    'rummy':     '', // TODO: Rummy_Rewarded (Android)
-    'teenPatti': '', // TODO: TeenPatti_Rewarded (Android)
-    'game28':    '', // TODO: 28_Rewarded (Android)
-    'blackjack': '', // TODO: Blackjack_Rewarded (Android)
-    'bluff':     '', // TODO: Bluff_Rewarded (Android)
+    'kazhutha':  'ca-app-pub-9287774769346149/3983565935',
+    'rummy':     'ca-app-pub-9287774769346149/4812283099',
+    'teenPatti': 'ca-app-pub-9287774769346149/3499201420',
+    'game28':    'ca-app-pub-9287774769346149/9577749953',
+    'blackjack': 'ca-app-pub-9287774769346149/5714526564',
+    'bluff':     'ca-app-pub-9287774769346149/9626774859',
   };
   static const _iosRewardedIds = <String, String>{
     'kazhutha':  '', // TODO: Kazhutha_Rewarded (iOS)
