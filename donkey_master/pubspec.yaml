@@ -2,7 +2,7 @@ name: asinux
 description: "Tricksy — outsmart the table. Play Kazhutha, Rummy, Teen Patti, 28, Blackjack and Bluff online."
 publish_to: 'none'
 
-version: 1.0.0+30
+version: 1.0.0+31
 
 environment:
   sdk: ^3.10.7

@@ -10,6 +10,7 @@ class RummyLobbyScreen extends StatefulWidget {
   final String playerId;
   final String playerName;
   final int maxPlayers;
+  final int targetScore;
 
   const RummyLobbyScreen({
     super.key,
@@ -17,6 +18,7 @@ class RummyLobbyScreen extends StatefulWidget {
     required this.playerId,
     required this.playerName,
     required this.maxPlayers,
+    this.targetScore = 0,
   });
 
   @override
@@ -64,6 +66,8 @@ class _RummyLobbyScreenState extends State<RummyLobbyScreen> {
             playerId: widget.playerId,
             playerName: widget.playerName,
             botIds: botIds,
+            targetScore: widget.targetScore,
+            isHost: _isHost,
           ),
         ),
       );
@@ -273,7 +277,7 @@ class _RummyLobbyScreenState extends State<RummyLobbyScreen> {
   Future<void> _startGame() async {
     setState(() => _starting = true);
     try {
-      await RummyService.instance.startGame(roomId: widget.roomId);
+      await RummyService.instance.startGame(roomId: widget.roomId, targetScore: widget.targetScore);
       // Navigation is handled by _onRoomUpdate when status → 'started'
     } catch (e, st) {
       debugPrint('[Rummy] startGame error: $e\n$st');

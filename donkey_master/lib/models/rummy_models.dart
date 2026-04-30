@@ -115,21 +115,33 @@ bool isValidSequence(List<RummyCard> cards, int wildRank) {
   final suit = regs.first.suit;
   if (regs.any((c) => c.suit != suit)) return false;
 
-  final ranks = regs.map((c) => c.rank).toList()..sort();
-  // No duplicate ranks
-  for (int i = 1; i < ranks.length; i++) {
-    if (ranks[i] == ranks[i - 1]) return false;
+  bool checkRanks(List<int> ranks) {
+    final sorted = List<int>.from(ranks)..sort();
+    for (int i = 1; i < sorted.length; i++) {
+      if (sorted[i] == sorted[i - 1]) return false;
+    }
+    final jokerCount = jokers.length;
+    final minR = sorted.first;
+    // Clamp upper bound at 14 to support Ace-as-high (rank 14) for Q-K-A
+    final startFrom = (minR - jokerCount).clamp(1, 14);
+    for (int start = startFrom; start <= minR; start++) {
+      final end = start + cards.length - 1;
+      if (end > 14) continue;
+      if (sorted.any((r) => r < start || r > end)) continue;
+      return true;
+    }
+    return false;
   }
 
-  // Try every possible start position that could cover all regular cards
-  final minR = ranks.first;
-  final startFrom = (minR - jokers.length).clamp(1, 13);
-  for (int start = startFrom; start <= minR; start++) {
-    final end = start + cards.length - 1;
-    if (end > 13) continue;
-    if (regs.any((c) => c.rank < start || c.rank > end)) continue;
-    return true;
+  final baseRanks = regs.map((c) => c.rank).toList();
+  if (checkRanks(baseRanks)) return true;
+
+  // Try Ace as high (14) to validate Q-K-A sequences
+  if (baseRanks.contains(1)) {
+    final highAceRanks = baseRanks.map((r) => r == 1 ? 14 : r).toList();
+    if (checkRanks(highAceRanks)) return true;
   }
+
   return false;
 }
 
@@ -229,7 +241,12 @@ class RummyGameState {
   final int closedDeckCount;
   final Map<String, RummyPlayer> players;
   final String? winnerId;
-  final Map<String, int> scores; // playerId → penalty points
+  final Map<String, int> scores;        // current-round penalty points
+  final Map<String, int> sessionScores; // cumulative across rounds
+  final int targetScore;  // 0 = single round; 101 / 201 = Pool Rummy
+  final int round;        // 1-based round number
+  final bool sessionOver;
+  final String? sessionWinnerId;
 
   const RummyGameState({
     required this.roomId,
@@ -242,6 +259,11 @@ class RummyGameState {
     required this.players,
     this.winnerId,
     this.scores = const {},
+    this.sessionScores = const {},
+    this.targetScore = 0,
+    this.round = 1,
+    this.sessionOver = false,
+    this.sessionWinnerId,
   });
 
   RummyCard? get topOfOpen => openDeck.isNotEmpty ? openDeck.last : null;
@@ -279,6 +301,11 @@ class RummyGameState {
         : <String, dynamic>{};
     final scores = scoresRaw.map((k, v) => MapEntry(k, (v as num).toInt()));
 
+    final sessionRaw = map['sessionScores'] != null
+        ? Map<String, dynamic>.from(map['sessionScores'] as Map)
+        : <String, dynamic>{};
+    final sessionScores = sessionRaw.map((k, v) => MapEntry(k, (v as num).toInt()));
+
     return RummyGameState(
       roomId: roomId,
       phase: rummyPhaseFromString(map['phase'] as String? ?? 'draw'),
@@ -290,6 +317,11 @@ class RummyGameState {
       players: players,
       winnerId: map['winnerId'] as String?,
       scores: scores,
+      sessionScores: sessionScores,
+      targetScore: (map['targetScore'] as num?)?.toInt() ?? 0,
+      round: (map['round'] as num?)?.toInt() ?? 1,
+      sessionOver: (map['sessionOver'] as bool?) ?? false,
+      sessionWinnerId: map['sessionWinnerId'] as String?,
     );
   }
 }

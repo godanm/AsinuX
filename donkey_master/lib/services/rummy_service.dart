@@ -225,19 +225,41 @@ class RummyService {
   // hand. The function writes each hand to rummy_hands/{roomId}/{uid}
   // using the Admin SDK, which bypasses the per-player read rules.
 
-  Future<void> startGame({required String roomId}) async {
-    debugPrint('[Rummy] startGame — calling dealRummyGame CF for $roomId');
+  Future<void> startGame({required String roomId, int targetScore = 0}) async {
+    debugPrint('[Rummy] startGame — calling dealRummyGame CF for $roomId (target=$targetScore)');
     try {
       final callable =
           FirebaseFunctions.instance.httpsCallable('dealRummyGame');
-      final result = await callable.call({'roomId': roomId});
+      final result = await callable.call({
+        'roomId': roomId,
+        'targetScore': targetScore,
+        'sessionScores': <String, int>{},
+        'round': 1,
+      });
       debugPrint('[Rummy] startGame CF returned: ${result.data}');
     } catch (e, st) {
       debugPrint('[Rummy] startGame CF threw: $e\n$st');
       rethrow;
     }
-    // Status → 'started' and all hands are written atomically by the CF.
-    // Lobby screens navigate when they observe the status change.
+  }
+
+  Future<void> startNextRound(String roomId, RummyGameState state) async {
+    debugPrint('[Rummy] startNextRound — round ${state.round + 1} in $roomId');
+    try {
+      final callable =
+          FirebaseFunctions.instance.httpsCallable('dealRummyGame');
+      final result = await callable.call({
+        'roomId': roomId,
+        'targetScore': state.targetScore,
+        'sessionScores': state.sessionScores,
+        'round': state.round + 1,
+        'nextRound': true,
+      });
+      debugPrint('[Rummy] startNextRound CF returned: ${result.data}');
+    } catch (e, st) {
+      debugPrint('[Rummy] startNextRound CF threw: $e\n$st');
+      rethrow;
+    }
   }
 
   // ── Draw from closed deck ──────────────────────────────────────

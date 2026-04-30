@@ -22,8 +22,8 @@ class RummyBotService {
   ///
   /// Takes the open card when it:
   /// - Is a joker (always valuable)
-  /// - Fits into a 2-card partial sequence in hand (same suit, rank ±1 or ±2)
-  /// - Completes a 2-card partial set in hand (same rank, different suit)
+  /// - Has genuine connections to the hand AND we'd actually keep it
+  ///   (prevents the cycle where bot picks up X then immediately discards X)
   static bool shouldDrawFromOpen(
     RummyCard? topOfOpen,
     List<RummyCard> hand,
@@ -36,20 +36,30 @@ class RummyBotService {
     // Always grab a joker
     if (topOfOpen.isPrintedJoker || topOfOpen.rank == wildRank) return true;
 
+    // Check for any connection to current hand
+    bool hasConnection = false;
     for (final card in hand) {
       if (isRummyJoker(card, wildRank)) continue;
-
-      // Set potential: same rank, different suit — one more makes a set
-      if (card.rank == topOfOpen.rank && card.suit != topOfOpen.suit) return true;
-
-      // Sequence potential: same suit, rank within 2 — joker or open card fills gap
+      if (card.rank == topOfOpen.rank && card.suit != topOfOpen.suit) {
+        hasConnection = true;
+        break;
+      }
       if (card.suit == topOfOpen.suit) {
         final diff = (card.rank - topOfOpen.rank).abs();
-        if (diff == 1 || diff == 2) return true;
+        if (diff == 1 || diff == 2) {
+          hasConnection = true;
+          break;
+        }
       }
     }
 
-    return false;
+    if (!hasConnection) return false;
+
+    // Simulate: only draw if we'd actually keep it, not discard it immediately.
+    // This prevents the bot from cycling the same card back and forth.
+    final simulated = [...hand, topOfOpen];
+    final discardIdx = chooseDiscard(simulated, wildJoker);
+    return simulated[discardIdx] != topOfOpen;
   }
 
   // ── Discard decision ──────────────────────────────────────────

@@ -58,17 +58,29 @@ function isValidSequence(cards: RummyCard[], wildRank: number): boolean {
   if (!naturals.every((c) => c.suit === suit)) return false;
 
   const jokerCount = cards.length - naturals.length;
-  const ranks = naturals.map((c) => c.rank).sort((a, b) => a - b);
 
-  for (let i = 1; i < ranks.length; i++) {
-    if (ranks[i] === ranks[i - 1]) return false;
+  function checkRanks(ranks: number[]): boolean {
+    const sorted = [...ranks].sort((a, b) => a - b);
+    for (let i = 1; i < sorted.length; i++) {
+      if (sorted[i] === sorted[i - 1]) return false;
+    }
+    let gapsNeeded = 0;
+    for (let i = 1; i < sorted.length; i++) {
+      gapsNeeded += sorted[i] - sorted[i - 1] - 1;
+    }
+    return gapsNeeded <= jokerCount;
   }
 
-  let gapsNeeded = 0;
-  for (let i = 1; i < ranks.length; i++) {
-    gapsNeeded += ranks[i] - ranks[i - 1] - 1;
+  const baseRanks = naturals.map((c) => c.rank);
+  if (checkRanks(baseRanks)) return true;
+
+  // Try Ace as high (14) for Q-K-A sequences
+  if (baseRanks.includes(1)) {
+    const highAceRanks = baseRanks.map((r) => r === 1 ? 14 : r);
+    if (checkRanks(highAceRanks)) return true;
   }
-  return gapsNeeded <= jokerCount;
+
+  return false;
 }
 
 function isPureSequence(cards: RummyCard[], wildRank: number): boolean {
@@ -114,7 +126,13 @@ export const dealRummyGame = onCall({ invoker: "public" }, async (request) => {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError("unauthenticated", "Sign in required");
 
-  const { roomId } = request.data as { roomId?: string };
+  const { roomId, sessionScores, targetScore, round, nextRound } = request.data as {
+    roomId?: string;
+    sessionScores?: Record<string, number>;
+    targetScore?: number;
+    round?: number;
+    nextRound?: boolean;
+  };
   if (!roomId || typeof roomId !== "string") {
     throw new HttpsError("invalid-argument", "roomId is required");
   }
@@ -127,7 +145,8 @@ export const dealRummyGame = onCall({ invoker: "public" }, async (request) => {
   if (room.hostId !== uid) {
     throw new HttpsError("permission-denied", "Only the host can start the game");
   }
-  if (room.status !== "ready") {
+  const allowedStatuses = nextRound ? ["ready", "started"] : ["ready"];
+  if (!allowedStatuses.includes(room.status as string)) {
     throw new HttpsError(
       "failed-precondition",
       `Room is '${room.status as string}', expected 'ready'`
@@ -179,7 +198,12 @@ export const dealRummyGame = onCall({ invoker: "public" }, async (request) => {
       closedDeck: deck,
       closedDeckCount: deck.length,
       players: playersMeta,
-      // No 'hands' key — each hand lives at rummy_hands/{roomId}/{playerId}
+      scores: {},
+      sessionScores: sessionScores ?? {},
+      targetScore: targetScore ?? 0,
+      round: round ?? 1,
+      sessionOver: false,
+      sessionWinnerId: null,
     },
     [`rummy_rooms/${roomId}/status`]: "started",
   };
@@ -230,6 +254,7 @@ export const declareRummyGame = onCall({ invoker: "public" }, async (request) =>
   }
 
   const wildRank = ((game.wildJoker as Record<string, unknown>).rank as number);
+  const turnOrder = (game.turnOrder as string[]) ?? [];
 
   const handSnap = await db.ref(`rummy_hands/${roomId}/${uid}`).get();
   if (!handSnap.exists()) throw new HttpsError("not-found", "Hand not found");
@@ -263,12 +288,47 @@ export const declareRummyGame = onCall({ invoker: "public" }, async (request) =>
 
   const validationError = validateDeclaration(melds, wildRank);
   if (validationError) {
-    await db.ref(`rummy_games/${roomId}/scores/${uid}`).set(80);
-    return { error: validationError };
+    // Wrong show: 80-point penalty. Eliminate player and continue the round.
+    const wrongShowPenalty = 80;
+    const existingSession = (game.sessionScores ?? {}) as Record<string, number>;
+    const newSessionScores: Record<string, number> = { ...existingSession };
+    newSessionScores[uid] = (newSessionScores[uid] ?? 0) + wrongShowPenalty;
+
+    const turnOrderAfter = turnOrder.filter((id) => id !== uid);
+    const wrongShowUpdates: Record<string, unknown> = {
+      [`scores/${uid}`]: wrongShowPenalty,
+      [`players/${uid}/hasDropped`]: true,
+      turnOrder: turnOrderAfter,
+      sessionScores: newSessionScores,
+    };
+
+    if (turnOrderAfter.length <= 1) {
+      const winnerId = turnOrderAfter[0] ?? "";
+      wrongShowUpdates.phase = "gameOver";
+      wrongShowUpdates.winnerId = winnerId;
+      wrongShowUpdates[`scores/${winnerId}`] = 0;
+      // Check session completion
+      const tgt = (game.targetScore as number | undefined) ?? 0;
+      if (tgt > 0) {
+        const allOver = Object.entries(newSessionScores)
+          .filter(([id]) => id !== winnerId)
+          .every(([, s]) => s >= tgt);
+        if ((newSessionScores[winnerId] ?? 0) < tgt || allOver) {
+          wrongShowUpdates.sessionOver = true;
+          wrongShowUpdates.sessionWinnerId = winnerId;
+        }
+      }
+    } else {
+      const currentIdx = turnOrder.indexOf(uid);
+      wrongShowUpdates.currentTurn = turnOrderAfter[currentIdx % turnOrderAfter.length];
+      wrongShowUpdates.phase = "draw";
+    }
+
+    await db.ref(`rummy_games/${roomId}`).update(wrongShowUpdates);
+    return { error: validationError, wrongShow: true };
   }
 
   // Read all other players' hands and compute deadwood
-  const turnOrder = (game.turnOrder as string[]) ?? [];
   const otherIds = turnOrder.filter((id) => id !== uid);
 
   const otherHandSnaps = await Promise.all(
@@ -286,13 +346,38 @@ export const declareRummyGame = onCall({ invoker: "public" }, async (request) =>
     );
   }
 
+  // Accumulate session scores
+  const tgt = (game.targetScore as number | undefined) ?? 0;
+  const existingSession = (game.sessionScores ?? {}) as Record<string, number>;
+  const sessionScores: Record<string, number> = { ...existingSession };
+  for (const [pid, pts] of Object.entries(scores)) {
+    sessionScores[pid] = (sessionScores[pid] ?? 0) + pts;
+  }
+
+  let sessionOver = false;
+  let sessionWinnerId: string | null = null;
+  if (tgt > 0) {
+    const remaining = turnOrder.filter((id) => (sessionScores[id] ?? 0) < tgt);
+    if (remaining.length <= 1) {
+      sessionOver = true;
+      sessionWinnerId = remaining.length === 1
+        ? remaining[0]
+        : turnOrder.reduce((best, id) =>
+            (sessionScores[id] ?? 0) < (sessionScores[best] ?? 0) ? id : best
+          );
+    }
+  }
+
   await db.ref(`rummy_games/${roomId}`).update({
     phase: "gameOver",
     winnerId: uid,
     scores,
+    sessionScores,
+    sessionOver: sessionOver || null,
+    sessionWinnerId: sessionWinnerId || null,
   });
 
-  logger.info(`[Rummy] declareRummyGame: ${uid} won in ${roomId} — scores: ${JSON.stringify(scores)}`);
+  logger.info(`[Rummy] declareRummyGame: ${uid} won round ${game.round ?? 1} in ${roomId} — scores: ${JSON.stringify(scores)} session: ${JSON.stringify(sessionScores)}`);
   return { error: null };
 });
 

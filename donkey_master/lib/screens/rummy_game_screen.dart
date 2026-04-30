@@ -38,6 +38,8 @@ class RummyGameScreen extends StatefulWidget {
   /// The host receives these so it can subscribe to bot hand streams
   /// and drive bot moves.
   final List<String> botIds;
+  final int targetScore;
+  final bool isHost;
 
   const RummyGameScreen({
     super.key,
@@ -45,6 +47,8 @@ class RummyGameScreen extends StatefulWidget {
     required this.playerId,
     required this.playerName,
     this.botIds = const [],
+    this.targetScore = 0,
+    this.isHost = false,
   });
 
   @override
@@ -64,6 +68,12 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
   bool _isMuted = false;
   bool _gameLogInitialized = false;
   bool _gameLogEndFired = false;
+  int _lastSeenRound = 1; // used to reset per-round flags when a new round starts
+  bool _nextRoundBusy = false;
+
+  // Bot draw source highlight (flashes the source deck before the card flies)
+  bool _botHighlightClosed = false;
+  bool _botHighlightOpen = false;
 
   // Flying card animation
   _FlyCard? _flyCard;
@@ -150,6 +160,18 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
       }
     }
 
+    // Detect new round start — reset per-round flags
+    if (state.round > _lastSeenRound && state.phase == RummyPhase.draw) {
+      _lastSeenRound = state.round;
+      _gameOverAdFired = false;
+      _statsRecorded = false;
+      _gameOverVisible = false;
+      _bonusAdUsed = false;
+      _gameLogEndFired = false;
+      _lastBotActionKey = null;
+      _nextRoundBusy = false;
+    }
+
     // Drive bot turns — only the first real player in turnOrder acts as host
     final firstReal = state.turnOrder
         .firstWhere((id) => !RummyBotService.isBot(id), orElse: () => '');
@@ -182,6 +204,15 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
     final useOpen = RummyBotService.shouldDrawFromOpen(
       state.topOfOpen, hand, state.wildJoker,
     );
+
+    // Flash the source deck so it's visually obvious the bot isn't grabbing
+    // the player's just-discarded card.
+    setState(() {
+      if (useOpen) { _botHighlightOpen = true; }
+      else { _botHighlightClosed = true; }
+    });
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (mounted) setState(() { _botHighlightClosed = false; _botHighlightOpen = false; });
 
     // Animate: source deck → opponent tile
     final src = _centerOf(useOpen ? _openDeckKey : _closedDeckKey);
@@ -445,6 +476,8 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
                   onDrawOpen: _drawFromOpen,
                   closedDeckKey: _closedDeckKey,
                   openDeckKey: _openDeckKey,
+                  botHighlightClosed: _botHighlightClosed,
+                  botHighlightOpen: _botHighlightOpen,
                 ),
               ),
 
@@ -496,8 +529,18 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
                 child: _GameOverOverlay(
                   state: state,
                   myId: widget.playerId,
+                  isHost: widget.isHost || widget.botIds.isNotEmpty,
+                  nextRoundBusy: _nextRoundBusy,
                   onPlayAgain: () => Navigator.of(context)
                       .popUntil((r) => r.isFirst),
+                  onNextRound: widget.targetScore > 0 && !state.sessionOver ? () async {
+                    setState(() => _nextRoundBusy = true);
+                    try {
+                      await RummyService.instance.startNextRound(widget.roomId, state);
+                    } catch (e) {
+                      if (mounted) setState(() => _nextRoundBusy = false);
+                    }
+                  } : null,
                   onWatchAd: _bonusAdUsed ? null : () {
                     final ctx = context;
                     AdMobService.instance.showRewardedAsync(ctx, () {
@@ -795,6 +838,8 @@ class _TableArea extends StatelessWidget {
   final VoidCallback onDrawOpen;
   final GlobalKey closedDeckKey;
   final GlobalKey openDeckKey;
+  final bool botHighlightClosed;
+  final bool botHighlightOpen;
 
   const _TableArea({
     required this.state,
@@ -805,6 +850,8 @@ class _TableArea extends StatelessWidget {
     required this.onDrawOpen,
     required this.closedDeckKey,
     required this.openDeckKey,
+    this.botHighlightClosed = false,
+    this.botHighlightOpen = false,
   });
 
   @override
@@ -829,21 +876,30 @@ class _TableArea extends StatelessWidget {
                     duration: const Duration(milliseconds: 200),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10),
-                      boxShadow: canDraw
+                      boxShadow: botHighlightClosed
                           ? [
                               BoxShadow(
-                                color: const Color(0xFF4FC3F7)
-                                    .withValues(alpha: 0.4),
-                                blurRadius: 16,
-                                spreadRadius: 2,
+                                color: Colors.amber.withValues(alpha: 0.7),
+                                blurRadius: 24,
+                                spreadRadius: 6,
                               )
                             ]
-                          : null,
+                          : canDraw
+                              ? [
+                                  BoxShadow(
+                                    color: const Color(0xFF4FC3F7)
+                                        .withValues(alpha: 0.4),
+                                    blurRadius: 16,
+                                    spreadRadius: 2,
+                                  )
+                                ]
+                              : null,
                     ),
                     child: _CardBack(
                       width: 64,
                       height: 90,
                       highlighted: canDraw,
+                      botHighlighted: botHighlightClosed,
                     ),
                   ),
                 ),
@@ -883,15 +939,23 @@ class _TableArea extends StatelessWidget {
                     duration: const Duration(milliseconds: 200),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10),
-                      boxShadow: canDraw && topOpen != null
+                      boxShadow: botHighlightOpen
                           ? [
                               BoxShadow(
-                                color: const Color(0xFF4FC3F7)
-                                    .withValues(alpha: 0.3),
-                                blurRadius: 12,
+                                color: Colors.amber.withValues(alpha: 0.7),
+                                blurRadius: 24,
+                                spreadRadius: 6,
                               )
                             ]
-                          : null,
+                          : canDraw && topOpen != null
+                              ? [
+                                  BoxShadow(
+                                    color: const Color(0xFF4FC3F7)
+                                        .withValues(alpha: 0.3),
+                                    blurRadius: 12,
+                                  )
+                                ]
+                              : null,
                     ),
                     child: topOpen != null
                         ? _RummyCardFace(
@@ -1498,11 +1562,14 @@ class _CardBack extends StatelessWidget {
   final double width;
   final double height;
   final bool highlighted;
+  final bool botHighlighted;
 
-  const _CardBack(
-      {required this.width,
-      required this.height,
-      this.highlighted = false});
+  const _CardBack({
+    required this.width,
+    required this.height,
+    this.highlighted = false,
+    this.botHighlighted = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1517,10 +1584,12 @@ class _CardBack extends StatelessWidget {
           colors: [Color(0xFF1565C0), Color(0xFF0d47a1)],
         ),
         border: Border.all(
-          color: highlighted
-              ? const Color(0xFF4FC3F7)
-              : const Color(0xFF1976D2),
-          width: highlighted ? 2 : 1,
+          color: botHighlighted
+              ? Colors.amber
+              : highlighted
+                  ? const Color(0xFF4FC3F7)
+                  : const Color(0xFF1976D2),
+          width: botHighlighted || highlighted ? 2 : 1,
         ),
         boxShadow: const [
           BoxShadow(
@@ -1614,13 +1683,19 @@ class _MiniCard extends StatelessWidget {
 class _GameOverOverlay extends StatelessWidget {
   final RummyGameState state;
   final String myId;
+  final bool isHost;
+  final bool nextRoundBusy;
   final VoidCallback onPlayAgain;
+  final VoidCallback? onNextRound;
   final VoidCallback? onWatchAd;
 
   const _GameOverOverlay({
     required this.state,
     required this.myId,
+    required this.isHost,
+    required this.nextRoundBusy,
     required this.onPlayAgain,
+    this.onNextRound,
     this.onWatchAd,
   });
 
@@ -1738,6 +1813,67 @@ class _GameOverOverlay extends StatelessWidget {
               }),
 
               const SizedBox(height: 20),
+
+              // ── Session scores (multi-round) ────────────────
+              if (state.targetScore > 0) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.04),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Text('SESSION  (${state.targetScore} Pool)',
+                              style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 10, letterSpacing: 1)),
+                          const Spacer(),
+                          Text('Round ${state.round}',
+                              style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 10)),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      ...allIds.map((id) {
+                        final player = state.players[id];
+                        if (player == null) return const SizedBox.shrink();
+                        final sess = state.sessionScores[id] ?? 0;
+                        final isSessionWinner = id == state.sessionWinnerId;
+                        final isOver = sess >= state.targetScore;
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: Row(
+                            children: [
+                              if (isSessionWinner) const Text('👑', style: TextStyle(fontSize: 11)),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  id == myId ? 'You' : player.name.replaceAll('_', ' '),
+                                  style: TextStyle(
+                                    color: isSessionWinner ? Colors.amber : isOver ? Colors.red.shade400 : Colors.white.withValues(alpha: 0.7),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                '$sess / ${state.targetScore}',
+                                style: TextStyle(
+                                  color: isSessionWinner ? Colors.amber : isOver ? Colors.red.shade400 : Colors.white.withValues(alpha: 0.5),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+
               if (iWon && onWatchAd != null) ...[
                 SizedBox(
                   width: double.infinity,
@@ -1756,26 +1892,68 @@ class _GameOverOverlay extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
               ],
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: onPlayAgain,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1565C0),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                  ),
-                  child: const Text(
-                    'PLAY AGAIN',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 2,
+              // Session over → just a Finish button
+              if (state.sessionOver) ...[
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: onPlayAgain,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber.shade800,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
+                    child: const Text('SESSION OVER — FINISH',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
                   ),
                 ),
-              ),
+              ] else if (onNextRound != null) ...[
+                // Multi-round: host sees Next Round, others see waiting text
+                if (isHost) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: nextRoundBusy ? null : onNextRound,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1565C0),
+                        disabledBackgroundColor: Colors.white.withValues(alpha: 0.08),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: nextRoundBusy
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Text('NEXT ROUND', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 2)),
+                    ),
+                  ),
+                ] else ...[
+                  Text('Waiting for host to start next round…',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13)),
+                ],
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: onPlayAgain,
+                    child: Text('LEAVE TABLE', style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 12)),
+                  ),
+                ),
+              ] else ...[
+                // Single-round: normal Play Again
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: onPlayAgain,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1565C0),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    child: const Text('PLAY AGAIN',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 2)),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
