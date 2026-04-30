@@ -476,7 +476,7 @@ class TeenPattiService {
       } else if (cmp < 0) {
         winners = [otherId];
       } else {
-        winners = [otherId];
+        winners = [callerId, otherId]; // true tie — split the pot
       }
     }
     debugPrint('[TeenPattiService] show — caller=$cLabel other=$oLabel winners=$winners pot=$newPot');

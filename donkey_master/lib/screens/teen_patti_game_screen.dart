@@ -33,6 +33,7 @@ class _TeenPattiGameScreenState extends State<TeenPattiGameScreen> {
   TeenPattiState? _state;
   List<PlayingCard> _myCards = [];
   bool _busy = false;
+  bool _cardsRevealing = false;
   Timer? _turnTimer;
   int _secondsLeft = 20;
   bool _isMuted = false;
@@ -363,6 +364,40 @@ class _TeenPattiGameScreenState extends State<TeenPattiGameScreen> {
 
     final isRevealed = me.isSeen && _myCards.isNotEmpty;
 
+    Widget cardRow;
+    if (isRevealed) {
+      cardRow = Row(
+        key: const ValueKey('revealed'),
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: _myCards.asMap().entries.map((e) =>
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5),
+            child: CardWidget(card: e.value, width: 64, height: 92),
+          )
+          .animate(delay: Duration(milliseconds: e.key * 110))
+          .slideY(begin: 0.25, end: 0, duration: 350.ms, curve: Curves.easeOut)
+          .fadeIn(duration: 300.ms),
+        ).toList(),
+      );
+    } else {
+      cardRow = Row(
+        key: ValueKey(_cardsRevealing ? 'revealing' : 'hidden'),
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: List.generate(3, (i) {
+          final back = CardBackWidget(width: 64, height: 92);
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5),
+            child: _cardsRevealing
+                ? back
+                    .animate(onPlay: (c) => c.repeat(reverse: true))
+                    .scaleXY(end: 1.07, duration: 420.ms, curve: Curves.easeInOut)
+                    .tint(color: Colors.amber, duration: 420.ms)
+                : back,
+          );
+        }),
+      );
+    }
+
     return Column(
       children: [
         if (_isMyTurn)
@@ -378,23 +413,9 @@ class _TeenPattiGameScreenState extends State<TeenPattiGameScreen> {
               ),
             ),
           ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: isRevealed
-              ? _myCards
-                  .map((c) => Padding(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 5),
-                        child: CardWidget(card: c, width: 64, height: 92),
-                      ))
-                  .toList()
-              : List.generate(
-                  3,
-                  (_) => Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 5),
-                    child: CardBackWidget(width: 64, height: 92),
-                  ),
-                ),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 400),
+          child: cardRow,
         ),
         const SizedBox(height: 8),
         if (isRevealed)
@@ -407,7 +428,7 @@ class _TeenPattiGameScreenState extends State<TeenPattiGameScreen> {
           )
         else
           Text(
-            'Cards hidden — tap See Cards to reveal',
+            _cardsRevealing ? 'Revealing…' : 'Cards hidden — tap See Cards to reveal',
             style: TextStyle(
                 fontSize: 11,
                 color: Colors.white.withValues(alpha: 0.35)),
@@ -480,8 +501,12 @@ class _TeenPattiGameScreenState extends State<TeenPattiGameScreen> {
                     child: _ActionButton(
                       'SEE CARDS',
                       Colors.teal,
-                      _busy ? null : () {
+                      _busy || _cardsRevealing ? null : () async {
+                        setState(() => _cardsRevealing = true);
                         SoundService.instance.playCut();
+                        await Future.delayed(const Duration(milliseconds: 900));
+                        if (!mounted) return;
+                        setState(() => _cardsRevealing = false);
                         _act(() => TeenPattiService.instance.seeCards(state, widget.playerId));
                       },
                     ),
