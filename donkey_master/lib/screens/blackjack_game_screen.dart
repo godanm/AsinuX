@@ -284,8 +284,7 @@ class _BlackjackGameScreenState extends State<BlackjackGameScreen> {
     );
 
     _handCount++;
-    if ((res == _Result.win || res == _Result.blackjack) &&
-        _handCount % 3 == 0) {
+    if (_handCount % 4 == 0) {
       Future.delayed(const Duration(seconds: 3), () {
         if (mounted) AdMobService.instance.showRewardedAsync(context: context, placement: 'blackjack');
       });
