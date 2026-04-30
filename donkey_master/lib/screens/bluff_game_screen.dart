@@ -74,6 +74,7 @@ class _BluffGameScreenState extends State<BluffGameScreen> {
   int _bluffsCaught = 0;
   int _bluffsSucceeded = 0;
   bool _statsRecorded = false;
+  bool _freeRank = false;
   int _totalPoints = 0;
   late String _bluffSessionKey;
 
@@ -115,6 +116,7 @@ class _BluffGameScreenState extends State<BluffGameScreen> {
     _bluffsCaught = 0;
     _bluffsSucceeded = 0;
     _statsRecorded = false;
+    _freeRank = false;
     _phase = _Phase.playerTurn;
     _status = 'Your turn — play Aces';
     _overlayMsg = '';
@@ -133,7 +135,7 @@ class _BluffGameScreenState extends State<BluffGameScreen> {
   // ── Human plays selected cards ─────────────────────────────────────────────
 
   Future<void> _humanPlay() async {
-    if (_selected.isEmpty || _phase != _Phase.playerTurn) return;
+    if (_selected.isEmpty || _phase != _Phase.playerTurn || _freeRank) return;
     final human = _players[0];
     final played = _selected.toList();
     final rank = _currentRank;
@@ -163,15 +165,13 @@ class _BluffGameScreenState extends State<BluffGameScreen> {
       handAfter: human.hand.length,
     );
 
-    if (human.hand.isEmpty) { await _handleWin(0); return; }
-
     for (int i = 1; i < _players.length; i++) {
       await Future.delayed(const Duration(milliseconds: 550));
       if (!mounted) return;
       if (_botCalls(i)) { await _resolveBluff(i); return; }
     }
     if (_lastWasBluff) _bluffsSucceeded++;
-    _advance();
+    _advance(); // win check happens inside _advance
   }
 
   // ── Human calls bluff / passes ─────────────────────────────────────────────
@@ -223,27 +223,44 @@ class _BluffGameScreenState extends State<BluffGameScreen> {
       _pile.clear();
       _lastPlayed.clear();
       _turnIdx = loserIdx;
+      _freeRank = true; // pile cleared — next player picks any rank
     });
+    // If the challenged player was honest and played their last card, they win
+    if (honest && _players[_lastByIdx].hand.isEmpty) {
+      await _handleWin(_lastByIdx);
+      return;
+    }
     _advance(skipRotate: true);
   }
 
   // ── Advance to next turn ───────────────────────────────────────────────────
 
   void _advance({bool skipRotate = false}) {
-    _rankIdx = (_rankIdx + 1) % 13;
+    // Surviving the challenge window with an empty hand = win
+    if (_lastByIdx >= 0 && _players[_lastByIdx].hand.isEmpty) {
+      _handleWin(_lastByIdx);
+      return;
+    }
+    if (!_freeRank) _rankIdx = (_rankIdx + 1) % 13;
     if (!skipRotate) _turnIdx = (_turnIdx + 1) % 4;
     final p = _players[_turnIdx];
     setState(() {
       _overlayMsg = '';
       if (p.isHuman) {
         _phase = _Phase.playerTurn;
-        _status = 'Your turn — play ${_rl(_currentRank)}s';
+        _status = _freeRank
+            ? 'Pile cleared — choose any rank to play'
+            : 'Your turn — play ${_rl(_currentRank)}s';
       } else {
         _phase = _Phase.botTurn;
         _status = '${p.name} is thinking…';
       }
     });
-    if (!p.isHuman) _runBot();
+    if (p.isHuman && _freeRank) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _showRankPicker());
+    } else if (!p.isHuman) {
+      _runBot();
+    }
   }
 
   // ── Bot plays ──────────────────────────────────────────────────────────────
@@ -252,6 +269,18 @@ class _BluffGameScreenState extends State<BluffGameScreen> {
     await Future.delayed(const Duration(milliseconds: 950));
     if (!mounted) return;
     final bot = _players[_turnIdx];
+
+    // Free rank: bot picks the rank it holds the most of
+    if (_freeRank) {
+      final counts = <Rank, int>{};
+      for (final c in bot.hand) counts[c.rank] = (counts[c.rank] ?? 0) + 1;
+      final bestRank = counts.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
+      setState(() {
+        _rankIdx = _rankCycle.indexOf(bestRank);
+        _freeRank = false;
+      });
+    }
+
     final rank = _currentRank;
     final rankCards = bot.hand.where((c) => c.rank == rank).toList();
     List<PlayingCard> toPlay;
@@ -289,7 +318,73 @@ class _BluffGameScreenState extends State<BluffGameScreen> {
       handAfter: bot.hand.length,
     );
 
-    if (bot.hand.isEmpty) { await _handleWin(_turnIdx); return; }
+    // Win checked in _advance / _resolveBluff after challenge window closes
+  }
+
+  // ── Rank picker (shown when pile is cleared) ───────────────────────────────
+
+  Future<void> _showRankPicker() async {
+    if (!mounted || !_freeRank) return;
+    final picked = await showModalBottomSheet<int>(
+      context: context,
+      backgroundColor: const Color(0xFF1a0020),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      isDismissible: false,
+      enableDrag: false,
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'PILE CLEARED — CHOOSE ANY RANK',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.6),
+                fontSize: 11,
+                letterSpacing: 1.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.center,
+              children: _rankCycle.asMap().entries.map((e) => GestureDetector(
+                onTap: () => Navigator.pop(context, e.key),
+                child: Container(
+                  width: 48, height: 48,
+                  decoration: BoxDecoration(
+                    color: _accent.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: _accent.withValues(alpha: 0.5)),
+                  ),
+                  child: Center(
+                    child: Text(
+                      _rl(e.value),
+                      style: const TextStyle(
+                        color: _accent,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+              )).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (picked != null && mounted) {
+      setState(() {
+        _rankIdx = picked;
+        _freeRank = false;
+        _status = 'Your turn — play ${_rl(_currentRank)}s';
+      });
+    }
   }
 
   // ── Win ────────────────────────────────────────────────────────────────────
@@ -472,8 +567,9 @@ class _BluffGameScreenState extends State<BluffGameScreen> {
                             ],
                           ),
                         ),
-                        Text('${_pile.length} cards',
-                            style: TextStyle(color: _accent, fontSize: 9, fontWeight: FontWeight.w700)),
+                        Text('${_pile.length}',
+                            style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+                        Text('CARDS', style: TextStyle(color: _accent, fontSize: 8, letterSpacing: 1.5, fontWeight: FontWeight.w700)),
                       ],
                     ),
             ),
