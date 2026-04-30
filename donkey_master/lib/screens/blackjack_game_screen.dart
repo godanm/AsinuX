@@ -286,7 +286,7 @@ class _BlackjackGameScreenState extends State<BlackjackGameScreen> {
     if ((res == _Result.win || res == _Result.blackjack) &&
         _handCount % 3 == 0) {
       Future.delayed(const Duration(seconds: 3), () {
-        if (mounted) AdMobService.instance.showRewardedAsync(context);
+        if (mounted) AdMobService.instance.showRewardedAsync(context: context, placement: 'blackjack');
       });
     }
   }
@@ -510,7 +510,7 @@ class _BlackjackGameScreenState extends State<BlackjackGameScreen> {
                     horizontal: 24, vertical: 12),
               ),
               onPressed: () async {
-                await AdMobService.instance.showRewardedAsync(context);
+                await AdMobService.instance.showRewardedAsync(context: context, placement: 'blackjack');
                 const bonus = 500;
                 if (mounted) setState(() => _chips = bonus);
                 await StatsService.instance.recordBlackjackRound(

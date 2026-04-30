@@ -24,7 +24,7 @@ class AdMobService {
         : 'ca-app-pub-9287774769346149/2135665202';
   }
 
-  // Standard interstitial — shown when player quits mid-game
+  // Standard interstitial — shown when player quits mid-game (shared across all games)
   static String get interstitialAdUnitId {
     if (kDebugMode) {
       return Platform.isAndroid
@@ -36,30 +36,57 @@ class AdMobService {
         : 'ca-app-pub-9287774769346149/2985712449';
   }
 
-  // Rewarded interstitial — shown at round end / game win
-  static String get rewardedInterstitialAdUnitId {
-    if (kDebugMode) {
-      return Platform.isAndroid
-          ? 'ca-app-pub-3940256099942544/5354046379'
-          : 'ca-app-pub-3940256099942544/6978759866';
-    }
-    return Platform.isAndroid
-        ? 'ca-app-pub-9287774769346149/6714019132'
-        : 'ca-app-pub-9287774769346149/5400937468';
-  }
-
   // App Open Ad — shown when app is foregrounded
   static String get appOpenAdUnitId {
     if (kDebugMode) {
       return Platform.isAndroid
           ? 'ca-app-pub-3940256099942544/9257395921'
-          : 'ca-app-pub-3940256099942544/9257395921'; // iOS test ID same for now
+          : 'ca-app-pub-3940256099942544/9257395921';
     }
-    // TODO: Replace with real App Open ad unit IDs from AdMob console
     return Platform.isAndroid
         ? 'ca-app-pub-9287774769346149/5755022612'
         : 'ca-app-pub-9287774769346149/REPLACE_IOS_APP_OPEN_ID';
   }
+
+  // Per-game rewarded ad unit IDs.
+  // TODO: Create one "Rewarded Interstitial" unit per game in AdMob console, then
+  //       paste the IDs below. Until filled in, all placements fall back to the
+  //       shared unit so existing behaviour is unchanged.
+  static const _androidRewardedIds = <String, String>{
+    'kazhutha':  '', // TODO: Kazhutha_Rewarded (Android)
+    'rummy':     '', // TODO: Rummy_Rewarded (Android)
+    'teenPatti': '', // TODO: TeenPatti_Rewarded (Android)
+    'game28':    '', // TODO: 28_Rewarded (Android)
+    'blackjack': '', // TODO: Blackjack_Rewarded (Android)
+    'bluff':     '', // TODO: Bluff_Rewarded (Android)
+  };
+  static const _iosRewardedIds = <String, String>{
+    'kazhutha':  '', // TODO: Kazhutha_Rewarded (iOS)
+    'rummy':     '', // TODO: Rummy_Rewarded (iOS)
+    'teenPatti': '', // TODO: TeenPatti_Rewarded (iOS)
+    'game28':    '', // TODO: 28_Rewarded (iOS)
+    'blackjack': '', // TODO: Blackjack_Rewarded (iOS)
+    'bluff':     '', // TODO: Bluff_Rewarded (iOS)
+  };
+  // Shared fallback used until game-specific IDs are filled in
+  static const _androidRewardedShared = 'ca-app-pub-9287774769346149/6714019132';
+  static const _iosRewardedShared     = 'ca-app-pub-9287774769346149/5400937468';
+
+  static String _rewardedUnitIdFor(String placement) {
+    if (kDebugMode) {
+      return Platform.isAndroid
+          ? 'ca-app-pub-3940256099942544/5354046379'
+          : 'ca-app-pub-3940256099942544/6978759866';
+    }
+    if (Platform.isAndroid) {
+      final id = _androidRewardedIds[placement] ?? '';
+      return id.isNotEmpty ? id : _androidRewardedShared;
+    }
+    final id = _iosRewardedIds[placement] ?? '';
+    return id.isNotEmpty ? id : _iosRewardedShared;
+  }
+
+  // ── State ────────────────────────────────────────────────────
 
   InterstitialAd? _interstitialAd;
   bool _isInterstitialReady = false;
@@ -68,6 +95,7 @@ class AdMobService {
   RewardedInterstitialAd? _rewardedAd;
   bool _isRewardedReady = false;
   Completer<void>? _rewardedLoadCompleter;
+  String _rewardedPlacement = ''; // which placement is currently pre-loaded
 
   AppOpenAd? _appOpenAd;
   bool _isAppOpenReady = false;
@@ -110,15 +138,17 @@ class AdMobService {
     );
   }
 
-  void _loadRewarded() {
+  void _loadRewarded([String placement = '']) {
+    _rewardedPlacement = placement;
+    final unitId = _rewardedUnitIdFor(placement);
     _rewardedLoadCompleter = Completer<void>();
-    debugPrint('[AdMob] loading rewarded interstitial (${kDebugMode ? "TEST" : "LIVE"}) $rewardedInterstitialAdUnitId');
+    debugPrint('[AdMob] loading rewarded (${kDebugMode ? "TEST" : "LIVE"} placement=$placement) $unitId');
     RewardedInterstitialAd.load(
-      adUnitId: rewardedInterstitialAdUnitId,
+      adUnitId: unitId,
       request: const AdRequest(),
       rewardedInterstitialAdLoadCallback: RewardedInterstitialAdLoadCallback(
         onAdLoaded: (ad) {
-          debugPrint('[AdMob] rewarded interstitial loaded ✓');
+          debugPrint('[AdMob] rewarded loaded ✓ placement=$placement');
           _rewardedAd = ad;
           _isRewardedReady = true;
           _rewardedLoadCompleter?.complete();
@@ -129,7 +159,7 @@ class AdMobService {
           _isRewardedReady = false;
           _rewardedLoadCompleter?.complete();
           _rewardedLoadCompleter = null;
-          Future.delayed(const Duration(minutes: 2), _loadRewarded);
+          Future.delayed(const Duration(minutes: 2), () => _loadRewarded(placement));
         },
       ),
     );
@@ -137,14 +167,10 @@ class AdMobService {
 
   // ── Show methods (awaitable — complete when ad is dismissed) ──
 
-  /// Show standard interstitial.
-  /// If the ad is still loading, waits up to [_kAdLoadTimeout] for it to finish
-  /// before giving up — prevents silent skips when a game ends right after a
-  /// previous ad triggered a reload.
+  /// Show standard interstitial (shared exit ad, no placement needed).
   Future<void> showInterstitialAsync([BuildContext? context]) async {
     debugPrint('[AdMob] showInterstitialAsync — ready=$_isInterstitialReady');
     if (!_isInterstitialReady || _interstitialAd == null) {
-      // Wait for an in-flight load rather than silently giving up
       final pending = _interstitialLoadCompleter;
       if (pending != null && !pending.isCompleted) {
         debugPrint('[AdMob] interstitial not ready — waiting for load…');
@@ -182,10 +208,24 @@ class AdMobService {
     await completer.future;
   }
 
-  /// Show rewarded interstitial. Falls back to standard interstitial if not ready.
+  /// Show rewarded interstitial for a specific game [placement].
+  /// Falls back to standard interstitial if not ready.
   /// [onRewarded] fires only when the user completes the ad and earns the reward.
-  Future<void> showRewardedAsync([BuildContext? context, VoidCallback? onRewarded]) async {
-    debugPrint('[AdMob] showRewardedAsync — rewarded=$_isRewardedReady interstitial=$_isInterstitialReady');
+  Future<void> showRewardedAsync({
+    BuildContext? context,
+    VoidCallback? onRewarded,
+    String placement = '',
+  }) async {
+    debugPrint('[AdMob] showRewardedAsync placement=$placement — rewarded=$_isRewardedReady interstitial=$_isInterstitialReady');
+
+    // If cached ad is for a different game, dispose and reload with the right ID.
+    if (_isRewardedReady && _rewardedAd != null && _rewardedPlacement != placement) {
+      debugPrint('[AdMob] rewarded placement mismatch ($_rewardedPlacement → $placement) — reloading');
+      _rewardedAd!.dispose();
+      _rewardedAd = null;
+      _isRewardedReady = false;
+      _loadRewarded(placement);
+    }
 
     // Wait for rewarded to finish loading if it isn't ready yet
     if (!_isRewardedReady || _rewardedAd == null) {
@@ -207,7 +247,7 @@ class AdMobService {
           ad.dispose();
           _rewardedAd = null;
           _isRewardedReady = false;
-          _loadRewarded();
+          _loadRewarded(placement);
           if (!completer.isCompleted) completer.complete();
         },
         onAdFailedToShowFullScreenContent: (ad, error) {
@@ -215,7 +255,7 @@ class AdMobService {
           ad.dispose();
           _rewardedAd = null;
           _isRewardedReady = false;
-          _loadRewarded();
+          _loadRewarded(placement);
           if (!completer.isCompleted) completer.complete();
         },
       );
@@ -233,7 +273,6 @@ class AdMobService {
 
   // ── App Open Ad ──────────────────────────────────────────────
 
-  /// App Open ads expire after 4 hours — reload if stale.
   bool get _isAppOpenValid =>
       _isAppOpenReady &&
       _appOpenAd != null &&

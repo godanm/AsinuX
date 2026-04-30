@@ -324,7 +324,7 @@ class _BluffGameScreenState extends State<BluffGameScreen> {
     if (humanWon) {
       SoundService.instance.playEscape();
       Future.delayed(const Duration(seconds: 2), () {
-        if (mounted && _rng.nextBool()) AdMobService.instance.showRewardedAsync(context);
+        if (mounted && _rng.nextBool()) AdMobService.instance.showRewardedAsync(context: context, placement: 'bluff');
       });
     } else {
       SoundService.instance.playDonkey();

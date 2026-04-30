@@ -263,7 +263,7 @@ class _GameScreenState extends State<GameScreen> {
         if (mounted) setState(() => _roundEndVisible = true);
       });
       Future.delayed(const Duration(seconds: 3), () {
-        if (mounted) AdMobService.instance.showRewardedAsync(context);
+        if (mounted) AdMobService.instance.showRewardedAsync(context: context, placement: 'kazhutha');
       });
     }
 
@@ -404,20 +404,21 @@ class _GameScreenState extends State<GameScreen> {
           _gameOverAdFired = true;
           WidgetsBinding.instance.addPostFrameCallback((_) async {
             if (!mounted) return;
+            final ctx = context;
             // 3-second pause so the player can see the final game state
             // before the ad appears (prevents the jarring "game is exiting" feel).
             await Future.delayed(const Duration(seconds: 3));
-            if (!mounted) return;
+            if (!ctx.mounted) return;
             // Tournament winner gets rewarded ad; everyone else gets interstitial
             final isWinner = state.tournamentWinnerId == widget.playerId;
             if (isWinner) {
-              await AdMobService.instance.showRewardedAsync(context);
+              await AdMobService.instance.showRewardedAsync(context: ctx, placement: 'kazhutha');
             } else {
-              await AdMobService.instance.showInterstitialAsync(context);
+              await AdMobService.instance.showInterstitialAsync(ctx);
             }
-            if (!mounted) return;
+            if (!ctx.mounted) return;
             Navigator.pushReplacement(
-              context,
+              ctx,
               MaterialPageRoute(
                 builder: (_) => ResultsScreen(
                   state: state,
@@ -734,7 +735,7 @@ class _GameScreenState extends State<GameScreen> {
                           ),
                           onPressed: () {
                             final ctx = context;
-                            AdMobService.instance.showRewardedAsync(ctx, () {
+                            AdMobService.instance.showRewardedAsync(context: ctx, placement: 'kazhutha', onRewarded: () {
                               StatsService.instance.awardBonusPoints(widget.playerId, 25);
                               if (mounted) setState(() => _roundBonusAdUsed = true);
                             });

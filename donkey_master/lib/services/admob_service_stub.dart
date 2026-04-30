@@ -44,7 +44,11 @@ class AdMobService {
   Future<void> showInterstitialAsync([BuildContext? context]) =>
       showRoundEndAd(context);
 
-  Future<void> showRewardedAsync([BuildContext? context, VoidCallback? onRewarded]) async {
+  Future<void> showRewardedAsync({
+    BuildContext? context,
+    VoidCallback? onRewarded,
+    String placement = '',
+  }) async {
     await showRoundEndAd(context);
     onRewarded?.call();
   }

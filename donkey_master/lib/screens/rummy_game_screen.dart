@@ -127,7 +127,7 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
           if (mounted) setState(() => _gameOverVisible = true);
         });
         Future.delayed(const Duration(seconds: 3), () {
-          if (mounted) AdMobService.instance.showRewardedAsync(context);
+          if (mounted) AdMobService.instance.showRewardedAsync(context: context, placement: 'rummy');
         });
       }
 
@@ -543,7 +543,7 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
                   } : null,
                   onWatchAd: _bonusAdUsed ? null : () {
                     final ctx = context;
-                    AdMobService.instance.showRewardedAsync(ctx, () {
+                    AdMobService.instance.showRewardedAsync(context: ctx, placement: 'rummy', onRewarded: () {
                       StatsService.instance.awardBonusPoints(widget.playerId, 100);
                       if (mounted) setState(() => _bonusAdUsed = true);
                     });

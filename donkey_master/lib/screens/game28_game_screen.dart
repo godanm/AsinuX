@@ -148,7 +148,7 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
         if (mounted) setState(() => _endScreenVisible = true);
       });
       Future.delayed(const Duration(seconds: 3), () {
-        if (mounted) AdMobService.instance.showRewardedAsync(context);
+        if (mounted) AdMobService.instance.showRewardedAsync(context: context, placement: 'game28');
       });
     }
 
@@ -406,7 +406,7 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
             final ctx = context;
             final uid = AuthService.instance.uid;
             if (uid == null) return;
-            AdMobService.instance.showRewardedAsync(ctx, () {
+            AdMobService.instance.showRewardedAsync(context: ctx, placement: 'game28', onRewarded: () {
               StatsService.instance.awardBonusPoints(uid, 30);
               if (mounted) setState(() => _roundBonusAdUsed = true);
             });

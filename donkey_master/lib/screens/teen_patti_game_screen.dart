@@ -107,7 +107,7 @@ class _TeenPattiGameScreenState extends State<TeenPattiGameScreen> {
       if (!_roundAdFired) {
         _roundAdFired = true;
         Future.delayed(const Duration(seconds: 3), () {
-          if (mounted) AdMobService.instance.showRewardedAsync(context);
+          if (mounted) AdMobService.instance.showRewardedAsync(context: context, placement: 'teenPatti');
         });
       }
     }
