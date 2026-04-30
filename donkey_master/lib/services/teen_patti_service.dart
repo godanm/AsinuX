@@ -443,8 +443,8 @@ class TeenPattiService {
     final caller = state.players[callerId]!;
     final other = state.players[otherId]!;
 
-    // Show cost: both seen = 2× stake (video rule); one or both blind = 1× stake
-    final showCost = (caller.isSeen && other.isSeen)
+    // Show cost: Seen caller always pays 2× stake; Blind caller pays 1× stake
+    final showCost = caller.isSeen
         ? state.currentStake * 2
         : state.currentStake;
 
