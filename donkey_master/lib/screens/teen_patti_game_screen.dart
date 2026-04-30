@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' show pi;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../models/card_model.dart';
@@ -414,7 +415,21 @@ class _TeenPattiGameScreenState extends State<TeenPattiGameScreen> {
             ),
           ),
         AnimatedSwitcher(
-          duration: const Duration(milliseconds: 400),
+          duration: const Duration(milliseconds: 500),
+          transitionBuilder: (child, animation) {
+            final angle = Tween<double>(begin: pi / 2, end: 0.0).animate(
+              CurvedAnimation(parent: animation, curve: Curves.easeOut),
+            );
+            return AnimatedBuilder(
+              animation: angle,
+              child: child,
+              builder: (_, child) => Transform(
+                transform: Matrix4.rotationY(angle.value),
+                alignment: Alignment.center,
+                child: child,
+              ),
+            );
+          },
           child: cardRow,
         ),
         const SizedBox(height: 8),
