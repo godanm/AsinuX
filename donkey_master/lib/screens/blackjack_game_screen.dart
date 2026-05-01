@@ -76,6 +76,7 @@ class _BlackjackGameScreenState extends State<BlackjackGameScreen> {
   bool _isMuted = false;
   bool _statsRecorded = false;
   int _handCount = 0;
+  bool _adPending = false;
   late String _bjSessionKey;
 
   static const _accent = Color(0xFFFFD700);
@@ -284,14 +285,15 @@ class _BlackjackGameScreenState extends State<BlackjackGameScreen> {
     );
 
     _handCount++;
-    if (_handCount % 4 == 0) {
-      Future.delayed(const Duration(seconds: 3), () {
-        if (mounted) AdMobService.instance.showRewardedAsync(context: context, placement: 'blackjack');
-      });
-    }
+    if (_handCount % 4 == 0) _adPending = true;
   }
 
-  void _newHand() {
+  Future<void> _newHand() async {
+    if (_adPending) {
+      _adPending = false;
+      await AdMobService.instance.showRewardedAsync(context: context, placement: 'blackjack');
+      if (!mounted) return;
+    }
     setState(() {
       _phase = _Phase.betting;
       _result = _Result.none;
