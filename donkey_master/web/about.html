@@ -1,394 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>About — Tricksy, Game 28, Teen Patti, Blackjack &amp; Bluff Online</title>
-  <meta name="description" content="Tricksy was built by a solo developer who grew up playing South Indian card games. Six games live: Donkey, Rummy, Game 28, Teen Patti, Blackjack, and Bluff." />
-  <meta name="keywords" content="about tricksy, tricksy app, rummy online, game 28, teen patti, blackjack, bluff, south indian card game online, donkey card game, kazhutha developer" />
-  <meta property="og:title" content="About — 6 Card Games on Tricksy" />
-  <meta property="og:description" content="Six card games in one place — Donkey, Rummy, Game 28, Teen Patti, Blackjack, and Bluff. Built by one developer, free to play." />
-  <meta property="og:url" content="https://www.tricksy.app/about" />
-  <meta property="og:type" content="article" />
-  <link rel="canonical" href="https://www.tricksy.app/about" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About Tricksy — Free Multiplayer Card Games</title>
+  <meta name="description" content="Tricksy is a free multiplayer card game app featuring Donkey, Teen Patti, Game 28, Blackjack and Bluff. Play instantly — no sign-up needed.">
+  <link rel="canonical" href="https://www.tricksy.app/about.html">
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0d0007;
-      color: #f0e6ee;
-      line-height: 1.7;
-    }
-
-    nav {
-      background: #1a000e;
-      border-bottom: 1px solid rgba(230,57,70,0.2);
-      padding: 16px 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .nav-logo {
-      font-size: 22px;
-      font-weight: 900;
-      letter-spacing: 1px;
-      color: #E63946;
-      text-decoration: none;
-    }
-    .nav-logo span { color: #fff; }
-    .nav-links { display: flex; gap: 24px; align-items: center; }
-    .nav-links a {
-      color: rgba(240,230,238,0.5);
-      text-decoration: none;
-      font-size: 14px;
-    }
-    .nav-links a:hover { color: #fff; }
-    .nav-play {
-      background: #E63946;
-      color: #fff !important;
-      padding: 8px 20px;
-      border-radius: 50px;
-      font-weight: 700;
-      font-size: 14px;
-      letter-spacing: 0.5px;
-    }
-
-    .hero {
-      background: linear-gradient(135deg, #2a0010 0%, #1a000a 100%);
-      border-bottom: 1px solid rgba(230,57,70,0.15);
-      padding: 64px 24px 48px;
-      text-align: center;
-    }
-    .hero-suits {
-      font-size: 32px;
-      margin-bottom: 16px;
-      opacity: 0.6;
-      letter-spacing: 8px;
-    }
-    .hero h1 {
-      font-size: clamp(28px, 5vw, 46px);
-      font-weight: 900;
-      margin-bottom: 16px;
-      background: linear-gradient(90deg, #E63946, #FF6B6B, #FFD700);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .hero p {
-      font-size: 18px;
-      color: rgba(240,230,238,0.55);
-      max-width: 560px;
-      margin: 0 auto;
-    }
-
-    .container {
-      max-width: 740px;
-      margin: 0 auto;
-      padding: 56px 24px 80px;
-    }
-
-    h2 {
-      font-size: 22px;
-      font-weight: 800;
-      color: #fff;
-      margin: 48px 0 16px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid rgba(230,57,70,0.3);
-    }
-    h2:first-child { margin-top: 0; }
-
-    p { color: rgba(240,230,238,0.78); margin-bottom: 18px; font-size: 16px; }
-
-    .quote {
-      border-left: 3px solid #E63946;
-      padding: 4px 0 4px 20px;
-      margin: 28px 0;
-      font-style: italic;
-      color: rgba(240,230,238,0.6);
-      font-size: 17px;
-    }
-
-    /* ── Game cards ── */
-    .game-cards {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      margin: 24px 0;
-    }
-    @media (max-width: 640px) { .game-cards { grid-template-columns: 1fr 1fr; } }
-    @media (max-width: 400px) { .game-cards { grid-template-columns: 1fr; } }
-    .game-card {
-      border-radius: 16px;
-      padding: 20px;
-      border: 1px solid;
-    }
-    .game-card.kaz { background: rgba(230,57,70,0.07);   border-color: rgba(230,57,70,0.3); }
-    .game-card.rum { background: rgba(21,101,192,0.07);  border-color: rgba(21,101,192,0.3); }
-    .game-card.g28 { background: rgba(38,166,154,0.07);  border-color: rgba(38,166,154,0.3); }
-    .game-card.tp  { background: rgba(255,179,0,0.07);   border-color: rgba(255,179,0,0.25); }
-    .game-card.bj  { background: rgba(124,77,255,0.07);  border-color: rgba(124,77,255,0.3); }
-    .game-card.blf { background: rgba(255,109,0,0.07);   border-color: rgba(255,109,0,0.3); }
-    .game-card .gc-icon { font-size: 28px; margin-bottom: 10px; }
-    .game-card h3 { font-size: 14px; font-weight: 900; letter-spacing: 1.5px; margin-bottom: 6px; }
-    .game-card.kaz h3 { color: #E63946; }
-    .game-card.rum h3 { color: #4FC3F7; }
-    .game-card.g28 h3 { color: #26A69A; }
-    .game-card.tp  h3 { color: #FFB300; }
-    .game-card.bj  h3 { color: #7C4DFF; }
-    .game-card.blf h3 { color: #FF6D00; }
-    .game-card p { font-size: 13px; color: rgba(240,230,238,0.6); margin: 0; line-height: 1.55; }
-    .live-badge {
-      display: inline-block;
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      padding: 2px 8px;
-      border-radius: 20px;
-      margin-bottom: 8px;
-      background: rgba(100,255,130,0.12);
-      color: #64ff82;
-      border: 1px solid rgba(100,255,130,0.3);
-    }
-
-    .stat-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-      gap: 16px;
-      margin: 24px 0;
-    }
-    .stat-card {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 14px;
-      padding: 20px;
-      text-align: center;
-    }
-    .stat-card .num {
-      font-size: 32px;
-      font-weight: 900;
-      color: #E63946;
-      display: block;
-    }
-    .stat-card .label {
-      font-size: 13px;
-      color: rgba(240,230,238,0.45);
-      margin-top: 4px;
-    }
-
-    .tech-list {
-      list-style: none;
-      padding: 0;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 12px;
-      margin: 16px 0 24px;
-    }
-    .tech-list li {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 10px;
-      padding: 12px 16px;
-      font-size: 14px;
-      color: rgba(240,230,238,0.7);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .tech-list li span { font-size: 20px; }
-
-    .cta {
-      background: linear-gradient(135deg, #2a0010, #1a000a);
-      border: 1px solid rgba(230,57,70,0.3);
-      border-radius: 20px;
-      padding: 40px 24px;
-      text-align: center;
-      margin-top: 56px;
-    }
-    .cta h2 { border: none; margin: 0 0 12px; }
-    .cta p { margin-bottom: 24px; }
-    .cta-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-    .cta-buttons a {
-      display: inline-block;
-      padding: 13px 32px;
-      border-radius: 50px;
-      text-decoration: none;
-      font-weight: 700;
-      font-size: 15px;
-    }
-    .btn-primary { background: #E63946; color: #fff; box-shadow: 0 0 30px rgba(230,57,70,0.4); }
-    .btn-secondary { background: rgba(255,255,255,0.08); color: rgba(240,230,238,0.8); border: 1px solid rgba(255,255,255,0.15); }
-
-    footer {
-      text-align: center;
-      padding: 32px 24px;
-      color: rgba(240,230,238,0.25);
-      font-size: 13px;
-      border-top: 1px solid rgba(255,255,255,0.06);
-    }
-    footer a { color: rgba(230,57,70,0.6); text-decoration: none; }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0d0007;color:#e0e0e0;line-height:1.7}
+    header{background:linear-gradient(135deg,#3d0020,#1a000e);padding:16px 24px;border-bottom:1px solid rgba(230,57,70,.2)}
+    header a{text-decoration:none;display:inline-flex;align-items:center;gap:10px}
+    .logo{width:36px;height:36px;background:linear-gradient(135deg,#5c0a1a,#1a000a);border-radius:9px;border:1px solid rgba(230,57,70,.4);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#FFD250}
+    header h1{font-size:18px;color:#fff;font-weight:700}
+    header small{font-size:11px;color:rgba(255,255,255,.4);display:block}
+    .container{max-width:720px;margin:0 auto;padding:32px 20px 60px}
+    h1{font-size:26px;font-weight:900;color:#fff;margin-bottom:6px}
+    .subtitle{font-size:14px;color:rgba(255,255,255,.4);margin-bottom:32px}
+    h2{font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#E63946;margin:32px 0 10px}
+    p{font-size:15px;color:#cccccc;margin-bottom:14px}
+    ul{padding-left:18px;margin-bottom:14px}
+    li{font-size:14px;color:#bbbbbb;margin-bottom:6px}
+    a{color:#E63946}
+    .game-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin:16px 0}
+    .game-item{background:#120008;border:1px solid rgba(230,57,70,.1);border-radius:10px;padding:14px 16px}
+    .game-item strong{font-size:13px;color:#fff;display:block}
+    .game-item span{font-size:11px;color:rgba(255,255,255,.35)}
+    .cta{display:inline-block;background:#E63946;color:#fff;padding:12px 28px;border-radius:24px;text-decoration:none;font-weight:700;font-size:14px;margin:16px 0}
+    .contact-box{background:#1a000e;border:1px solid rgba(230,57,70,.15);border-radius:12px;padding:20px 24px;margin-top:16px}
+    footer{background:#0a0005;border-top:1px solid rgba(255,255,255,.05);padding:24px;text-align:center;margin-top:40px}
+    footer p{font-size:12px;color:rgba(255,255,255,.25);margin:0}
+    footer a{color:rgba(255,255,255,.4);margin:0 8px;text-decoration:none}
   </style>
-
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "AboutPage",
-    "name": "About Tricksy",
-    "description": "Six card games — Donkey, Rummy, Game 28, Teen Patti, Blackjack, and Bluff — built by one developer and free to play on the web.",
-    "url": "https://www.tricksy.app/about",
-    "publisher": {
-      "@type": "Organization",
-      "name": "Tricksy",
-      "url": "https://www.tricksy.app"
-    }
-  }
-  </script>
-  <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9287774769346149" crossorigin="anonymous"></script>
-
-  <!-- Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6MBDL2081K"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-6MBDL2081K');
-  </script>
 </head>
 <body>
-
-  <nav>
-    <a class="nav-logo" href="/">KAZHU<span>THA</span></a>
-    <div class="nav-links">
-      <a href="/how-to-play">How to Play</a>
-      <a href="/" class="nav-play">Play Now →</a>
-    </div>
-  </nav>
-
-  <div class="hero">
-    <div class="hero-suits">🃏 🀄 🎯 🎴 ♠ 🤫</div>
-    <h1>Six Games, One Place</h1>
-    <p>Why a 25-year IT veteran spent his evenings building the card games the internet forgot.</p>
-  </div>
+  <header>
+    <a href="/">
+      <div class="logo">T</div>
+      <div>
+        <h1>Tricksy</h1>
+        <small>Multiplayer Card Games</small>
+      </div>
+    </a>
+  </header>
 
   <div class="container">
+    <h1>About Tricksy</h1>
+    <p class="subtitle">Free multiplayer card games — play instantly, no account needed</p>
 
-    <h2>Where It All Started</h2>
-    <p>Every South Indian family has a version of this story. Summer holidays at a grandparent's house, a worn deck of cards on a wooden table, cousins arguing over who cut whose suit, and someone — always someone — ending up as the Donkey. That someone was occasionally me.</p>
+    <h2>What is Tricksy?</h2>
+    <p>Tricksy is a free card game app that brings together five classic card games under one roof. Whether you're waiting for a friend or killing time, you can jump into a game in seconds — no sign-up, no password, no fees.</p>
+    <p>Play against smart bots or invite friends to a private room. Every game is chip-based and purely for entertainment — there is no real money involved.</p>
 
-    <p>Donkey is one of those games that never needed a rulebook because it was always taught by someone who learned it the same way. Grandparent to parent, parent to child, cousin to cousin. It is fast, loud, social, and occasionally heartbreaking when a well-timed Vettu ruins your escape at the last card.</p>
+    <a class="cta" href="/">Play Now — Free</a>
 
-    <div class="quote">
-      "I searched for an online version to play with friends who had moved abroad. There was nothing. A few native apps, most of them abandoned. No web version at all."
+    <h2>Games</h2>
+    <div class="game-list">
+      <div class="game-item"><strong>🃏 Donkey (Kazhutha)</strong><span>Trick-taking · 4 players</span></div>
+      <div class="game-item"><strong>🌹 Teen Patti</strong><span>3-card betting · 2–6 players</span></div>
+      <div class="game-item"><strong>🃏 Game 28</strong><span>Trick-taking · 2 teams</span></div>
+      <div class="game-item"><strong>🃏 Blackjack</strong><span>Beat the dealer</span></div>
+      <div class="game-item"><strong>🤫 Bluff</strong><span>Deception · 4 players</span></div>
     </div>
 
-    <p>That gap felt wrong. A game this loved, this widely played across Tamil Nadu and Kerala, deserved better than being locked inside an old APK. So in March 2026, I started building one — and kept going until there were six.</p>
-
-    <h2>The Games</h2>
-    <div class="game-cards">
-      <div class="game-card kaz">
-        <div class="live-badge">LIVE</div>
-        <div class="gc-icon">🃏</div>
-        <h3>KAZHUTHA</h3>
-        <p>The classic South Indian trick-taking game. 4 players, 13 cards, one Donkey eliminated per round. Use the Vettu to force opponents to pick up cards.</p>
-      </div>
-      <div class="game-card rum">
-        <div class="live-badge">LIVE</div>
-        <div class="gc-icon">🀄</div>
-        <h3>RUMMY</h3>
-        <p>13-card Indian Rummy. Arrange sequences and sets, declare before anyone else. Two decks, wild jokers, real-time multiplayer.</p>
-      </div>
-      <div class="game-card g28">
-        <div class="live-badge">LIVE</div>
-        <div class="gc-icon">🎯</div>
-        <h3>GAME 28</h3>
-        <p>South Indian bidding and trick-taking. Two teams of two compete over 28 points — Jacks, Nines, Aces, and Tens. Trump suits and smart bidding win rounds.</p>
-      </div>
-      <div class="game-card tp">
-        <div class="live-badge">LIVE</div>
-        <div class="gc-icon">🎴</div>
-        <h3>TEEN PATTI</h3>
-        <p>India's beloved 3-card poker. Bet blind or seen, bluff your way through, or fold early. Best hand at showdown — or last one standing — takes the pot.</p>
-      </div>
-      <div class="game-card bj">
-        <div class="live-badge">LIVE</div>
-        <div class="gc-icon">♠</div>
-        <h3>BLACKJACK</h3>
-        <p>The world's most popular casino game. Beat the dealer to 21 without busting. Hit, Stand, or Double Down — classic rules, no house edge nonsense.</p>
-      </div>
-      <div class="game-card blf">
-        <div class="live-badge">LIVE</div>
-        <div class="gc-icon">🤫</div>
-        <h3>BLUFF</h3>
-        <p>Play cards face-down and lie about their rank. Call opponents' bluffs or sneak yours past them. First to empty their hand wins.</p>
-      </div>
-    </div>
-
-    <h2>Why Web First</h2>
-    <p>The decision to build for the web before anything else was deliberate. Native apps create friction — you have to find them, download them, install them, and then convince your friends to do the same. A web app has no barrier. You share a link, they click it, and the game starts. No app store, no account, no waiting.</p>
-
-    <p>Both games should be as easy to start as sending a WhatsApp message. That is the standard I held this to.</p>
-
-    <h2>Built by One Person</h2>
-    <p>I am an IT engineer with 25 years of experience across software development, systems architecture, and infrastructure. Most of that time was spent building things for other people. This is the first thing I have built purely for the love of it.</p>
-
-    <p>The entire app — six complete games, real-time multiplayer, bot AI for every game, animations, ads integration, stats tracking, leaderboards, deployment — was built from scratch over the course of about two months, mostly in evenings and weekends. Written in Flutter and Dart, backed by Firebase Realtime Database, hosted on Firebase Hosting.</p>
-
-    <div class="stat-grid">
-      <div class="stat-card">
-        <span class="num">6</span>
-        <div class="label">Games live</div>
-      </div>
-      <div class="stat-card">
-        <span class="num">~1mo</span>
-        <div class="label">Time to build</div>
-      </div>
-      <div class="stat-card">
-        <span class="num">1</span>
-        <div class="label">Developer</div>
-      </div>
-      <div class="stat-card">
-        <span class="num">25yr</span>
-        <div class="label">Engineering experience</div>
-      </div>
-    </div>
-
-    <h2>The Bot Problem</h2>
-    <p>Building real-time multiplayer was the easy part — Firebase handles the heavy lifting. The harder challenge was the bots. Both Donkey and Rummy require genuine game sense, not just random legal moves.</p>
-
-    <p>The Donkey bots use a phase-aware strategy: suit depletion in the early game, tactical cutting in the mid game, and targeted sabotage in the late game. Hard mode bots track every card played and model opponents' hands.</p>
-
-    <p>The Rummy bots understand meld structure — they evaluate each card in their hand for sequence and set potential, draw from the open deck only when the card genuinely improves a meld, and discard the card that least connects to their partial groups. They will not give away useful cards to opponents.</p>
-
-    <h2>What's Next</h2>
-    <p>All six games are free and will stay free. The roadmap includes a live leaderboard, in-game chat, more bot difficulty levels, and deeper multiplayer across all games. If you have played any of these under different house rules, I would genuinely like to hear about them.</p>
-
-    <p>Feedback, bug reports, and suggestions go directly to me — there is no support team, no ticketing system. Just the flag icon in the app and a developer who reads every message.</p>
-
-    <h2>Technology</h2>
-    <ul class="tech-list">
-      <li><span>📱</span> Flutter &amp; Dart</li>
-      <li><span>🔥</span> Firebase Realtime DB</li>
-      <li><span>🌐</span> Firebase Hosting</li>
-      <li><span>🔐</span> Firebase Anonymous Auth</li>
-      <li><span>📢</span> Google AdMob</li>
-      <li><span>🎵</span> Custom sound effects</li>
+    <h2>How It Works</h2>
+    <ul>
+      <li>Open the app or visit <a href="/">tricksy.app</a> — you're instantly signed in anonymously</li>
+      <li>Pick a game, choose Quick Play (bots) or create a private room</li>
+      <li>Share a 4-letter room code with friends to play together</li>
+      <li>Earn points, climb the leaderboard, and unlock bonus chips</li>
     </ul>
 
-    <div class="cta">
-      <h2>Come Play</h2>
-      <p>No account needed. Pick a game and jump straight into a match.</p>
-      <div class="cta-buttons">
-        <a href="/" class="btn-primary">Play Now →</a>
-        <a href="/how-to-play" class="btn-secondary">Learn the Rules</a>
-      </div>
-    </div>
+    <h2>Privacy</h2>
+    <p>Tricksy uses Firebase Anonymous Authentication — you never need to provide an email address or create a password. We collect only your display name and game statistics. See our <a href="/privacy.html">Privacy Policy</a> for full details.</p>
 
+    <h2>Entertainment Only</h2>
+    <p>All games on Tricksy use virtual chips for entertainment purposes only. No real money is wagered, won, or exchanged. Success in the app does not imply future success at real-money gambling.</p>
+
+    <h2>Contact</h2>
+    <div class="contact-box">
+      <p style="margin:0">Questions, feedback, or bug reports:<br>
+      <a href="mailto:privacy@tricksy.app">privacy@tricksy.app</a></p>
+    </div>
   </div>
 
   <footer>
-    <p>&copy; 2026 Kazhutha &nbsp;·&nbsp; <a href="/">Play</a> &nbsp;·&nbsp; <a href="/how-to-play">How to Play</a> &nbsp;·&nbsp; <a href="/privacy">Privacy Policy</a></p>
+    <p>
+      <a href="/">Play Tricksy</a>
+      <a href="/how-to-play.html">How to Play</a>
+      <a href="/privacy.html">Privacy</a>
+      <a href="/terms.html">Terms</a>
+    </p>
+    <p style="margin-top:8px">© 2026 Tricksy · Free multiplayer card games · For entertainment only</p>
   </footer>
-
 </body>
 </html>
