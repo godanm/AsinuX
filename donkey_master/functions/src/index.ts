@@ -430,32 +430,31 @@ export const cleanOldGameLogs = onSchedule("every day 02:00", async () => {
   const gamelogCutoff = Date.now() - GAMELOG_RETENTION_HOURS * 60 * 60 * 1000;
   const s: Record<string, number> = {};
 
-  // ── 1. gamelogs (session-keyed paths; use last event ts) ─────────────────
+  // ── 1. gamelogs — key format: {roomId}-started-{ISO datetime}-game-{type} ──
   const logsSnap = await db.ref("gamelogs").get();
   if (logsSnap.exists()) {
     const logEntries = logsSnap.val() as Record<string, unknown>;
+    const RE_STARTED = /-started-(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)-game-/;
     await Promise.all(Object.keys(logEntries).map(async (key) => {
-      // Use push-key order (already chronological) — no index required.
-      const latestSnap = await db
-        .ref(`gamelogs/${key}/events`)
-        .limitToLast(1)
-        .get();
-      if (!latestSnap.exists()) {
-        await db.ref(`gamelogs/${key}`).remove();
-        s.gamelogs = (s.gamelogs ?? 0) + 1;
-        return;
-      }
-      let latestTs = 0;
-      latestSnap.forEach((c) => {
-        const fromKey = pushKeyToMs(c.key ?? "");
-        if (fromKey > 0) {
-          latestTs = fromKey;
-        } else {
-          const ts = c.val()?.ts as number | undefined;
-          if (ts) latestTs = ts;
+      let createdAt = 0;
+      const m = key.match(RE_STARTED);
+      if (m) {
+        createdAt = new Date(m[1]).getTime();
+      } else {
+        // Fallback: read last event push key for legacy/unformatted keys.
+        const latestSnap = await db.ref(`gamelogs/${key}/events`).limitToLast(1).get();
+        if (!latestSnap.exists()) {
+          await db.ref(`gamelogs/${key}`).remove();
+          s.gamelogs = (s.gamelogs ?? 0) + 1;
+          return;
         }
-      });
-      if (latestTs > 0 && latestTs < gamelogCutoff) {
+        latestSnap.forEach((c) => {
+          const fromKey = pushKeyToMs(c.key ?? "");
+          if (fromKey > 0) createdAt = fromKey;
+          else createdAt = (c.val()?.ts as number | undefined) ?? 0;
+        });
+      }
+      if (createdAt > 0 && createdAt < gamelogCutoff) {
         await db.ref(`gamelogs/${key}`).remove();
         s.gamelogs = (s.gamelogs ?? 0) + 1;
       }
