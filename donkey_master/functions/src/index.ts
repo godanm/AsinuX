@@ -382,6 +382,7 @@ export const declareRummyGame = onCall({ invoker: "public" }, async (request) =>
 });
 
 const RETENTION_DAYS = 7;
+const GAMELOG_RETENTION_HOURS = 48;
 const QUEUE_STALE_HOURS = 24;
 
 // Firebase push key character set — first 8 chars encode creation timestamp (big-endian base-64).
@@ -426,6 +427,7 @@ async function purgeByPushKey(
 export const cleanOldGameLogs = onSchedule("every day 02:00", async () => {
   const db = admin.database();
   const cutoff = Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000;
+  const gamelogCutoff = Date.now() - GAMELOG_RETENTION_HOURS * 60 * 60 * 1000;
   const s: Record<string, number> = {};
 
   // ── 1. gamelogs (session-keyed paths; use last event ts) ─────────────────
@@ -448,7 +450,7 @@ export const cleanOldGameLogs = onSchedule("every day 02:00", async () => {
         const ts = c.val()?.ts as number | undefined;
         if (ts && ts > latestTs) latestTs = ts;
       });
-      if (latestTs < cutoff) {
+      if (latestTs < gamelogCutoff) {
         await db.ref(`gamelogs/${key}`).remove();
         s.gamelogs = (s.gamelogs ?? 0) + 1;
       }
