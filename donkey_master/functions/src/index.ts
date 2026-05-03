@@ -424,7 +424,7 @@ async function purgeByPushKey(
  * game28_codes, kazhutha rooms, roomCodes, rummy_rooms/games/hands,
  * and stale matchmaking queue entries.
  */
-export const cleanOldGameLogs = onSchedule("every day 02:00", async () => {
+export const dailyCleanup = onSchedule("every day 02:00", async () => {
   const db = admin.database();
   const cutoff = Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000;
   const gamelogCutoff = Date.now() - GAMELOG_RETENTION_HOURS * 60 * 60 * 1000;
@@ -524,5 +524,5 @@ export const cleanOldGameLogs = onSchedule("every day 02:00", async () => {
     }));
   }
 
-  logger.info(`cleanOldGameLogs: ${JSON.stringify(s)}`);
+  logger.info(`dailyCleanup: ${JSON.stringify(s)}`);
 });
