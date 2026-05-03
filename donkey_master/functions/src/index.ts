@@ -435,9 +435,9 @@ export const cleanOldGameLogs = onSchedule("every day 02:00", async () => {
   if (logsSnap.exists()) {
     const logEntries = logsSnap.val() as Record<string, unknown>;
     await Promise.all(Object.keys(logEntries).map(async (key) => {
+      // Use push-key order (already chronological) — no index required.
       const latestSnap = await db
         .ref(`gamelogs/${key}/events`)
-        .orderByChild("ts")
         .limitToLast(1)
         .get();
       if (!latestSnap.exists()) {
@@ -447,10 +447,15 @@ export const cleanOldGameLogs = onSchedule("every day 02:00", async () => {
       }
       let latestTs = 0;
       latestSnap.forEach((c) => {
-        const ts = c.val()?.ts as number | undefined;
-        if (ts && ts > latestTs) latestTs = ts;
+        const fromKey = pushKeyToMs(c.key ?? "");
+        if (fromKey > 0) {
+          latestTs = fromKey;
+        } else {
+          const ts = c.val()?.ts as number | undefined;
+          if (ts) latestTs = ts;
+        }
       });
-      if (latestTs < gamelogCutoff) {
+      if (latestTs > 0 && latestTs < gamelogCutoff) {
         await db.ref(`gamelogs/${key}`).remove();
         s.gamelogs = (s.gamelogs ?? 0) + 1;
       }
