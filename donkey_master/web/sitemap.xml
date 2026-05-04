@@ -40,6 +40,27 @@
   </url>
 
   <url>
+    <loc>https://www.tricksy.app/blog/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.tricksy.app/blog/5-card-games-play-with-friends.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.tricksy.app/blog/teen-patti-tips-beginners.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.tricksy.app/blog/game-28-beginners-guide.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
     <loc>https://www.tricksy.app/about.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>

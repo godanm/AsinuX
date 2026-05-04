@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>How to Play Blackjack — Tricksy</title>
-  <meta name="description" content="Learn Blackjack rules: card values, Hit, Stand, Double Down, dealer rules and payouts. Play free Blackjack online with chips — no real money.">
+  <title>How to Play Blackjack — Rules, Basic Strategy &amp; Tips</title>
+  <meta name="description" content="Complete Blackjack guide: card values, Hit, Stand, Double Down, dealer rules, basic strategy chart, tips and FAQ. Play free Blackjack online — chip-based, no real money.">
   <link rel="canonical" href="https://www.tricksy.app/games/blackjack.html">
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
@@ -33,6 +33,9 @@
     .game-card:hover{border-color:rgba(255,215,0,.4)}
     .game-card strong{font-size:13px;color:#fff;display:block;margin:4px 0 2px}
     .game-card span{font-size:11px;color:rgba(255,255,255,.35)}
+    .faq-item{margin-bottom:20px}
+    .faq-item h4{font-size:14px;font-weight:700;color:#fff;margin-bottom:5px}
+    .faq-item p{font-size:14px;color:#bbbbbb;margin-bottom:0}
     footer{background:#0a0005;border-top:1px solid rgba(255,255,255,.05);padding:24px;text-align:center}
     footer p{font-size:12px;color:rgba(255,255,255,.25);margin:0}
     footer a{color:rgba(255,255,255,.4);margin:0 8px;text-decoration:none}
@@ -68,56 +71,113 @@
 
     <div class="rule">
       <h3><span>🏆</span> Objective</h3>
-      <p>Beat the dealer by getting a hand value closer to 21 without going over. You play against the house — not other players.</p>
+      <p>Beat the dealer by getting a hand value closer to 21 without going over. You play against the house — not other players. It's a simple concept with rich decision-making beneath the surface.</p>
       <ul>
         <li>Get closer to 21 than the dealer</li>
         <li>Go over 21 and you "bust" — instant loss</li>
         <li>Dealer busts? You win automatically</li>
-        <li>Equal totals = push (bet returned)</li>
+        <li>Equal totals = push (bet returned, no chips won or lost)</li>
       </ul>
     </div>
 
     <div class="rule">
       <h3><span>🃏</span> Card Values</h3>
-      <p>Number cards are worth their face value. Face cards are worth 10. Aces are flexible.</p>
+      <p>Number cards are worth their face value. Face cards are all worth 10. Aces are uniquely flexible — they can count as 1 or 11, whichever benefits your hand more.</p>
       <ul>
-        <li>2–10 = face value</li>
-        <li>Jack, Queen, King = 10</li>
-        <li>Ace = 11 or 1 — whichever keeps you under 21</li>
-        <li>Ace + any 10-value card = Blackjack (best hand!)</li>
+        <li>2 through 10 = face value</li>
+        <li>Jack, Queen, King = 10 each</li>
+        <li>Ace = 11, but counts as 1 if 11 would cause a bust</li>
+        <li>Ace + any 10-value card = Blackjack (the best hand — pays 1.5×)</li>
       </ul>
     </div>
 
     <div class="rule">
       <h3><span>🎯</span> Your Actions</h3>
-      <p>After the deal you have three moves. Choose wisely based on your total and the dealer's visible card.</p>
+      <p>After the initial deal (two cards each, one dealer card hidden), you choose how to play your hand. Pick wisely — the dealer's visible card is your key clue.</p>
       <ul>
-        <li><strong>Hit</strong> — draw another card</li>
-        <li><strong>Stand</strong> — keep your hand and end your turn</li>
-        <li><strong>Double Down</strong> — double your bet, draw exactly one card, then stand (only on first two cards)</li>
+        <li><strong>Hit</strong> — draw another card to increase your total</li>
+        <li><strong>Stand</strong> — keep your current hand and end your turn</li>
+        <li><strong>Double Down</strong> — double your bet, draw exactly one more card, then stand automatically. Only available on your first two cards.</li>
       </ul>
     </div>
 
     <div class="rule">
       <h3><span>🤖</span> Dealer Rules</h3>
-      <p>The dealer follows fixed rules — no strategy, no choices. One of the dealer's two cards is hidden until your turn ends.</p>
+      <p>The dealer follows strict, fixed rules — there's no decision-making or strategy on their side. One of the dealer's two cards stays hidden until after your turn ends.</p>
       <ul>
-        <li>Dealer always hits until reaching 17 or more</li>
-        <li>Dealer stands on 17 and above</li>
-        <li>Hidden card is revealed after you stand or bust</li>
+        <li>Dealer always hits until reaching 17 or higher</li>
+        <li>Dealer stands on 17, 18, 19, 20, and 21</li>
+        <li>The hidden card is revealed after you Stand or Bust</li>
+        <li>If the dealer busts, all players still in the hand win</li>
       </ul>
     </div>
 
     <div class="rule">
       <h3><span>💰</span> Payouts</h3>
-      <p>Your winnings depend on how you won. Blackjack pays a bonus over a regular win.</p>
+      <p>Your winnings depend on how you won. Blackjack (natural 21 on the first two cards) pays a special bonus above a regular win.</p>
       <ul>
         <li>Regular win → +1× your bet</li>
-        <li>Blackjack (Ace + 10-value) → +1.5× your bet</li>
+        <li>Blackjack (Ace + 10-value card) → +1.5× your bet</li>
         <li>Push (tie) → bet returned, no gain or loss</li>
         <li>Bust or lower total → lose your bet</li>
       </ul>
     </div>
+
+    <h2>Basic Strategy Guide</h2>
+
+    <div class="rule">
+      <h3><span>🧠</span> The Fundamentals of Smart Play</h3>
+      <p>Blackjack has a mathematically proven "basic strategy" — optimal decisions for every possible combination of your hand and the dealer's visible card. You don't need to memorise it all, but these key principles will significantly improve your results:</p>
+      <ul>
+        <li><strong>Always stand on 17 or higher.</strong> The risk of busting outweighs any potential gain from hitting. Even a soft 17 (Ace + 6) is best left alone in most situations.</li>
+        <li><strong>Always hit on 8 or lower.</strong> You can't bust — any card drawn keeps you in the game. Take the card.</li>
+        <li><strong>Stand on 12–16 when dealer shows 2–6.</strong> The dealer is in the "bust zone" — they must hit and are likely to go over 21. Don't take extra risk; let the dealer bust.</li>
+        <li><strong>Hit on 12–16 when dealer shows 7 or higher.</strong> The dealer has a strong visible card and is unlikely to bust. You need a better total to compete.</li>
+        <li><strong>Double Down on 10 or 11.</strong> When your first two cards total 10 or 11, you have a great chance of hitting 20 or 21 with one more card. Double your bet and take one card.</li>
+        <li><strong>Double Down on 9 vs dealer's 3–6.</strong> The dealer is weak; doubling down here gives you a statistical edge.</li>
+        <li><strong>Never chase a bust loss.</strong> Each hand is independent. Playing recklessly to recover losses is the fastest way to drain your chip stack.</li>
+      </ul>
+    </div>
+
+    <h2>History &amp; Origins</h2>
+
+    <div class="rule">
+      <h3><span>📖</span> About Blackjack</h3>
+      <p>Blackjack is one of the most recognised card games in the world, with origins in 18th-century France where it was known as "Vingt-et-Un" (twenty-one). The game crossed the Atlantic with French colonists and became extremely popular in early American casinos, where a special bonus was offered for a hand containing the Ace of Spades and a black Jack — giving the game its modern name.</p>
+      <p>Over the 20th century, mathematicians developed the first complete basic strategy for Blackjack, published in 1956 by Roger Baldwin and colleagues. This was a landmark moment — proving for the first time that a card game could be played with near-optimal decisions based purely on mathematics. Later work by Edward O. Thorp popularised card counting, permanently changing how casinos approach the game.</p>
+      <p>On Tricksy, Blackjack is played for virtual chips only. No real money, no house edge exploitation — just the pure fun of the decisions. The standard rules apply: dealer hits to 17, Blackjack pays 1.5×, and Double Down is available on your first two cards.</p>
+    </div>
+
+    <h2>Frequently Asked Questions</h2>
+
+    <div class="rule">
+      <div class="faq-item">
+        <h4>What is a "soft" hand vs a "hard" hand?</h4>
+        <p>A "soft" hand contains an Ace that is currently counted as 11 (e.g., Ace + 6 = soft 17). A "hard" hand has no Ace, or an Ace that must count as 1 to avoid busting (e.g., Ace + 6 + 10 = hard 17). Soft hands are safer to hit because the Ace can drop to 1 if you draw a high card.</p>
+      </div>
+      <div class="faq-item">
+        <h4>When should I Double Down?</h4>
+        <p>Double Down is strongest when your two cards total 10 or 11 — you have a high probability of drawing a 10-value card and ending up with 20 or 21. Also consider doubling on 9 if the dealer shows a 3, 4, 5, or 6 (the "bust zone").</p>
+      </div>
+      <div class="faq-item">
+        <h4>What happens if both I and the dealer get Blackjack?</h4>
+        <p>It's a push — your bet is returned and no chips are won or lost. Both having natural Blackjack on the same hand results in a tie.</p>
+      </div>
+      <div class="faq-item">
+        <h4>Can the dealer get Blackjack?</h4>
+        <p>Yes. If the dealer's hidden card combines with their visible card to make an Ace + 10-value hand, they have Blackjack. This beats any non-Blackjack player hand, including totals of 21 built with 3+ cards.</p>
+      </div>
+      <div class="faq-item">
+        <h4>Does Tricksy use a single deck or multiple decks?</h4>
+        <p>Tricksy uses a standard single-deck variant for simplicity and speed. The deck is reshuffled before each hand, so there is no card counting advantage.</p>
+      </div>
+      <div class="faq-item">
+        <h4>Is Blackjack on Tricksy gambling?</h4>
+        <p>No. All chips on Tricksy are virtual and have no real-world value. You cannot purchase chips with real money or cash out winnings. The game is purely for entertainment and strategy practice.</p>
+      </div>
+    </div>
+
+    <a class="cta" href="/">Play Blackjack Free Now</a>
 
     <h2>More Games</h2>
     <div class="game-grid">
