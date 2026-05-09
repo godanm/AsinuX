@@ -148,6 +148,54 @@ class TeenPattiStats {
       );
 }
 
+// ── Tambola stats ─────────────────────────────────────────────────────────────
+
+class TambolaStats {
+  final int gamesPlayed;
+  final int prizesWon;
+  final int earlyFivesWon;
+  final int fullHousesWon;
+
+  const TambolaStats({
+    this.gamesPlayed = 0,
+    this.prizesWon = 0,
+    this.earlyFivesWon = 0,
+    this.fullHousesWon = 0,
+  });
+
+  double get prizeRate => gamesPlayed == 0 ? 0 : prizesWon / (gamesPlayed * 5);
+  double get fullHouseRate => gamesPlayed == 0 ? 0 : fullHousesWon / gamesPlayed;
+
+  factory TambolaStats.fromMap(Map<dynamic, dynamic> map) => TambolaStats(
+        gamesPlayed: (map['gamesPlayed'] as int?) ?? 0,
+        prizesWon: (map['prizesWon'] as int?) ?? 0,
+        earlyFivesWon: (map['earlyFivesWon'] as int?) ?? 0,
+        fullHousesWon: (map['fullHousesWon'] as int?) ?? 0,
+      );
+}
+
+// ── Wild Card stats ───────────────────────────────────────────────────────────
+
+class WildCardStats {
+  final int gamesPlayed;
+  final int wins;
+  final int wildCardsPlayed;
+
+  const WildCardStats({
+    this.gamesPlayed = 0,
+    this.wins = 0,
+    this.wildCardsPlayed = 0,
+  });
+
+  double get winRate => gamesPlayed == 0 ? 0 : wins / gamesPlayed;
+
+  factory WildCardStats.fromMap(Map<dynamic, dynamic> map) => WildCardStats(
+        gamesPlayed: (map['gamesPlayed'] as int?) ?? 0,
+        wins: (map['wins'] as int?) ?? 0,
+        wildCardsPlayed: (map['wildCardsPlayed'] as int?) ?? 0,
+      );
+}
+
 // ── Bluff stats (stub — populated when the game is built) ────────────────────
 
 class BluffStats {
@@ -238,6 +286,8 @@ class StatsService {
   DatabaseReference _teenPattiRef(String uid) => _db.ref('stats/$uid/teen_patti');
   DatabaseReference _blackjackRef(String uid) => _db.ref('stats/$uid/blackjack');
   DatabaseReference _bluffRef(String uid) => _db.ref('stats/$uid/bluff');
+  DatabaseReference _tambolaRef(String uid) => _db.ref('stats/$uid/tambola');
+  DatabaseReference _wildcardRef(String uid) => _db.ref('stats/$uid/wildcard');
 
   /// Public entry point for rewarded-ad bonuses.
   Future<void> awardBonusPoints(String uid, int amount) => _applyPointsDelta(uid, amount);
@@ -283,6 +333,51 @@ class StatsService {
     });
     await _applyPointsDelta(uid, won ? 150 : 0);
     debugPrint('[StatsService] bluff game for $uid — won=$won bluffs=$bluffsAttempted caught=$bluffsCaught succeeded=$bluffsSucceeded');
+  }
+
+  Stream<TambolaStats> tambolaStatsStream(String uid) {
+    return _tambolaRef(uid).onValue.map((event) {
+      if (!event.snapshot.exists) return const TambolaStats();
+      return TambolaStats.fromMap(event.snapshot.value as Map<dynamic, dynamic>);
+    });
+  }
+
+  Future<void> recordTambolaGame({
+    required String uid,
+    required int prizesWon,
+    required bool wonEarlyFive,
+    required bool wonFullHouse,
+  }) async {
+    await _tambolaRef(uid).update({
+      'gamesPlayed': ServerValue.increment(1),
+      if (prizesWon > 0) 'prizesWon': ServerValue.increment(prizesWon),
+      if (wonEarlyFive) 'earlyFivesWon': ServerValue.increment(1),
+      if (wonFullHouse) 'fullHousesWon': ServerValue.increment(1),
+    });
+    final points = prizesWon * 50 + (wonFullHouse ? 100 : 0);
+    await _applyPointsDelta(uid, points);
+    debugPrint('[StatsService] tambola for $uid — prizes=$prizesWon earlyFive=$wonEarlyFive fullHouse=$wonFullHouse');
+  }
+
+  Stream<WildCardStats> wildcardStatsStream(String uid) {
+    return _wildcardRef(uid).onValue.map((event) {
+      if (!event.snapshot.exists) return const WildCardStats();
+      return WildCardStats.fromMap(event.snapshot.value as Map<dynamic, dynamic>);
+    });
+  }
+
+  Future<void> recordWildCardGame({
+    required String uid,
+    required bool won,
+    required int wildCardsPlayed,
+  }) async {
+    await _wildcardRef(uid).update({
+      'gamesPlayed': ServerValue.increment(1),
+      if (won) 'wins': ServerValue.increment(1),
+      if (wildCardsPlayed > 0) 'wildCardsPlayed': ServerValue.increment(wildCardsPlayed),
+    });
+    await _applyPointsDelta(uid, won ? 150 : 0);
+    debugPrint('[StatsService] wildcard for $uid — won=$won wilds=$wildCardsPlayed');
   }
 
   Stream<RummyStats> rummyStatsStream(String uid) {

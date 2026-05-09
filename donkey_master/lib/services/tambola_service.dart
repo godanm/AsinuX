@@ -194,15 +194,11 @@ class TambolaService with GameGuard {
     required TambolaPrize prize,
     required TambolaTicket ticket,
   }) async {
+    // Validate eligibility before entering the transaction (cheap read, no write).
     final snap = await _gameRef(roomId).get();
     if (!snap.exists) return 'Game not found';
     final data = Map<String, dynamic>.from(snap.value as Map);
     if (data['phase'] != 'playing') return 'Game is not active';
-
-    final prizesRaw = data['prizeWinners'] != null
-        ? Map<String, dynamic>.from(data['prizeWinners'] as Map)
-        : <String, dynamic>{};
-    if (prizesRaw.containsKey(prize.key)) return 'Prize already claimed';
 
     final called = _fbList(data['calledNumbers'])
         .map((n) => (n as num).toInt())
@@ -217,12 +213,32 @@ class TambolaService with GameGuard {
     };
     if (!valid) return 'Not valid — not all numbers have been called yet';
 
-    final updates = <String, dynamic>{
-      'prizeWinners/${prize.key}': playerId,
-    };
-    if (prize == TambolaPrize.fullHouse) updates['phase'] = 'gameOver';
+    // Atomic write: abort if another client already claimed this prize.
+    String? error;
+    await _gameRef(roomId).runTransaction((current) {
+      if (current == null) {
+        error = 'Game not found';
+        return Transaction.abort();
+      }
+      final game = Map<String, dynamic>.from(current as Map);
+      if (game['phase'] != 'playing') {
+        error = 'Game is not active';
+        return Transaction.abort();
+      }
+      final winners = game['prizeWinners'] != null
+          ? Map<String, dynamic>.from(game['prizeWinners'] as Map)
+          : <String, dynamic>{};
+      if (winners.containsKey(prize.key)) {
+        error = 'Prize already claimed';
+        return Transaction.abort();
+      }
+      winners[prize.key] = playerId;
+      game['prizeWinners'] = winners;
+      if (prize == TambolaPrize.fullHouse) game['phase'] = 'gameOver';
+      return Transaction.success(game);
+    });
 
-    await _gameRef(roomId).update(updates);
+    if (error != null) return error;
     debugPrint('[Tambola] $playerId claimed ${prize.label} in $roomId');
     return null;
   }

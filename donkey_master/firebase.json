@@ -49,6 +49,16 @@
       "**/.*",
       "**/node_modules/**"
     ],
+    "redirects": [
+      { "source": "/how-to-play/kazhutha",   "destination": "/games/kazhutha.html",   "type": 301 },
+      { "source": "/how-to-play/teen-patti", "destination": "/games/teen-patti.html",  "type": 301 },
+      { "source": "/how-to-play/game-28",    "destination": "/games/28.html",          "type": 301 },
+      { "source": "/how-to-play/blackjack",  "destination": "/games/blackjack.html",   "type": 301 },
+      { "source": "/how-to-play/bluff",      "destination": "/games/bluff.html",       "type": 301 },
+      { "source": "/how-to-play/rummy",      "destination": "/games/rummy.html",       "type": 301 },
+      { "source": "/how-to-play/tambola",    "destination": "/games/tambola.html",     "type": 301 },
+      { "source": "/how-to-play/wildcard",   "destination": "/games/wildcard.html",    "type": 301 }
+    ],
     "rewrites": [
       {
         "source": "/privacy",
@@ -62,12 +72,6 @@
         "source": "/about",
         "destination": "/about.html"
       },
-      { "source": "/how-to-play/kazhutha",  "destination": "/how-to-play/kazhutha.html" },
-      { "source": "/how-to-play/rummy",     "destination": "/how-to-play/rummy.html" },
-      { "source": "/how-to-play/game-28",   "destination": "/how-to-play/game-28.html" },
-      { "source": "/how-to-play/teen-patti","destination": "/how-to-play/teen-patti.html" },
-      { "source": "/how-to-play/blackjack", "destination": "/how-to-play/blackjack.html" },
-      { "source": "/how-to-play/bluff",     "destination": "/how-to-play/bluff.html" },
       {
         "source": "**",
         "destination": "/index.html"

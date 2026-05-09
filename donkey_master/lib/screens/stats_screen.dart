@@ -90,15 +90,30 @@ class StatsScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Blackjack + Bluff row
+                // Bottom 2×2 grid
                 const _GridDividerH(),
-                SizedBox(
-                  height: 155,
+                Expanded(
                   child: Row(
                     children: [
-                      Expanded(child: _BlackjackBlock(uid: uid)),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Expanded(child: _BlackjackBlock(uid: uid)),
+                            const _GridDividerH(),
+                            Expanded(child: _TambolaBlock(uid: uid)),
+                          ],
+                        ),
+                      ),
                       const _GridDividerV(),
-                      Expanded(child: _BluffBlock(uid: uid)),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Expanded(child: _BluffBlock(uid: uid)),
+                            const _GridDividerH(),
+                            Expanded(child: _WildCardBlock(uid: uid)),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -390,6 +405,97 @@ class _BluffBlock extends StatelessWidget {
               _MiniBar(
                 segments: [
                   _Seg(s.wins, const Color(0xFFAB47BC)),
+                  _Seg((s.gamesPlayed - s.wins).clamp(0, s.gamesPlayed), Colors.white24),
+                ],
+                labels: const ['Won', 'Lost'],
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+// ── Tambola block ─────────────────────────────────────────────────────────────
+
+class _TambolaBlock extends StatelessWidget {
+  final String uid;
+  const _TambolaBlock({required this.uid});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<TambolaStats>(
+      stream: StatsService.instance.tambolaStatsStream(uid),
+      builder: (context, snap) {
+        final s = snap.data ?? const TambolaStats();
+        return _GameBlock(
+          emoji: '🎟',
+          title: 'TAMBOLA',
+          accentColor: const Color(0xFFF57C00),
+          hasData: s.gamesPlayed > 0,
+          children: [
+            _MiniStat('Games', '${s.gamesPlayed}'),
+            _MiniStat('Prizes won', '${s.prizesWon}',
+                color: const Color(0xFFF57C00)),
+            _MiniStat('Early Fives', '${s.earlyFivesWon}',
+                color: Colors.amberAccent),
+            _MiniStat('Full Houses', '${s.fullHousesWon}',
+                color: Colors.greenAccent.shade400),
+            _MiniStat(
+              'Full House%',
+              '${(s.fullHouseRate * 100).toStringAsFixed(0)}%',
+              color: Colors.greenAccent.shade400,
+            ),
+            if (s.gamesPlayed > 0) ...[
+              const SizedBox(height: 8),
+              _MiniBar(
+                segments: [
+                  _Seg(s.fullHousesWon, Colors.greenAccent.shade400),
+                  _Seg((s.gamesPlayed - s.fullHousesWon).clamp(0, s.gamesPlayed),
+                      Colors.white24),
+                ],
+                labels: const ['Full House', 'No win'],
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+// ── Wild Card block ───────────────────────────────────────────────────────────
+
+class _WildCardBlock extends StatelessWidget {
+  final String uid;
+  const _WildCardBlock({required this.uid});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<WildCardStats>(
+      stream: StatsService.instance.wildcardStatsStream(uid),
+      builder: (context, snap) {
+        final s = snap.data ?? const WildCardStats();
+        return _GameBlock(
+          emoji: '🃏',
+          title: 'WILD CARD',
+          accentColor: const Color(0xFF7B1FA2),
+          hasData: s.gamesPlayed > 0,
+          children: [
+            _MiniStat('Games', '${s.gamesPlayed}'),
+            _MiniStat('Wins', '${s.wins}', color: const Color(0xFFCE93D8)),
+            _MiniStat(
+              'Win rate',
+              '${(s.winRate * 100).toStringAsFixed(0)}%',
+              color: const Color(0xFFCE93D8),
+            ),
+            _MiniStat('Wilds played', '${s.wildCardsPlayed}', color: Colors.amber),
+            if (s.gamesPlayed > 0) ...[
+              const SizedBox(height: 8),
+              _MiniBar(
+                segments: [
+                  _Seg(s.wins, const Color(0xFF7B1FA2)),
                   _Seg((s.gamesPlayed - s.wins).clamp(0, s.gamesPlayed), Colors.white24),
                 ],
                 labels: const ['Won', 'Lost'],

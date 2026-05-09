@@ -19,8 +19,14 @@ if [[ "$1" != "--yes" ]]; then
 fi
 
 remove() {
-  echo "  removing /$1 ..."
-  firebase database:remove "/$1" --project "$PROJECT" -f 2>&1 | grep -v "^$" || true
+  local data
+  data=$(firebase database:get "/$1" --project "$PROJECT" --shallow 2>/dev/null)
+  if [[ "$data" == "null" || -z "$data" ]]; then
+    echo "  /$1 — empty, skipped"
+  else
+    firebase database:remove "/$1" --project "$PROJECT" -f >/dev/null 2>&1
+    echo "  /$1 — removed"
+  fi
 }
 
 echo ""

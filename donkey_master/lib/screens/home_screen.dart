@@ -44,6 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   static const _kDeepLinkPaths = {
     '/kazhutha', '/rummy', '/game-28', '/teen-patti', '/blackjack', '/bluff',
+    '/tambola', '/wildcard',
   };
 
   @override
@@ -167,6 +168,10 @@ class _HomeScreenState extends State<HomeScreen> {
         Navigator.push(context, MaterialPageRoute(builder: (_) => BlackjackGameScreen(playerId: _uid, playerName: _playerName)));
       case '/bluff':
         Navigator.push(context, MaterialPageRoute(builder: (_) => BluffGameScreen(playerId: _uid, playerName: _playerName)));
+      case '/tambola':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => TambolaMatchmakingScreen(playerName: _playerName)));
+      case '/wildcard':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => WildCardMatchmakingScreen(playerName: _playerName)));
     }
   }
 

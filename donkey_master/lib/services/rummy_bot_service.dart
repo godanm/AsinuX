@@ -1,3 +1,4 @@
+import 'dart:math' show min;
 import '../models/rummy_models.dart';
 
 /// Helpers for Rummy bot players.
@@ -123,5 +124,80 @@ class RummyBotService {
     }
 
     return worst?.key ?? hand.length - 1;
+  }
+
+  // ── Declaration ───────────────────────────────────────────────
+
+  /// Returns true if the 14-card [hand] contains a declarable 13-card arrangement.
+  static bool shouldDeclare(List<RummyCard> hand, RummyCard wildJoker) =>
+      buildDeclaration(hand, wildJoker) != null;
+
+  /// Returns `{'melds': List<List<RummyCard>>, 'discardIdx': int}` if a valid
+  /// winning declaration exists in the 14-card hand, null otherwise.
+  static Map<String, dynamic>? buildDeclaration(
+      List<RummyCard> hand, RummyCard wildJoker) {
+    for (int di = 0; di < hand.length; di++) {
+      final remaining = List<RummyCard>.from(hand)..removeAt(di);
+      final melds = _tryPartition(remaining, wildJoker.rank);
+      if (melds != null) return {'melds': melds, 'discardIdx': di};
+    }
+    return null;
+  }
+
+  /// Tries to partition [cards] (exactly 13) into valid melds satisfying:
+  /// ≥1 pure sequence + ≥2 total sequences. Returns null if impossible.
+  static List<List<RummyCard>>? _tryPartition(
+      List<RummyCard> cards, int wildRank) {
+    // Sort: regular cards by (suit, rank); jokers last so the anchor is always a regular card.
+    final sorted = List<RummyCard>.from(cards)
+      ..sort((a, b) {
+        final aj = isRummyJoker(a, wildRank);
+        final bj = isRummyJoker(b, wildRank);
+        if (aj != bj) return aj ? 1 : -1;
+        if (a.suit != b.suit) return a.suit.compareTo(b.suit);
+        return a.rank.compareTo(b.rank);
+      });
+    return _backtrack(sorted, [], wildRank);
+  }
+
+  static List<List<RummyCard>>? _backtrack(
+      List<RummyCard> rem, List<List<RummyCard>> built, int wildRank) {
+    if (rem.isEmpty) {
+      final pureSeqs = built.where((m) => isPureSequence(m, wildRank)).length;
+      final seqs = built.where((m) => isValidSequence(m, wildRank)).length;
+      return (pureSeqs >= 1 && seqs >= 2) ? built : null;
+    }
+
+    // Always anchor on the first non-joker — it must belong to some meld.
+    final anchorIdx = rem.indexWhere((c) => !isRummyJoker(c, wildRank));
+    if (anchorIdx == -1) return null; // only jokers left, no valid meld possible
+
+    final anchor = rem[anchorIdx];
+    final others = List<RummyCard>.from(rem)..removeAt(anchorIdx);
+
+    for (int size = 3; size <= min(4, rem.length); size++) {
+      for (final combo in _combos(others, size - 1)) {
+        final meld = [anchor, ...combo];
+        if (!isValidMeld(meld, wildRank)) continue;
+        final newRem = List<RummyCard>.from(rem);
+        for (final c in meld) { newRem.remove(c); }
+        final result = _backtrack(newRem, [...built, meld], wildRank);
+        if (result != null) return result;
+      }
+    }
+    return null;
+  }
+
+  static Iterable<List<RummyCard>> _combos(List<RummyCard> pool, int r) sync* {
+    if (r == 0) {
+      yield [];
+      return;
+    }
+    if (pool.length < r) { return; }
+    for (int i = 0; i <= pool.length - r; i++) {
+      for (final rest in _combos(pool.sublist(i + 1), r - 1)) {
+        yield [pool[i], ...rest];
+      }
+    }
   }
 }
