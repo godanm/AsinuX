@@ -94,6 +94,24 @@ class AuthService {
       });
     }
   }
+
+  // ── Account deletion ──────────────────────────────────────────
+  // Removes all RTDB data for this user, deletes the Firebase Auth
+  // record, and clears local SharedPreferences.
+
+  Future<void> deleteAccount() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+    final uid = user.uid;
+    final db = FirebaseDatabase.instance;
+    await Future.wait([
+      db.ref('stats/$uid').remove(),
+      db.ref('error_logs/$uid').remove(),
+    ]);
+    await user.delete();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+  }
 }
 
 class AvatarPreset {

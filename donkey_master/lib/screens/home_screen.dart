@@ -790,8 +790,61 @@ class _SettingsSheetState extends State<_SettingsSheet> {
               ),
             ),
           ),
+
+          const SizedBox(height: 24),
+          Divider(color: Colors.white.withValues(alpha: 0.08)),
+          const SizedBox(height: 12),
+
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: OutlinedButton(
+              onPressed: _confirmDelete,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.red.shade400,
+                side: BorderSide(color: Colors.red.withValues(alpha: 0.35)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Delete Account & Data',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+            ),
+          ),
+          const SizedBox(height: 8),
         ],
       ),
+    );
+  }
+
+  Future<void> _confirmDelete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1e0010),
+        title: const Text('Delete Account?',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        content: const Text(
+          'This permanently deletes your game stats and all stored data. You will start fresh. This cannot be undone.',
+          style: TextStyle(color: Colors.white70, fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red.shade400),
+            child: const Text('Delete', style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await AuthService.instance.deleteAccount();
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
+      (route) => false,
     );
   }
 }
