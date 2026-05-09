@@ -277,6 +277,8 @@ class RummyService with GameGuard {
     if (!snap.exists) return;
     final data = Map<String, dynamic>.from(snap.value as Map);
 
+    if (data['phase'] != 'draw' || data['currentTurn'] != playerId) return;
+
     final closedRaw = _fbList(data['closedDeck']);
     if (closedRaw.isEmpty) {
       await _reshuffleOpenIntoClosed(roomId, data);
@@ -301,6 +303,7 @@ class RummyService with GameGuard {
         'closedDeckCount': closedDeck.length,
         'players/$playerId/handSize': hand.length,
         'phase': 'discard',
+        'openDrawnCard': null,
       }),
       _handRef(roomId, playerId).set(hand.map((c) => c.toMap()).toList()),
     ]);
@@ -315,6 +318,8 @@ class RummyService with GameGuard {
     final snap = await _gameRef(roomId).get();
     if (!snap.exists) return;
     final data = Map<String, dynamic>.from(snap.value as Map);
+
+    if (data['phase'] != 'draw' || data['currentTurn'] != playerId) return;
 
     final openRaw = _fbList(data['openDeck']);
     if (openRaw.isEmpty) return;
@@ -335,6 +340,7 @@ class RummyService with GameGuard {
         'openDeck': openDeck.map((c) => c.toMap()).toList(),
         'players/$playerId/handSize': hand.length,
         'phase': 'discard',
+        'openDrawnCard': drawn.toMap(),
       }),
       _handRef(roomId, playerId).set(hand.map((c) => c.toMap()).toList()),
     ]);
@@ -350,12 +356,22 @@ class RummyService with GameGuard {
     if (!snap.exists) return;
     final data = Map<String, dynamic>.from(snap.value as Map);
 
+    if (data['phase'] != 'discard' || data['currentTurn'] != playerId) return;
+
     final handSnap = await _handRef(roomId, playerId).get();
     if (!handSnap.exists) return;
     final hand = _fbList(handSnap.value)
         .map((c) => RummyCard.fromMap(c as Map))
         .toList();
     if (cardIndex < 0 || cardIndex >= hand.length) return;
+
+    // Prevent re-discarding a card just drawn from the open pile.
+    final openDrawnRaw = data['openDrawnCard'];
+    if (openDrawnRaw != null) {
+      final openDrawn = RummyCard.fromMap(
+          Map<dynamic, dynamic>.from(openDrawnRaw as Map));
+      if (hand[cardIndex] == openDrawn) return;
+    }
 
     final discarded = hand.removeAt(cardIndex);
 
@@ -372,6 +388,7 @@ class RummyService with GameGuard {
         'players/$playerId/handSize': hand.length,
         'currentTurn': nextPlayer,
         'phase': 'draw',
+        'openDrawnCard': null,
       }),
       _handRef(roomId, playerId).set(hand.map((c) => c.toMap()).toList()),
     ]);
