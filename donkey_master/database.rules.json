@@ -161,15 +161,19 @@
       ".read":    "auth != null",
       ".indexOn": ["status"],
       "$roomId": {
-        ".write": "auth != null"
+        ".write": "auth != null && (root.child('wildcard_rooms').child($roomId).child('players').child(auth.uid).exists() || newData.child('players').child(auth.uid).exists())"
       }
     },
 
     // ── Wild Card game state ──────────────────────────────────────────────────
+    // Turn-based rule not feasible here: Wild Card tracks turns via
+    // currentPlayerIdx (integer) rather than a player UID, so the rules
+    // engine cannot cross-reference it. Membership check closes the main
+    // attack surface; the service enforces turn order at the application layer.
     "wildcard_games": {
       "$roomId": {
-        ".read":  "auth != null",
-        ".write": "auth != null"
+        ".read":  "auth != null && root.child('wildcard_rooms').child($roomId).child('players').child(auth.uid).exists()",
+        ".write": "auth != null && root.child('wildcard_rooms').child($roomId).child('players').child(auth.uid).exists()"
       }
     },
 
