@@ -437,6 +437,134 @@ const _games = <_Game>[
       ),
     ],
   ),
+  _Game(
+    id: 'wildcard',
+    emoji: '🃏',
+    title: 'WILD CARD',
+    subtitle: 'Color-matching · 2–6 players',
+    accent: Color(0xFFE91E63),
+    gradientColors: [Color(0xFF7B0038), Color(0xFF35001A)],
+    cards: [
+      _Card(
+        emoji: '🏆',
+        title: 'Objective',
+        body: 'Match cards by color or number and empty your hand before anyone else. Special cards flip the game — use them at the right moment.',
+        bullets: [
+          '2–6 players, each dealt 7 cards',
+          'Draw pile in the center, one card face-up to start',
+          'First player to play all their cards wins',
+        ],
+      ),
+      _Card(
+        emoji: '🎨',
+        title: 'Playing a Card',
+        body: 'On your turn, play one card that matches the top card by color or by number/type. If you have nothing to play, draw one card from the pile.',
+        bullets: [
+          'Same color → always playable',
+          'Same number or type → always playable',
+          'Wild cards → playable any time, you choose the new color',
+          'Drew a playable card? You may play it immediately',
+        ],
+      ),
+      _Card(
+        emoji: '⚡',
+        title: 'Special Cards',
+        body: 'Four types of action cards change the flow of the game. Landing one at the right time can swing a losing hand.',
+        bullets: [
+          'Skip — next player loses their turn',
+          'Reverse — flip the direction of play',
+          'Draw Two — next player draws 2 cards and loses their turn',
+          'Wild — choose any color to continue',
+          'Wild Draw Four — next player draws 4 + skips; only playable if you have no matching color',
+        ],
+      ),
+      _Card(
+        emoji: '📢',
+        title: '"Wild Card!"',
+        body: 'When you play down to your last card, tap the "Wild Card!" button immediately. Failing to call it means a 2-card penalty if caught.',
+        bullets: [
+          'Tap "Wild Card!" the moment you drop to 1 card',
+          'Any opponent can catch you if you forget',
+          'If caught: draw 2 penalty cards',
+          'You\'re safe once the next player starts their turn',
+        ],
+      ),
+      _Card(
+        emoji: '💡',
+        title: 'Strategy Tips',
+        body: 'Wild Card rewards timing. Hold your action cards until they hurt the most — and save Wild Draw Four for when it costs your opponent the most cards.',
+        bullets: [
+          'Save Skip and Reverse for when an opponent is down to 1–2 cards',
+          'Change color to one you hold a lot of — force opponents to draw',
+          'Don\'t burn Wild Draw Four early; save it as a finisher',
+          'Watch opponents\' card counts — the player with fewest cards is your target',
+        ],
+      ),
+    ],
+  ),
+  _Game(
+    id: 'tambola',
+    emoji: '🎟',
+    title: 'TAMBOLA',
+    subtitle: '90-number Housie · 2–6 players',
+    accent: Color(0xFFF57C00),
+    gradientColors: [Color(0xFF7f3c00), Color(0xFF3d1c00)],
+    cards: [
+      _Card(
+        emoji: '🏆',
+        title: 'Objective',
+        body: 'Numbers 1–90 are called automatically every 5 seconds. Mark matching numbers on your ticket and claim prizes before anyone else does.',
+        bullets: [
+          '2–6 players, each gets one 3×9 ticket with 15 numbers',
+          'Five independent prizes — multiple players can win different prizes',
+          'Full House ends the game',
+        ],
+      ),
+      _Card(
+        emoji: '🎟',
+        title: 'Your Ticket',
+        body: 'Your ticket has 3 rows and 9 columns. Each row has exactly 5 numbers and 4 blank spaces. Numbers are auto-marked in orange as they are called — you don\'t need to do anything.',
+        bullets: [
+          'Column 1: numbers 1–9  ·  Column 2: 10–19  ·  … ·  Column 9: 80–90',
+          'Each row has 5 numbers — you need all 5 called to win a Line prize',
+          'Numbers highlight automatically — focus on claiming, not tracking',
+        ],
+      ),
+      _Card(
+        emoji: '🥇',
+        title: 'The Five Prizes',
+        body: 'Each prize can only be claimed once — by the first player to complete that pattern and tap CLAIM. Prizes are independent: different players can win different prizes.',
+        bullets: [
+          'Early Five — first 5 numbers on your ticket called',
+          'Top Line — all 5 numbers in your first row called',
+          'Middle Line — all 5 numbers in your second row called',
+          'Bottom Line — all 5 numbers in your third row called',
+          'Full House — all 15 numbers on your ticket called (ends the game)',
+        ],
+      ),
+      _Card(
+        emoji: '⚡',
+        title: 'Claiming a Prize',
+        body: 'When your pattern is complete the CLAIM button appears. Tap it immediately — another player might be eligible for the same prize at the same time. First tap wins.',
+        bullets: [
+          'CLAIM button appears automatically when you\'re eligible',
+          'Invalid claims are rejected — the button only shows when you\'re truly eligible',
+          'Full House claim ends the game for everyone instantly',
+        ],
+      ),
+      _Card(
+        emoji: '💡',
+        title: 'Tips & Strategy',
+        body: 'Tambola is fast — prizes go quickly once numbers start flowing. Keep an eye on the prize panel to know what\'s still available.',
+        bullets: [
+          'Claim Early Five the moment it appears — it\'s the easiest and goes first',
+          'Watch the player progress bar to see who\'s close to Full House',
+          'If three Line prizes are claimed, focus entirely on Full House',
+          'A number called every 5 seconds means Full House typically arrives in 6–8 minutes',
+        ],
+      ),
+    ],
+  ),
 ];
 
 // ── Root overlay widget ───────────────────────────────────────────────────────
@@ -527,33 +655,34 @@ class _GameSelector extends StatelessWidget {
           // Header
           _OverlayHeader(title: 'HOW TO PLAY', onClose: onClose),
 
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
-            child: Column(
-              children: [
-                Text(
-                  'Select a game to learn the rules',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.35),
-                    fontSize: 13,
+              Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+              child: Column(
+                children: [
+                  Text(
+                    'Select a game to learn the rules',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.35),
+                      fontSize: 13,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-                // 2×2 grid
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 1.35,
-                  children: _games.map((g) => _GameTile(
-                        game: g,
-                        onTap: () => onGameSelected(g.id),
-                      )).toList(),
-                ),
-              ],
+                  GridView.count(
+                    crossAxisCount: 2,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 1.35,
+                    children: _games.map((g) => _GameTile(
+                          game: g,
+                          onTap: () => onGameSelected(g.id),
+                        )).toList(),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

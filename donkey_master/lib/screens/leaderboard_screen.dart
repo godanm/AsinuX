@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../services/error_log_service.dart';
 import '../services/stats_service.dart';
 import '../widgets/player_avatar.dart';
 
@@ -46,7 +47,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         );
       }
       if (mounted) setState(() { _entries = entries; _myEntry = myEntry; _loading = false; });
-    } catch (e) {
+    } catch (e, st) {
+      ErrorLogService.instance.logAuto(game: 'leaderboard', error: e.toString(), stack: st);
       if (mounted) setState(() { _error = e.toString(); _loading = false; });
     }
   }

@@ -15,6 +15,8 @@ import 'matchmaking_screen.dart';
 import 'rummy_matchmaking_screen.dart';
 import 'game28_matchmaking_screen.dart';
 import 'teen_patti_matchmaking_screen.dart';
+import 'tambola_matchmaking_screen.dart';
+import 'wildcard_matchmaking_screen.dart';
 import 'blackjack_game_screen.dart';
 import 'bluff_game_screen.dart';
 import 'stats_screen.dart';
@@ -483,6 +485,47 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                     ),
                                   ).animate().fadeIn(delay: 1000.ms, duration: 500.ms).slideY(begin: 0.1),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            // ── Row 4: Tambola ────────────────────────
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _GameCard(
+                                    emoji: '🎟',
+                                    title: 'TAMBOLA',
+                                    subtitle: 'Housie · 2–6 players',
+                                    accentColor: const Color(0xFFF57C00),
+                                    gradientColors: const [Color(0xFF7f3c00), Color(0xFF3d1c00)],
+                                    suits: const ['1', '45', '90', '🎱'],
+                                    enabled: _nameLoaded,
+                                    comingSoon: false,
+                                    onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (_) => TambolaMatchmakingScreen(playerName: _playerName)),
+                                    ),
+                                  ).animate().fadeIn(delay: 1120.ms, duration: 500.ms).slideY(begin: 0.1),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _GameCard(
+                                    emoji: '🃏',
+                                    title: 'WILD CARD',
+                                    subtitle: 'Color-matching · 2–6 players',
+                                    accentColor: const Color(0xFFE91E63),
+                                    gradientColors: const [Color(0xFF7B0038), Color(0xFF35001A)],
+                                    suits: const ['🔴', '🔵', '🟢', '🟡'],
+                                    enabled: _nameLoaded,
+                                    comingSoon: false,
+                                    onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (_) => WildCardMatchmakingScreen(playerName: _playerName)),
+                                    ),
+                                  ).animate().fadeIn(delay: 1240.ms, duration: 500.ms).slideY(begin: 0.1),
                                 ),
                               ],
                             ),

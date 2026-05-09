@@ -3,12 +3,22 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 import '../models/card_model.dart';
 import '../models/teen_patti_state.dart';
+import 'error_log_service.dart';
 import 'game_logger.dart';
 
-class TeenPattiService {
+List<dynamic> _fbList(dynamic v) {
+  if (v is List) return v;
+  if (v is Map) return v.values.toList();
+  return [];
+}
+
+class TeenPattiService with GameGuard {
   static final TeenPattiService _i = TeenPattiService._();
   static TeenPattiService get instance => _i;
   TeenPattiService._();
+
+  @override
+  String get gameName => 'teen_patti';
 
   final _db = FirebaseDatabase.instance;
 
@@ -634,7 +644,7 @@ class TeenPattiService {
   }
 
   List<PlayingCard> _parseCards(Map<dynamic, dynamic> data) =>
-      (data['cards'] as List<dynamic>? ?? [])
+      _fbList(data['cards'])
           .map((c) => PlayingCard.fromMap(c as Map<dynamic, dynamic>))
           .toList();
 

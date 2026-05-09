@@ -4,12 +4,23 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
 import '../models/rummy_models.dart';
+import '../utils/game_session_tracker.dart';
+import 'error_log_service.dart';
 import 'rummy_bot_service.dart';
 
-class RummyService {
+List<dynamic> _fbList(dynamic v) {
+  if (v is List) return v;
+  if (v is Map) return v.values.toList();
+  return [];
+}
+
+class RummyService with GameGuard {
   static final RummyService _instance = RummyService._();
   static RummyService get instance => _instance;
   RummyService._();
+
+  @override
+  String get gameName => 'rummy';
 
   final _db = FirebaseDatabase.instance;
   final _rng = Random();
@@ -73,6 +84,7 @@ class RummyService {
         );
         if (joined) {
           debugPrint('[Rummy] successfully joined $roomId via transaction');
+          GameSessionTracker.record('rummy', roomId);
           return roomId;
         }
         debugPrint('[Rummy] room $roomId was full or gone — trying next');
@@ -80,11 +92,13 @@ class RummyService {
     }
 
     debugPrint('[Rummy] no suitable room found — creating new one');
-    return _createRoom(
+    final newRoomId = await _createRoom(
       playerId: playerId,
       playerName: playerName,
       maxPlayers: maxPlayers,
     );
+    GameSessionTracker.record('rummy', newRoomId);
+    return newRoomId;
   }
 
   /// Atomically joins [roomId]. Returns true if the seat was claimed,
@@ -225,52 +239,45 @@ class RummyService {
   // hand. The function writes each hand to rummy_hands/{roomId}/{uid}
   // using the Admin SDK, which bypasses the per-player read rules.
 
-  Future<void> startGame({required String roomId, int targetScore = 0}) async {
-    debugPrint('[Rummy] startGame — calling dealRummyGame CF for $roomId (target=$targetScore)');
-    try {
-      final callable =
-          FirebaseFunctions.instance.httpsCallable('dealRummyGame');
-      final result = await callable.call({
-        'roomId': roomId,
-        'targetScore': targetScore,
-        'sessionScores': <String, int>{},
-        'round': 1,
+  Future<void> startGame({required String roomId, int targetScore = 0}) =>
+      guarded('startGame', () async {
+        debugPrint('[Rummy] startGame — calling dealRummyGame CF for $roomId (target=$targetScore)');
+        final callable =
+            FirebaseFunctions.instance.httpsCallable('dealRummyGame');
+        final result = await callable.call({
+          'roomId': roomId,
+          'targetScore': targetScore,
+          'sessionScores': <String, int>{},
+          'round': 1,
+        });
+        debugPrint('[Rummy] startGame CF returned: ${result.data}');
       });
-      debugPrint('[Rummy] startGame CF returned: ${result.data}');
-    } catch (e, st) {
-      debugPrint('[Rummy] startGame CF threw: $e\n$st');
-      rethrow;
-    }
-  }
 
-  Future<void> startNextRound(String roomId, RummyGameState state) async {
-    debugPrint('[Rummy] startNextRound — round ${state.round + 1} in $roomId');
-    try {
-      final callable =
-          FirebaseFunctions.instance.httpsCallable('dealRummyGame');
-      final result = await callable.call({
-        'roomId': roomId,
-        'targetScore': state.targetScore,
-        'sessionScores': state.sessionScores,
-        'round': state.round + 1,
-        'nextRound': true,
+  Future<void> startNextRound(String roomId, RummyGameState state) =>
+      guarded('startNextRound', () async {
+        debugPrint('[Rummy] startNextRound — round ${state.round + 1} in $roomId');
+        final callable =
+            FirebaseFunctions.instance.httpsCallable('dealRummyGame');
+        final result = await callable.call({
+          'roomId': roomId,
+          'targetScore': state.targetScore,
+          'sessionScores': state.sessionScores,
+          'round': state.round + 1,
+          'nextRound': true,
+        });
+        debugPrint('[Rummy] startNextRound CF returned: ${result.data}');
       });
-      debugPrint('[Rummy] startNextRound CF returned: ${result.data}');
-    } catch (e, st) {
-      debugPrint('[Rummy] startNextRound CF threw: $e\n$st');
-      rethrow;
-    }
-  }
 
   // ── Draw from closed deck ──────────────────────────────────────
 
-  Future<void> drawFromClosed(String roomId, String playerId) async {
+  Future<void> drawFromClosed(String roomId, String playerId) =>
+      guarded('drawFromClosed', () async {
     debugPrint('[Rummy] $playerId drawing from closed deck');
     final snap = await _gameRef(roomId).get();
     if (!snap.exists) return;
     final data = Map<String, dynamic>.from(snap.value as Map);
 
-    final closedRaw = (data['closedDeck'] as List?)?.cast<dynamic>() ?? [];
+    final closedRaw = _fbList(data['closedDeck']);
     if (closedRaw.isEmpty) {
       await _reshuffleOpenIntoClosed(roomId, data);
       return drawFromClosed(roomId, playerId);
@@ -282,7 +289,7 @@ class RummyService {
     // Read hand from private path, not the shared game state
     final handSnap = await _handRef(roomId, playerId).get();
     final hand = handSnap.exists
-        ? ((handSnap.value as List).cast<dynamic>())
+        ? _fbList(handSnap.value)
             .map((c) => RummyCard.fromMap(c as Map))
             .toList()
         : <RummyCard>[];
@@ -298,17 +305,18 @@ class RummyService {
       _handRef(roomId, playerId).set(hand.map((c) => c.toMap()).toList()),
     ]);
     debugPrint('[Rummy] $playerId drew $drawn from closed deck');
-  }
+  });
 
   // ── Draw from open deck ────────────────────────────────────────
 
-  Future<void> drawFromOpen(String roomId, String playerId) async {
+  Future<void> drawFromOpen(String roomId, String playerId) =>
+      guarded('drawFromOpen', () async {
     debugPrint('[Rummy] $playerId drawing from open deck');
     final snap = await _gameRef(roomId).get();
     if (!snap.exists) return;
     final data = Map<String, dynamic>.from(snap.value as Map);
 
-    final openRaw = (data['openDeck'] as List?)?.cast<dynamic>() ?? [];
+    final openRaw = _fbList(data['openDeck']);
     if (openRaw.isEmpty) return;
 
     final openDeck = openRaw.map((c) => RummyCard.fromMap(c as Map)).toList();
@@ -316,7 +324,7 @@ class RummyService {
 
     final handSnap = await _handRef(roomId, playerId).get();
     final hand = handSnap.exists
-        ? ((handSnap.value as List).cast<dynamic>())
+        ? _fbList(handSnap.value)
             .map((c) => RummyCard.fromMap(c as Map))
             .toList()
         : <RummyCard>[];
@@ -331,11 +339,12 @@ class RummyService {
       _handRef(roomId, playerId).set(hand.map((c) => c.toMap()).toList()),
     ]);
     debugPrint('[Rummy] $playerId drew $drawn from open deck');
-  }
+  });
 
   // ── Discard a card ─────────────────────────────────────────────
 
-  Future<void> discardCard(String roomId, String playerId, int cardIndex) async {
+  Future<void> discardCard(String roomId, String playerId, int cardIndex) =>
+      guarded('discardCard', () async {
     debugPrint('[Rummy] $playerId discarding card at index $cardIndex');
     final snap = await _gameRef(roomId).get();
     if (!snap.exists) return;
@@ -343,18 +352,18 @@ class RummyService {
 
     final handSnap = await _handRef(roomId, playerId).get();
     if (!handSnap.exists) return;
-    final hand = ((handSnap.value as List).cast<dynamic>())
+    final hand = _fbList(handSnap.value)
         .map((c) => RummyCard.fromMap(c as Map))
         .toList();
-    if (cardIndex >= hand.length) return;
+    if (cardIndex < 0 || cardIndex >= hand.length) return;
 
     final discarded = hand.removeAt(cardIndex);
 
-    final openRaw = (data['openDeck'] as List?)?.cast<dynamic>() ?? [];
+    final openRaw = _fbList(data['openDeck']);
     final openDeck = openRaw.map((c) => RummyCard.fromMap(c as Map)).toList();
     openDeck.add(discarded);
 
-    final turnOrder = (data['turnOrder'] as List).map((e) => e.toString()).toList();
+    final turnOrder = _fbList(data['turnOrder']).map((e) => e.toString()).toList();
     final nextPlayer = turnOrder[(turnOrder.indexOf(playerId) + 1) % turnOrder.length];
 
     await Future.wait([
@@ -367,14 +376,14 @@ class RummyService {
       _handRef(roomId, playerId).set(hand.map((c) => c.toMap()).toList()),
     ]);
     debugPrint('[Rummy] $playerId discarded $discarded — next turn: $nextPlayer');
-  }
+  });
 
   // ── Reshuffle open deck into closed ───────────────────────────
 
   Future<void> _reshuffleOpenIntoClosed(
       String roomId, Map<String, dynamic> data) async {
     debugPrint('[Rummy] reshuffling open deck into closed deck');
-    final openRaw = (data['openDeck'] as List?)?.cast<dynamic>() ?? [];
+    final openRaw = _fbList(data['openDeck']);
     final openDeck = openRaw.map((c) => RummyCard.fromMap(c as Map)).toList();
     if (openDeck.length <= 1) return;
 
@@ -390,7 +399,8 @@ class RummyService {
 
   // ── Drop player ───────────────────────────────────────────────
 
-  Future<void> dropPlayer(String roomId, String playerId) async {
+  Future<void> dropPlayer(String roomId, String playerId) =>
+      guarded('dropPlayer', () async {
     debugPrint('[Rummy] $playerId dropping');
     final snap = await _gameRef(roomId).get();
     if (!snap.exists) return;
@@ -399,7 +409,7 @@ class RummyService {
     final phase = data['phase'] as String? ?? 'draw';
     final penalty = phase == 'draw' ? 20 : 40;
 
-    final turnOrder = (data['turnOrder'] as List)
+    final turnOrder = _fbList(data['turnOrder'])
         .map((e) => e.toString())
         .toList()
       ..remove(playerId);
@@ -426,7 +436,7 @@ class RummyService {
 
     await _gameRef(roomId).update(updates);
     debugPrint('[Rummy] $playerId dropped with $penalty pts');
-  }
+  });
 
   // ── Declare game ───────────────────────────────────────────────
   //
@@ -484,7 +494,7 @@ class RummyService {
 
     List<RummyCard> parseHand(DataSnapshot snap) {
       if (!snap.exists) return [];
-      return ((snap.value as List).cast<dynamic>())
+      return _fbList(snap.value)
           .map((c) => RummyCard.fromMap(c as Map))
           .toList();
     }
@@ -495,8 +505,9 @@ class RummyService {
         controller.add(
           RummyGameState.fromMap(roomId, latestGameData!, Map.from(hands)),
         );
-      } catch (e) {
+      } catch (e, st) {
         debugPrint('[Rummy] gameStream emit error: $e');
+        ErrorLogService.instance.logAuto(game: 'rummy', error: 'gameStream: $e', stack: st);
       }
     }
 

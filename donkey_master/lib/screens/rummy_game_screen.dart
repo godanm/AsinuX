@@ -13,6 +13,7 @@ import '../services/auth_service.dart';
 import '../services/stats_service.dart';
 import '../widgets/how_to_play_overlay.dart';
 import '../services/sound_service.dart';
+import '../services/error_log_service.dart';
 import '../services/game_logger.dart';
 
 // ── Flying card state ─────────────────────────────────────────────────────────
@@ -241,6 +242,17 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
     if (state == null || state.currentTurn != botId) return;
     final hand = state.players[botId]?.hand ?? [];
     if (hand.isEmpty) return;
+
+    // Check for a winning declaration before discarding
+    final declaration = RummyBotService.buildDeclaration(hand, state.wildJoker);
+    if (declaration != null) {
+      final melds = declaration['melds'] as List<List<RummyCard>>;
+      await Future.delayed(const Duration(milliseconds: 800));
+      if (!mounted) return;
+      await RummyService.instance.declareGame(widget.roomId, botId, melds);
+      return;
+    }
+
     final idx = RummyBotService.chooseDiscard(hand, state.wildJoker);
 
     // Animate card face: opponent tile → open deck
@@ -396,6 +408,16 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
           );
           if (!mounted) return;
           if (error != null) {
+            ErrorLogService.instance.log(
+              uid: widget.playerId,
+              game: 'rummy',
+              error: 'declare_rejected',
+              context: {
+                'reason': error,
+                'roomId': widget.roomId,
+                'meldCount': melds.fold(0, (s, m) => s + m.length),
+              },
+            );
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text('Invalid: $error'),
               backgroundColor: Colors.red.shade700,
@@ -537,7 +559,8 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
                     setState(() => _nextRoundBusy = true);
                     try {
                       await RummyService.instance.startNextRound(widget.roomId, state);
-                    } catch (e) {
+                    } catch (e, st) {
+                      ErrorLogService.instance.logAuto(game: 'rummy', error: e.toString(), stack: st);
                       if (mounted) setState(() => _nextRoundBusy = false);
                     }
                   } : null,
@@ -1980,8 +2003,10 @@ class _DeclareSheet extends StatefulWidget {
 }
 
 class _DeclareSheetState extends State<_DeclareSheet> {
-  // groupOf[i] = group index (0 = discard, 1-4 = melds)
+  // groupOf[i] = group index (0 = discard, 1-4 = melds), keyed by ORIGINAL hand index
   late final List<int> _groupOf;
+  // _sortedIndices[displayPos] = original hand index; lets us show cards sorted by suit+rank
+  late final List<int> _sortedIndices;
   bool _submitting = false;
 
   static const _groupColors = [
@@ -1997,6 +2022,18 @@ class _DeclareSheetState extends State<_DeclareSheet> {
   void initState() {
     super.initState();
     _groupOf = List.filled(widget.hand.length, 0);
+
+    // Sort display order: regular cards by (suit, rank), wild jokers second-to-last, printed jokers last
+    _sortedIndices = List.generate(widget.hand.length, (i) => i)
+      ..sort((a, b) {
+        final ca = widget.hand[a];
+        final cb = widget.hand[b];
+        final aj = ca.isPrintedJoker ? 2 : (ca.rank == widget.wildRank ? 1 : 0);
+        final bj = cb.isPrintedJoker ? 2 : (cb.rank == widget.wildRank ? 1 : 0);
+        if (aj != bj) return aj.compareTo(bj);
+        if (ca.suit != cb.suit) return ca.suit.compareTo(cb.suit);
+        return ca.rank.compareTo(cb.rank);
+      });
   }
 
   // Cards in each group
@@ -2103,11 +2140,12 @@ class _DeclareSheetState extends State<_DeclareSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // All 14 cards — tap to cycle group
+                  // All 14 cards sorted by suit+rank — tap to cycle group
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: List.generate(widget.hand.length, (i) {
+                    children: List.generate(widget.hand.length, (si) {
+                      final i = _sortedIndices[si]; // original hand index
                       final card = widget.hand[i];
                       final g = _groupOf[i];
                       final color = _groupColors[g];

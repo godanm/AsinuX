@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../services/auth_service.dart';
+import '../services/error_log_service.dart';
 import '../services/teen_patti_service.dart';
 import '../services/teen_patti_bot_service.dart';
 import '../widgets/player_avatar.dart';
@@ -92,7 +93,8 @@ class _TeenPattiMatchmakingScreenState
           ),
         ),
       );
-    } catch (e) {
+    } catch (e, st) {
+      ErrorLogService.instance.logAuto(game: 'teen_patti', error: e.toString(), stack: st);
       if (mounted) {
         setState(() => _launching = false);
         ScaffoldMessenger.of(context).showSnackBar(

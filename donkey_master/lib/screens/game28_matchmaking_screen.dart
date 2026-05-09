@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../services/auth_service.dart'; // AvatarPreset
+import '../services/error_log_service.dart';
 import '../services/game28_service.dart';
 import '../services/game28_bot_service.dart';
 import '../widgets/player_avatar.dart';
@@ -98,7 +99,8 @@ class _Game28MatchmakingScreenState extends State<Game28MatchmakingScreen> {
           ),
         ),
       );
-    } catch (e) {
+    } catch (e, st) {
+      ErrorLogService.instance.logAuto(game: 'game28', error: e.toString(), stack: st);
       if (mounted) {
         setState(() => _launching = false);
         ScaffoldMessenger.of(context).showSnackBar(

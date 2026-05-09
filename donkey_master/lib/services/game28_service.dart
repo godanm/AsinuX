@@ -3,12 +3,16 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 import '../models/card_model.dart';
 import '../models/game28_state.dart';
+import 'error_log_service.dart';
 import 'game_logger.dart';
 
-class Game28Service {
+class Game28Service with GameGuard {
   static final Game28Service _instance = Game28Service._();
   static Game28Service get instance => _instance;
   Game28Service._();
+
+  @override
+  String get gameName => 'game28';
 
   final _db = FirebaseDatabase.instance;
   DatabaseReference _ref(String roomId) => _db.ref('game28_rooms/$roomId');
@@ -182,7 +186,7 @@ class Game28Service {
         final holderTeam = state.players[holder]?.teamIndex;
         final myTeam = state.players[playerId]?.teamIndex;
         if (holderTeam != null && myTeam != null &&
-            holderTeam == myTeam && bidValue < 20) return;
+            holderTeam == myTeam && bidValue < 20) { return; }
       }
 
       // Thani declaration — bid of 28 ends bidding immediately
@@ -438,7 +442,7 @@ class Game28Service {
           );
 
     await _ref(state.roomId).update({
-      'players/${playerId}/hand': newHand.map((c) => c.toMap()).toList(),
+      'players/$playerId/hand': newHand.map((c) => c.toMap()).toList(),
       'currentTrick': newTrick.map((k, v) => MapEntry(k, v.toMap())),
       'leadSuit': leadSuit,
       'leadPlayer': isLeader ? playerId : state.leadPlayer,

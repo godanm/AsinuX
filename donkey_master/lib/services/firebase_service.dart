@@ -5,13 +5,23 @@ import '../models/player_model.dart';
 import '../models/card_model.dart';
 import '../models/chat_message.dart';
 import '../utils/game_logic.dart';
+import 'error_log_service.dart';
 import 'stats_service.dart';
 import 'game_logger.dart';
 
-class FirebaseService {
+List<dynamic> _fbList(dynamic v) {
+  if (v is List) return v;
+  if (v is Map) return v.values.toList();
+  return [];
+}
+
+class FirebaseService with GameGuard {
   static final FirebaseService _instance = FirebaseService._();
   static FirebaseService get instance => _instance;
   FirebaseService._();
+
+  @override
+  String get gameName => 'kazhutha';
 
   final _db = FirebaseDatabase.instance;
   DatabaseReference _roomRef(String roomId) => _db.ref('rooms/$roomId');
@@ -345,7 +355,7 @@ class FirebaseService {
           .child('players/$pickupId/hand')
           .get();
       final freshHand = freshSnap.exists
-          ? (freshSnap.value as List<dynamic>)
+          ? _fbList(freshSnap.value)
               .map((c) => PlayingCard.fromMap(c as Map<dynamic, dynamic>))
               .toList()
           : (updatedPlayers[pickupId]?.hand ?? <PlayingCard>[]);

@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import '../services/error_log_service.dart';
+import '../utils/game_session_tracker.dart';
 
 enum _FeedbackType { bug, suggestion, other }
 
@@ -45,21 +47,56 @@ class _FeedbackSheetState extends State<FeedbackSheet> {
       _FeedbackType.other      => 'other',
     };
 
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? 'unknown';
+
+    // Gather diagnostic context — best-effort, never blocks the write
+    List<Map<String, dynamic>> recentRooms = [];
+    List<Map<String, dynamic>> recentErrors = [];
     try {
-      await FirebaseDatabase.instance.ref('feedback').push().set({
+      recentRooms = await GameSessionTracker.recent();
+    } catch (_) {}
+    if (uid != 'unknown') {
+      try {
+        final errSnap = await FirebaseDatabase.instance
+            .ref('error_logs/$uid')
+            .limitToLast(5)
+            .get();
+        if (errSnap.exists) {
+          final raw = errSnap.value as Map;
+          recentErrors = raw.entries.map((e) {
+            final entry = Map<String, dynamic>.from(e.value as Map);
+            return <String, dynamic>{
+              'key': e.key.toString(),
+              'game': (entry['game'] ?? '').toString(),
+              'error': (entry['error'] ?? '').toString(),
+              'ts': (entry['timestamp'] as num?)?.toInt() ?? 0,
+            };
+          }).toList();
+        }
+      } catch (_) {}
+    }
+
+    try {
+      final payload = <String, dynamic>{
         'type': label,
         'message': msg,
         'timestamp': ServerValue.timestamp,
-        'uid': FirebaseAuth.instance.currentUser?.uid ?? 'unknown',
+        'uid': uid,
         'platform': kIsWeb ? 'web' : defaultTargetPlatform.name.toLowerCase(),
         'version': const String.fromEnvironment('APP_VERSION', defaultValue: ''),
-      });
+        'errorLogsRef': 'error_logs/$uid',
+      };
+      if (recentErrors.isNotEmpty) payload['recentErrors'] = recentErrors;
+      if (recentRooms.isNotEmpty) payload['recentGameRooms'] = recentRooms;
+
+      await FirebaseDatabase.instance.ref('feedback').push().set(payload);
 
       if (!mounted) return;
       setState(() { _sending = false; _sent = true; });
       await Future.delayed(const Duration(seconds: 2));
       if (mounted) Navigator.of(context).pop();
-    } catch (e) {
+    } catch (e, st) {
+      ErrorLogService.instance.logAuto(game: 'feedback', error: e.toString(), stack: st);
       if (!mounted) return;
       setState(() => _sending = false);
       ScaffoldMessenger.of(context).showSnackBar(

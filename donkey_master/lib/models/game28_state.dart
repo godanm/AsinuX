@@ -1,5 +1,11 @@
 import '../models/card_model.dart';
 
+List<dynamic> _fbList(dynamic v) {
+  if (v is List) return v;
+  if (v is Map) return v.values.toList();
+  return [];
+}
+
 enum Game28Phase {
   waiting,
   cardReview,     // players see their first 4 cards before bidding
@@ -96,7 +102,7 @@ class Game28Player {
         isBot: map['isBot'] as bool? ?? false,
         isHost: map['isHost'] as bool? ?? false,
         seatIndex: (map['seatIndex'] as num?)?.toInt() ?? 0,
-        hand: (map['hand'] as List<dynamic>? ?? [])
+        hand: _fbList(map['hand'])
             .map((c) => PlayingCard.fromMap(c as Map<dynamic, dynamic>))
             .toList(),
       );
@@ -286,13 +292,13 @@ class Game28State {
           Game28Player.fromMap(k.toString(), v as Map<dynamic, dynamic>),
         ),
       ),
-      playerOrder: (map['playerOrder'] as List<dynamic>? ?? [])
+      playerOrder: _fbList(map['playerOrder'])
           .map((e) => e.toString())
           .toList(),
       currentBid: (map['currentBid'] as num?)?.toInt() ?? 13,
       currentBidder: map['currentBidder'] as String?,
       biddingTurn: map['biddingTurn'] as String?,
-      passedPlayers: (map['passedPlayers'] as List<dynamic>? ?? [])
+      passedPlayers: _fbList(map['passedPlayers'])
           .map((e) => e.toString())
           .toList(),
       trumpSuit: (map['trumpSuit'] as num?)?.toInt(),
@@ -309,7 +315,7 @@ class Game28State {
       leadPlayer: map['leadPlayer'] as String?,
       currentTurn: map['currentTurn'] as String?,
       trickNumber: (map['trickNumber'] as num?)?.toInt() ?? 1,
-      pendingDeck: (map['pendingDeck'] as List<dynamic>? ?? [])
+      pendingDeck: _fbList(map['pendingDeck'])
           .map((c) => PlayingCard.fromMap(c as Map<dynamic, dynamic>))
           .toList(),
       trumpRevealRequired: map['trumpRevealRequired'] as bool? ?? false,

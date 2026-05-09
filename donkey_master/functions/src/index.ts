@@ -260,29 +260,36 @@ export const declareRummyGame = onCall({ invoker: "public" }, async (request) =>
   if (!handSnap.exists()) throw new HttpsError("not-found", "Hand not found");
   const actualHand = handSnap.val() as RummyCard[];
 
-  // Verify declared cards exactly match actual hand
+  // Player is in discard phase: hand has 14 cards (13 original + 1 drawn).
+  // Client sends only the 13 meld cards; the 14th (discard) is implicit.
   const declared = melds.flat();
-  if (declared.length !== actualHand.length) {
-    await db.ref(`rummy_games/${roomId}/scores/${uid}`).set(80);
+  const expectedMeldCount = actualHand.length - 1; // 13
+  if (declared.length !== expectedMeldCount) {
+    logger.warn(`[Rummy] declare card count mismatch: declared=${declared.length} hand=${actualHand.length} uid=${uid} room=${roomId}`);
+    await db.ref(`error_logs/${uid}`).push({
+      game: 'rummy', ts: Date.now(),
+      error: 'declare_count_mismatch',
+      context: { declared: declared.length, hand: actualHand.length, roomId },
+    });
     return { error: "Declared card count does not match your hand" };
   }
 
   const cardKey = (c: RummyCard) =>
     `${c.isPrintedJoker ? 1 : 0}:${c.suit}:${c.rank}`;
-  const sortedActual = [...actualHand].sort((a, b) =>
-    cardKey(a).localeCompare(cardKey(b))
-  );
-  const sortedDeclared = [...declared].sort((a, b) =>
-    cardKey(a).localeCompare(cardKey(b))
-  );
-  const cardsMatch = sortedActual.every(
-    (c, i) =>
-      c.rank === sortedDeclared[i]?.rank &&
-      c.suit === sortedDeclared[i]?.suit &&
-      c.isPrintedJoker === sortedDeclared[i]?.isPrintedJoker
-  );
+  const handKeySet = new Set(actualHand.map(cardKey));
+  // Check every declared card exists in the hand (no fabricated cards)
+  const declaredKeys = declared.map(cardKey);
+  const uniqueDeclared = new Set(declaredKeys);
+  const cardsMatch =
+    uniqueDeclared.size === declared.length && // no duplicate declared cards
+    declaredKeys.every((k) => handKeySet.has(k));
   if (!cardsMatch) {
-    await db.ref(`rummy_games/${roomId}/scores/${uid}`).set(80);
+    logger.warn(`[Rummy] declare cards mismatch uid=${uid} room=${roomId}`);
+    await db.ref(`error_logs/${uid}`).push({
+      game: 'rummy', ts: Date.now(),
+      error: 'declare_cards_mismatch',
+      context: { roomId },
+    });
     return { error: "Declared cards do not match your actual hand" };
   }
 
@@ -522,6 +529,57 @@ export const dailyCleanup = onSchedule("every day 02:00", async () => {
         s.matchmaking_queue = (s.matchmaking_queue ?? 0) + 1;
       }
     }));
+  }
+
+  // ── 9. tambola rooms / games / tickets (push key timestamp) ──────────────
+  s.tambola_rooms   = await purgeByPushKey(db, "tambola_rooms",   cutoff);
+  s.tambola_games   = await purgeByPushKey(db, "tambola_games",   cutoff);
+  s.tambola_tickets = await purgeByPushKey(db, "tambola_tickets", cutoff);
+
+  // ── 10. wildcard rooms / games / hands (push key timestamp) ──────────────
+  s.wildcard_rooms  = await purgeByPushKey(db, "wildcard_rooms",  cutoff);
+  s.wildcard_games  = await purgeByPushKey(db, "wildcard_games",  cutoff);
+  s.wildcard_hands  = await purgeByPushKey(db, "wildcard_hands",  cutoff);
+
+  // ── 11. teen patti rooms (push key) + secrets/codes orphan cleanup ────────
+  s.teen_patti_rooms = await purgeByPushKey(db, "teen_patti_rooms", cutoff);
+
+  const tpSecretsSnap = await db.ref("teen_patti_secrets").get();
+  if (tpSecretsSnap.exists()) {
+    const tpSecrets = tpSecretsSnap.val() as Record<string, unknown>;
+    await Promise.all(Object.keys(tpSecrets).map(async (roomId) => {
+      const exists = (await db.ref(`teen_patti_rooms/${roomId}`).get()).exists();
+      if (!exists) {
+        await db.ref(`teen_patti_secrets/${roomId}`).remove();
+        s.teen_patti_secrets = (s.teen_patti_secrets ?? 0) + 1;
+      }
+    }));
+  }
+
+  const tpCodesSnap = await db.ref("teen_patti_codes").get();
+  if (tpCodesSnap.exists()) {
+    const tpCodes = tpCodesSnap.val() as Record<string, string>;
+    await Promise.all(Object.entries(tpCodes).map(async ([code, roomId]) => {
+      const exists = (await db.ref(`teen_patti_rooms/${roomId}`).get()).exists();
+      if (!exists) {
+        await db.ref(`teen_patti_codes/${code}`).remove();
+        s.teen_patti_codes = (s.teen_patti_codes ?? 0) + 1;
+      }
+    }));
+  }
+
+  // ── 12. feedback (push key timestamp) ────────────────────────────────────
+  s.feedback = await purgeByPushKey(db, "feedback", cutoff);
+
+  // ── 13. error_logs — nested per uid, purge old entries by push key ────────
+  const errLogsSnap = await db.ref("error_logs").get();
+  if (errLogsSnap.exists()) {
+    const uids = Object.keys(errLogsSnap.val() as Record<string, unknown>);
+    let errTotal = 0;
+    await Promise.all(uids.map(async (uid) => {
+      errTotal += await purgeByPushKey(db, `error_logs/${uid}`, cutoff);
+    }));
+    s.error_logs = errTotal;
   }
 
   logger.info(`dailyCleanup: ${JSON.stringify(s)}`);

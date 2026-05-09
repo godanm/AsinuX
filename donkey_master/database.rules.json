@@ -126,6 +126,73 @@
       ".write": "auth != null"
     },
 
+    // ── Tambola rooms ─────────────────────────────────────────────────────────
+    "tambola_rooms": {
+      ".read":    "auth != null",
+      ".indexOn": ["status"],
+      "$roomId": {
+        ".write": "auth != null && (root.child('tambola_rooms').child($roomId).child('players').child(auth.uid).exists() || newData.child('players').child(auth.uid).exists())"
+      }
+    },
+
+    // ── Tambola game state ────────────────────────────────────────────────────
+    "tambola_games": {
+      "$roomId": {
+        ".read":  "auth != null && root.child('tambola_rooms').child($roomId).child('players').child(auth.uid).exists()",
+        ".write": "auth != null && root.child('tambola_rooms').child($roomId).child('players').child(auth.uid).exists()"
+      }
+    },
+
+    // ── Tambola tickets — all players in the room can read all tickets ─────────
+    "tambola_tickets": {
+      "$roomId": {
+        ".read":  "auth != null && root.child('tambola_rooms').child($roomId).child('players').child(auth.uid).exists()",
+        "$playerId": {
+          ".write": "auth != null && root.child('tambola_rooms').child($roomId).child('players').child(auth.uid).exists()"
+        }
+      }
+    },
+
+    // ── Wild Card rooms ───────────────────────────────────────────────────────
+    "wildcard_rooms": {
+      ".read":    "auth != null",
+      ".indexOn": ["status"],
+      "$roomId": {
+        ".write": "auth != null"
+      }
+    },
+
+    // ── Wild Card game state ──────────────────────────────────────────────────
+    "wildcard_games": {
+      "$roomId": {
+        ".read":  "auth != null",
+        ".write": "auth != null"
+      }
+    },
+
+    // ── Wild Card private hands ───────────────────────────────────────────────
+    "wildcard_hands": {
+      "$roomId": {
+        "$playerId": {
+          ".read":  "auth != null && (auth.uid == $playerId || root.child('wildcard_rooms').child($roomId).child('hostId').val() == auth.uid)",
+          ".write": "auth != null && root.child('wildcard_rooms').child($roomId).child('players').child(auth.uid).exists()"
+        }
+      }
+    },
+
+    // ── User feedback ────────────────────────────────────────────────────────
+    "feedback": {
+      ".write": "auth != null"
+    },
+
+    // ── Error logs ────────────────────────────────────────────────────────────
+    "error_logs": {
+      "$uid": {
+        ".read":  "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    },
+
     // ── Game logs ─────────────────────────────────────────────────────────────
     "gamelogs": {
       "$roomId": {

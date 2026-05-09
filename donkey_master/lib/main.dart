@@ -3,9 +3,32 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'screens/splash_screen.dart';
 import 'services/admob_service.dart';
+import 'services/error_log_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Catch widget/framework errors on both web and Android.
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    ErrorLogService.instance.logAuto(
+      game: 'flutter_error',
+      error: details.exceptionAsString(),
+      stack: details.stack,
+      context: {'library': details.library ?? ''},
+    );
+  };
+
+  // Catch uncaught async/Dart errors that escape the Flutter zone.
+  PlatformDispatcher.instance.onError = (error, stack) {
+    ErrorLogService.instance.logAuto(
+      game: 'uncaught_error',
+      error: error.toString(),
+      stack: stack,
+    );
+    return true;
+  };
+
   runApp(const DonkeyMasterApp());
 }
 

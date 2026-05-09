@@ -74,6 +74,12 @@ class RummyCard {
 
 // ── Deck factory ──────────────────────────────────────────────────────────────
 
+List<dynamic> _fbList(dynamic v) {
+  if (v is List) return v;
+  if (v is Map) return v.values.toList();
+  return [];
+}
+
 List<RummyCard> buildRummyDeck() {
   final cards = <RummyCard>[];
   for (int d = 0; d < 2; d++) {
@@ -287,14 +293,13 @@ class RummyGameState {
       );
     }
 
-    final openRaw = (map['openDeck'] as List?)?.cast<dynamic>() ?? [];
+    final openRaw = _fbList(map['openDeck']);
     final openDeck =
         openRaw.map((c) => RummyCard.fromMap(c as Map)).toList();
 
-    final turnOrder = (map['turnOrder'] as List?)
-            ?.map((e) => e.toString())
-            .toList() ??
-        [];
+    final turnOrder = _fbList(map['turnOrder'])
+        .map((e) => e.toString())
+        .toList();
 
     final scoresRaw = map['scores'] != null
         ? Map<String, dynamic>.from(map['scores'] as Map)

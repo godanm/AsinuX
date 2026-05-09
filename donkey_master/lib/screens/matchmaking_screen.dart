@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../services/error_log_service.dart';
 import '../services/firebase_service.dart';
 import '../services/auth_service.dart';
 import '../services/bot_service.dart';
@@ -113,7 +114,8 @@ class _MatchmakingScreenState extends State<MatchmakingScreen> {
           builder: (_) => GameScreen(roomId: state.roomId, playerId: user.uid),
         ),
       );
-    } catch (e) {
+    } catch (e, st) {
+      ErrorLogService.instance.logAuto(game: 'kazhutha', error: e.toString(), stack: st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to start: $e'), backgroundColor: Colors.red.shade700),

@@ -2,38 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../services/auth_service.dart';
 import '../services/error_log_service.dart';
-import '../services/rummy_service.dart';
+import '../services/wildcard_service.dart';
+import '../widgets/how_to_play_overlay.dart';
 import '../widgets/player_avatar.dart';
-import 'rummy_lobby_screen.dart';
+import 'wildcard_game_screen.dart';
 
-class RummyMatchmakingScreen extends StatefulWidget {
+class WildCardMatchmakingScreen extends StatefulWidget {
   final String playerName;
-
-  const RummyMatchmakingScreen({super.key, required this.playerName});
+  const WildCardMatchmakingScreen({super.key, required this.playerName});
 
   @override
-  State<RummyMatchmakingScreen> createState() => _RummyMatchmakingScreenState();
+  State<WildCardMatchmakingScreen> createState() =>
+      _WildCardMatchmakingScreenState();
 }
 
-class _RummyMatchmakingScreenState extends State<RummyMatchmakingScreen> {
+class _WildCardMatchmakingScreenState
+    extends State<WildCardMatchmakingScreen> {
   int _selectedCount = 4;
-  int _targetScore = 0; // 0=Points, 101=Pool 101, 201=Pool 201
   bool _searching = false;
   AvatarPreset _avatar = const AvatarPreset(colorIndex: -1, iconIndex: -1);
 
   static const _counts = [2, 4, 6];
-  static const _poolOptions = [
-    (label: 'Points', sub: 'Single round', target: 0),
-    (label: '101 Pool', sub: 'First to 101 loses', target: 101),
-    (label: '201 Pool', sub: 'First to 201 loses', target: 201),
-  ];
+  static const _accent = Color(0xFF7B1FA2);
+  static const _accentDark = Color(0xFF4A0072);
 
   @override
   void initState() {
     super.initState();
-    AuthService.instance.loadAvatar().then((p) {
-      if (mounted) setState(() => _avatar = p);
-    });
+    AuthService.instance
+        .loadAvatar()
+        .then((p) => mounted ? setState(() => _avatar = p) : null);
   }
 
   @override
@@ -43,7 +41,6 @@ class _RummyMatchmakingScreenState extends State<RummyMatchmakingScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // ── Header ───────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: Row(
@@ -54,11 +51,11 @@ class _RummyMatchmakingScreenState extends State<RummyMatchmakingScreen> {
                   ),
                   const Spacer(),
                   ShaderMask(
-                    shaderCallback: (bounds) => const LinearGradient(
-                      colors: [Color(0xFF4FC3F7), Color(0xFF1565C0), Color(0xFFE3F2FD)],
-                    ).createShader(bounds),
+                    shaderCallback: (b) => const LinearGradient(
+                      colors: [Color(0xFF7B1FA2), Color(0xFFCE93D8), Color(0xFF7B1FA2)],
+                    ).createShader(b),
                     child: const Text(
-                      'RUMMY',
+                      'WILD CARD',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w900,
@@ -68,7 +65,12 @@ class _RummyMatchmakingScreenState extends State<RummyMatchmakingScreen> {
                     ),
                   ),
                   const Spacer(),
-                  const SizedBox(width: 48), // balance back button
+                  IconButton(
+                    icon: const Icon(Icons.help_outline_rounded,
+                        color: Colors.white54),
+                    onPressed: () =>
+                        showHowToPlay(context, game: 'wildcard'),
+                  ),
                 ],
               ),
             ),
@@ -80,13 +82,13 @@ class _RummyMatchmakingScreenState extends State<RummyMatchmakingScreen> {
                   children: [
                     const SizedBox(height: 24),
 
-                    // ── Player avatar ─────────────────────────────
                     PlayerAvatarWidget(
                       radius: 36,
                       playerId: widget.playerName,
                       playerName: widget.playerName,
                       preset: _avatar,
-                    ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.8, 0.8)),
+                    ).animate().fadeIn(duration: 400.ms).scale(
+                        begin: const Offset(0.8, 0.8)),
 
                     const SizedBox(height: 12),
 
@@ -101,7 +103,6 @@ class _RummyMatchmakingScreenState extends State<RummyMatchmakingScreen> {
 
                     const SizedBox(height: 32),
 
-                    // ── Player count picker ───────────────────────
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
@@ -123,12 +124,12 @@ class _RummyMatchmakingScreenState extends State<RummyMatchmakingScreen> {
                         return Expanded(
                           child: Padding(
                             padding: EdgeInsets.only(
-                              right: count != _counts.last ? 10 : 0,
-                            ),
+                                right: count != _counts.last ? 10 : 0),
                             child: GestureDetector(
                               onTap: _searching
                                   ? null
-                                  : () => setState(() => _selectedCount = count),
+                                  : () =>
+                                      setState(() => _selectedCount = count),
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
                                 height: 72,
@@ -136,7 +137,7 @@ class _RummyMatchmakingScreenState extends State<RummyMatchmakingScreen> {
                                   borderRadius: BorderRadius.circular(16),
                                   gradient: selected
                                       ? const LinearGradient(
-                                          colors: [Color(0xFF1565C0), Color(0xFF0d47a1)],
+                                          colors: [_accent, _accentDark],
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight,
                                         )
@@ -146,15 +147,14 @@ class _RummyMatchmakingScreenState extends State<RummyMatchmakingScreen> {
                                       : Colors.white.withValues(alpha: 0.05),
                                   border: Border.all(
                                     color: selected
-                                        ? const Color(0xFF4FC3F7).withValues(alpha: 0.6)
+                                        ? _accent.withValues(alpha: 0.7)
                                         : Colors.white.withValues(alpha: 0.1),
                                     width: selected ? 1.5 : 1,
                                   ),
                                   boxShadow: selected
                                       ? [
                                           BoxShadow(
-                                            color: const Color(0xFF1565C0)
-                                                .withValues(alpha: 0.45),
+                                            color: _accent.withValues(alpha: 0.4),
                                             blurRadius: 16,
                                             spreadRadius: 1,
                                           )
@@ -195,11 +195,10 @@ class _RummyMatchmakingScreenState extends State<RummyMatchmakingScreen> {
 
                     const SizedBox(height: 12),
 
-                    // Table description
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 200),
                       child: Text(
-                        _tableDescription(_selectedCount),
+                        _tableDesc(_selectedCount),
                         key: ValueKey(_selectedCount),
                         textAlign: TextAlign.center,
                         style: TextStyle(
@@ -209,90 +208,53 @@ class _RummyMatchmakingScreenState extends State<RummyMatchmakingScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 32),
 
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'GAME MODE',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.45),
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 2,
-                        ),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.04),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                            color: _accent.withValues(alpha: 0.2)),
                       ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    Row(
-                      children: _poolOptions.map((opt) {
-                        final selected = _targetScore == opt.target;
-                        return Expanded(
-                          child: Padding(
-                            padding: EdgeInsets.only(
-                              right: opt.target != _poolOptions.last.target ? 8 : 0,
-                            ),
-                            child: GestureDetector(
-                              onTap: _searching ? null : () => setState(() => _targetScore = opt.target),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(14),
-                                  gradient: selected
-                                      ? const LinearGradient(
-                                          colors: [Color(0xFF1565C0), Color(0xFF0d47a1)],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        )
-                                      : null,
-                                  color: selected ? null : Colors.white.withValues(alpha: 0.05),
-                                  border: Border.all(
-                                    color: selected
-                                        ? const Color(0xFF4FC3F7).withValues(alpha: 0.6)
-                                        : Colors.white.withValues(alpha: 0.1),
-                                    width: selected ? 1.5 : 1,
-                                  ),
-                                  boxShadow: selected
-                                      ? [BoxShadow(color: const Color(0xFF1565C0).withValues(alpha: 0.4), blurRadius: 14, spreadRadius: 1)]
-                                      : null,
-                                ),
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      opt.label,
-                                      style: TextStyle(
-                                        color: selected ? Colors.white : Colors.white.withValues(alpha: 0.5),
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w900,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      opt.sub,
-                                      style: TextStyle(
-                                        color: selected ? Colors.white.withValues(alpha: 0.65) : Colors.white.withValues(alpha: 0.2),
-                                        fontSize: 9,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
-                                ),
-                              ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'HOW IT WORKS',
+                            style: TextStyle(
+                              color: _accent.withValues(alpha: 0.8),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 2,
                             ),
                           ),
-                        );
-                      }).toList(),
-                    ).animate().fadeIn(delay: 380.ms).slideY(begin: 0.1),
-
+                          const SizedBox(height: 10),
+                          ...[
+                            '🃏  7 cards dealt to each player',
+                            '🎨  Match color or number to play a card',
+                            '⚡  Special cards — Skip, Reverse, Draw Two',
+                            '🃏  Wilds let you choose any color',
+                            '🏆  First to empty their hand wins',
+                          ].map((t) => Padding(
+                                padding: const EdgeInsets.only(bottom: 6),
+                                child: Text(
+                                  t,
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.55),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              )),
+                        ],
+                      ),
+                    ).animate().fadeIn(delay: 400.ms),
                   ],
                 ),
               ),
             ),
 
-            // ── Find match button (pinned bottom) ─────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
               child: SizedBox(
@@ -301,9 +263,8 @@ class _RummyMatchmakingScreenState extends State<RummyMatchmakingScreen> {
                 child: ElevatedButton(
                   onPressed: _searching ? null : _findMatch,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1565C0),
-                    disabledBackgroundColor:
-                        const Color(0xFF1565C0).withValues(alpha: 0.4),
+                    backgroundColor: _accent,
+                    disabledBackgroundColor: _accent.withValues(alpha: 0.4),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16)),
                     elevation: 0,
@@ -357,55 +318,47 @@ class _RummyMatchmakingScreenState extends State<RummyMatchmakingScreen> {
     );
   }
 
-  String _tableDescription(int count) {
-    return switch (count) {
-      2 => 'Head-to-head — fills instantly',
-      4 => 'Most competitive — balanced play',
-      6 => 'Full chaos — traditional format',
-      _ => '',
-    };
-  }
+  String _tableDesc(int count) => switch (count) {
+        2 => 'Head-to-head — fills instantly',
+        4 => 'Classic Wild Card — most popular',
+        6 => 'Full table — chaotic fun',
+        _ => '',
+      };
 
   Future<void> _findMatch() async {
     setState(() => _searching = true);
     try {
       final user = await AuthService.instance.signInAnonymously();
-      final roomId = await RummyService.instance.findOrCreateRoom(
+      final roomId = await WildCardService.instance.findOrCreateRoom(
         playerId: user.uid,
         playerName: widget.playerName,
         maxPlayers: _selectedCount,
       );
-
-      // Fill any open seats with bots so the table is always full
-      await RummyService.instance.fillRoomWithBots(
+      await WildCardService.instance.fillRoomWithBots(
         roomId: roomId,
         maxPlayers: _selectedCount,
-        currentCount: 1, // just us — bots fill the rest
+        currentCount: 1,
       );
-
+      await WildCardService.instance.startGame(roomId);
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => RummyLobbyScreen(
+          builder: (_) => WildCardGameScreen(
             roomId: roomId,
             playerId: user.uid,
             playerName: widget.playerName,
-            maxPlayers: _selectedCount,
-            targetScore: _targetScore,
           ),
         ),
       );
     } catch (e, st) {
-      ErrorLogService.instance.logAuto(game: 'rummy', error: e.toString(), stack: st);
+      ErrorLogService.instance.logAuto(game: 'wildcard', error: e.toString(), stack: st);
       if (!mounted) return;
       setState(() => _searching = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Could not find a table: $e'),
-          backgroundColor: Colors.red.shade700,
-        ),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Could not find a table: $e'),
+        backgroundColor: Colors.red.shade700,
+      ));
     }
   }
 }
