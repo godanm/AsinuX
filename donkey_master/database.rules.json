@@ -60,10 +60,13 @@
     },
 
     // ── Rummy game state (shared, no hand data) ───────────────────────────────
+    // Write allowed only when it is the player's turn, or when it is a bot's
+    // turn and the writer is the room host (who drives all bot actions).
+    // Cloud Functions use the Admin SDK and bypass these rules entirely.
     "rummy_games": {
       "$roomId": {
         ".read":  "auth != null && root.child('rummy_rooms').child($roomId).child('players').child(auth.uid).exists()",
-        ".write": "auth != null && root.child('rummy_rooms').child($roomId).child('players').child(auth.uid).exists()"
+        ".write": "auth != null && root.child('rummy_rooms').child($roomId).child('players').child(auth.uid).exists() && (!data.exists() || data.child('currentTurn').val() == auth.uid || (data.child('currentTurn').val().matches(/^bot_/) && root.child('rummy_rooms').child($roomId).child('hostId').val() == auth.uid))"
       }
     },
 
