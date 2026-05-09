@@ -104,10 +104,16 @@
     },
 
     // ── Teen Patti rooms ──────────────────────────────────────────────────────
+    // Teen Patti stores all game state in this node (no separate games node).
+    // Write is allowed when:
+    //   • room doesn't exist yet (creation)
+    //   • player is joining (newData has their uid)
+    //   • player is a member AND (currentTurn is null = pre-game/between rounds,
+    //     OR it is their turn, OR it is a bot turn and they are the host)
     "teen_patti_rooms": {
       "$roomId": {
         ".read":  "auth != null && root.child('teen_patti_rooms').child($roomId).child('players').child(auth.uid).exists()",
-        ".write": "auth != null && (root.child('teen_patti_rooms').child($roomId).child('players').child(auth.uid).exists() || newData.child('players').child(auth.uid).exists())"
+        ".write": "auth != null && (!data.exists() || newData.child('players').child(auth.uid).exists() || (data.child('players').child(auth.uid).exists() && (data.child('currentTurn').val() == null || data.child('currentTurn').val() == auth.uid || (data.child('currentTurn').val().matches(/^bot_/) && data.child('hostId').val() == auth.uid))))"
       }
     },
 
@@ -139,10 +145,19 @@
     },
 
     // ── Tambola game state ────────────────────────────────────────────────────
+    // Base: any room member may write (needed for prize claims on prizeWinners
+    // and phase). calledNumbers and remainingNumbers are restricted to the host
+    // so only the host can advance the number draw.
     "tambola_games": {
       "$roomId": {
         ".read":  "auth != null && root.child('tambola_rooms').child($roomId).child('players').child(auth.uid).exists()",
-        ".write": "auth != null && root.child('tambola_rooms').child($roomId).child('players').child(auth.uid).exists()"
+        ".write": "auth != null && root.child('tambola_rooms').child($roomId).child('players').child(auth.uid).exists()",
+        "calledNumbers": {
+          ".write": "auth != null && root.child('tambola_rooms').child($roomId).child('hostId').val() == auth.uid"
+        },
+        "remainingNumbers": {
+          ".write": "auth != null && root.child('tambola_rooms').child($roomId).child('hostId').val() == auth.uid"
+        }
       }
     },
 
