@@ -151,6 +151,7 @@ class WildCardService with GameGuard {
       'phase': 'playing',
       'playerOrder': playerOrder,
       'currentPlayerIdx': 0,
+      'currentTurnId': playerOrder[0],
       'direction': 1,
       'currentColor': WildPlayCard.colorKey(discardTop.color),
       'discardTop': discardTop.toMap(),
@@ -304,6 +305,7 @@ class WildCardService with GameGuard {
       'currentColor': WildPlayCard.colorKey(newColor),
       'direction': newDirection,
       'currentPlayerIdx': nextIdx,
+      'currentTurnId': state.playerOrder[nextIdx],
       'cardCounts': cardCounts,
       'pendingDraw': pendingDraw,
     });
@@ -364,6 +366,7 @@ class WildCardService with GameGuard {
       'discardPile': discardPile.map((c) => c.toMap()).toList(),
       'cardCounts': cardCounts,
       'currentPlayerIdx': nextIdx,
+      'currentTurnId': state.playerOrder[nextIdx],
     });
 
     debugPrint('[WildCard] drawCard: $playerId drew ${drawnCard.label}, next idx=$nextIdx (${state.playerOrder.length > nextIdx ? state.playerOrder[nextIdx] : "?"})');
