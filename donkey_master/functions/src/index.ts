@@ -388,9 +388,7 @@ export const declareRummyGame = onCall({ invoker: "public" }, async (request) =>
   return { error: null };
 });
 
-const RETENTION_DAYS = 7;
-const GAMELOG_RETENTION_HOURS = 48;
-const QUEUE_STALE_HOURS = 24;
+const RETENTION_HOURS = 24;
 
 // Firebase push key character set — first 8 chars encode creation timestamp (big-endian base-64).
 const PUSH_CHARS = '-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz';
@@ -426,15 +424,12 @@ async function purgeByPushKey(
 }
 
 /**
- * Runs daily at 02:00 UTC and purges all transactional data older than
- * RETENTION_DAYS (7 days). Covers: gamelogs, game28_rooms, game28_secrets,
- * game28_codes, kazhutha rooms, roomCodes, rummy_rooms/games/hands,
- * and stale matchmaking queue entries.
+ * Runs every 4 hours and purges all transactional data older than
+ * RETENTION_HOURS (8 hours). Covers every game node so the DB never grows.
  */
-export const dailyCleanup = onSchedule("every day 02:00", async () => {
+export const dailyCleanup = onSchedule("every 4 hours", async () => {
   const db = admin.database();
-  const cutoff = Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000;
-  const gamelogCutoff = Date.now() - GAMELOG_RETENTION_HOURS * 60 * 60 * 1000;
+  const cutoff = Date.now() - RETENTION_HOURS * 60 * 60 * 1000;
   const s: Record<string, number> = {};
 
   // ── 1. gamelogs — key format: {roomId}-started-{ISO datetime}-game-{type} ──
@@ -461,7 +456,7 @@ export const dailyCleanup = onSchedule("every day 02:00", async () => {
           else createdAt = (c.val()?.ts as number | undefined) ?? 0;
         });
       }
-      if (createdAt > 0 && createdAt < gamelogCutoff) {
+      if (createdAt > 0 && createdAt < cutoff) {
         await db.ref(`gamelogs/${key}`).remove();
         s.gamelogs = (s.gamelogs ?? 0) + 1;
       }
@@ -519,12 +514,11 @@ export const dailyCleanup = onSchedule("every day 02:00", async () => {
   s.rummy_hands = await purgeByPushKey(db, "rummy_hands", cutoff);
 
   // ── 8. matchmaking queue — stale entries older than QUEUE_STALE_HOURS ────
-  const queueCutoff = Date.now() - QUEUE_STALE_HOURS * 60 * 60 * 1000;
   const queueSnap = await db.ref("matchmaking/queue").get();
   if (queueSnap.exists()) {
     const queue = queueSnap.val() as Record<string, { joinedAt?: number }>;
     await Promise.all(Object.entries(queue).map(async ([uid, entry]) => {
-      if ((entry.joinedAt ?? 0) < queueCutoff) {
+      if ((entry.joinedAt ?? 0) < cutoff) {
         await db.ref(`matchmaking/queue/${uid}`).remove();
         s.matchmaking_queue = (s.matchmaking_queue ?? 0) + 1;
       }

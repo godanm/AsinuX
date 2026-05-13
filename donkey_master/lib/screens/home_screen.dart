@@ -22,8 +22,7 @@ import 'bluff_game_screen.dart';
 import 'stats_screen.dart';
 import 'leaderboard_screen.dart';
 
-// ── Paste Play Store URL here once the app is approved ───────────────────────
-const _kPlayStoreUrl = '';
+const _kPlayStoreUrl = 'https://play.google.com/store/apps/details?id=com.asinux.app';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
