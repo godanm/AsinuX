@@ -184,9 +184,27 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
     _lastBotActionKey = actionKey;
 
     if (state.phase == RummyPhase.draw) {
-      Future.delayed(const Duration(milliseconds: 2400), () => _botDraw(state.currentTurn));
+      Future.delayed(const Duration(milliseconds: 2400), () async {
+        await _botDraw(state.currentTurn);
+        _lastBotActionKey = null;
+        // If the draw silently failed (state unchanged), retry after a short pause.
+        if (mounted && _state?.currentTurn == state.currentTurn &&
+            _state?.phase == RummyPhase.draw) {
+          await Future.delayed(const Duration(milliseconds: 3000));
+          if (mounted && _state != null) _onStateChange(_state!);
+        }
+      });
     } else {
-      Future.delayed(const Duration(milliseconds: 1800), () => _botDiscard(state.currentTurn));
+      Future.delayed(const Duration(milliseconds: 1800), () async {
+        await _botDiscard(state.currentTurn);
+        _lastBotActionKey = null;
+        // If the discard silently failed (state unchanged), retry after a short pause.
+        if (mounted && _state?.currentTurn == state.currentTurn &&
+            _state?.phase == RummyPhase.discard) {
+          await Future.delayed(const Duration(milliseconds: 3000));
+          if (mounted && _state != null) _onStateChange(_state!);
+        }
+      });
     }
   }
 

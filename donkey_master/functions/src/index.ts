@@ -1,6 +1,7 @@
 import * as admin from "firebase-admin";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { onValueCreated } from "firebase-functions/v2/database";
 import { logger } from "firebase-functions";
 
 admin.initializeApp({
@@ -276,13 +277,20 @@ export const declareRummyGame = onCall({ invoker: "public" }, async (request) =>
 
   const cardKey = (c: RummyCard) =>
     `${c.isPrintedJoker ? 1 : 0}:${c.suit}:${c.rank}`;
-  const handKeySet = new Set(actualHand.map(cardKey));
-  // Check every declared card exists in the hand (no fabricated cards)
-  const declaredKeys = declared.map(cardKey);
-  const uniqueDeclared = new Set(declaredKeys);
-  const cardsMatch =
-    uniqueDeclared.size === declared.length && // no duplicate declared cards
-    declaredKeys.every((k) => handKeySet.has(k));
+  // Frequency-map comparison — handles duplicate cards in a double deck.
+  // A player can legitimately hold two identical cards (e.g. two 5♥), so a
+  // Set-based uniqueness check would incorrectly reject valid declarations.
+  const handFreq = new Map<string, number>();
+  for (const k of actualHand.map(cardKey)) {
+    handFreq.set(k, (handFreq.get(k) ?? 0) + 1);
+  }
+  const declaredFreq = new Map<string, number>();
+  for (const k of declared.map(cardKey)) {
+    declaredFreq.set(k, (declaredFreq.get(k) ?? 0) + 1);
+  }
+  const cardsMatch = [...declaredFreq.entries()].every(
+    ([k, count]) => (handFreq.get(k) ?? 0) >= count
+  );
   if (!cardsMatch) {
     logger.warn(`[Rummy] declare cards mismatch uid=${uid} room=${roomId}`);
     await db.ref(`error_logs/${uid}`).push({
@@ -576,5 +584,49 @@ export const dailyCleanup = onSchedule("every 4 hours", async () => {
     s.error_logs = errTotal;
   }
 
+  // ── 14. error_logs_by_date — purge date buckets older than cutoff ─────────
+  const errByDateSnap = await db.ref("error_logs_by_date").get();
+  if (errByDateSnap.exists()) {
+    const dates = Object.keys(errByDateSnap.val() as Record<string, unknown>);
+    let errByDateTotal = 0;
+    await Promise.all(dates.map(async (dateKey) => {
+      // dateKey format: MM-DD-YY — parse to check age
+      const [mm, dd, yy] = dateKey.split("-").map(Number);
+      const bucketMs = Date.UTC(2000 + yy, mm - 1, dd);
+      if (bucketMs < cutoff) {
+        await db.ref(`error_logs_by_date/${dateKey}`).remove();
+        errByDateTotal++;
+      }
+    }));
+    s.error_logs_by_date = errByDateTotal;
+  }
+
   logger.info(`dailyCleanup: ${JSON.stringify(s)}`);
 });
+
+// ── Error log organiser ───────────────────────────────────────────────────────
+//
+// Fires whenever the app writes to error_logs/{uid}/{entryId}.
+// Re-files the entry under error_logs_by_date/MM-DD-YY/{uid}/{entryId} and
+// removes the original so the flat error_logs node stays clean.
+// No app-side changes required.
+
+export const organiseErrorLog = onValueCreated(
+  "error_logs/{uid}/{entryId}",
+  async (event) => {
+    const { uid, entryId } = event.params;
+    const entry = event.data.val() as Record<string, unknown> | null;
+    if (!entry) return;
+
+    const ts = typeof entry.ts === "number" ? entry.ts : Date.now();
+    const d = new Date(ts);
+    const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const dd = String(d.getUTCDate()).padStart(2, "0");
+    const yy = String(d.getUTCFullYear()).slice(-2);
+    const dateKey = `${mm}-${dd}-${yy}`;
+
+    const db = admin.database();
+    await db.ref(`error_logs_by_date/${dateKey}/${uid}/${entryId}`).set(entry);
+    await db.ref(`error_logs/${uid}/${entryId}`).remove();
+  }
+);

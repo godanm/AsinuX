@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blackjack Basic Strategy: When to Hit, Stand, Double, and Split — Tricksy</title>
+  <meta name="description" content="Learn Blackjack basic strategy — the mathematically correct play for every hand. When to hit, stand, double down, and split. Reduce the house edge to near zero.">
+  <link rel="canonical" href="https://www.tricksy.app/blog/blackjack-basic-strategy.html">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0d0007;color:#e0e0e0;line-height:1.8}
+    header{background:linear-gradient(135deg,#3d0020,#1a000e);padding:16px 24px;border-bottom:1px solid rgba(230,57,70,.2)}
+    header a{text-decoration:none;display:inline-flex;align-items:center;gap:10px}
+    .logo{width:36px;height:36px;background:linear-gradient(135deg,#5c0a1a,#1a000a);border-radius:9px;border:1px solid rgba(230,57,70,.4);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#FFD250}
+    header h1{font-size:18px;color:#fff;font-weight:700}
+    header small{font-size:11px;color:rgba(255,255,255,.4);display:block}
+    .container{max-width:720px;margin:0 auto;padding:32px 20px 60px}
+    h1{font-size:26px;font-weight:900;color:#fff;margin-bottom:8px;line-height:1.3}
+    .meta{font-size:12px;color:rgba(255,255,255,.3);margin-bottom:28px}
+    h2{font-size:19px;font-weight:800;color:#fff;margin:32px 0 10px}
+    h3{font-size:14px;font-weight:700;color:#00E5FF;margin:20px 0 6px;letter-spacing:.5px;text-transform:uppercase}
+    p{font-size:15px;color:#cccccc;margin-bottom:14px}
+    ul{padding-left:20px;margin-bottom:14px}
+    ol{padding-left:20px;margin-bottom:14px}
+    li{font-size:14px;color:#bbbbbb;margin-bottom:8px}
+    a{color:#E63946}
+    .tip-box{background:#001a1a;border:1px solid rgba(0,229,255,.15);border-radius:14px;padding:20px 24px;margin:20px 0}
+    .tip-box .tip-num{font-size:28px;font-weight:900;color:#00E5FF;margin-bottom:4px}
+    .tip-box h2{margin-top:0;font-size:17px;color:#fff}
+    .rule-box{background:#0d1a00;border:1px solid rgba(0,200,80,.2);border-radius:12px;padding:16px 20px;margin:12px 0}
+    .rule-box strong{color:#00c850;display:block;margin-bottom:4px;font-size:14px}
+    .rule-box p{margin:0;font-size:14px}
+    .mistake-box{background:#1a0005;border-left:3px solid #E63946;border-radius:0 12px 12px 0;padding:16px 20px;margin:16px 0}
+    .mistake-box p{margin:0;font-size:14px}
+    .mistake-box strong{color:#E63946}
+    .cta{display:inline-block;background:#00E5FF;color:#000;padding:12px 28px;border-radius:24px;text-decoration:none;font-weight:700;font-size:14px;margin:24px 0}
+    footer{background:#0a0005;border-top:1px solid rgba(255,255,255,.05);padding:24px;text-align:center;margin-top:40px}
+    footer p{font-size:12px;color:rgba(255,255,255,.25);margin:0}
+    footer a{color:rgba(255,255,255,.4);margin:0 8px;text-decoration:none}
+  </style>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9287774769346149" crossorigin="anonymous"></script>
+</head>
+<body>
+  <header>
+    <a href="/">
+      <div class="logo">T</div>
+      <div>
+        <h1>Tricksy</h1>
+        <small>Multiplayer Card Games</small>
+      </div>
+    </a>
+  </header>
+
+  <div class="container">
+    <p style="font-size:12px;color:rgba(255,255,255,.3);margin-bottom:12px"><a href="/blog/">← Blog</a></p>
+    <h1>Blackjack Basic Strategy: When to Hit, Stand, Double, and Split</h1>
+    <p class="meta">May 2026 · 8 min read · <a href="/games/blackjack.html">Blackjack rules →</a></p>
+
+    <p>Blackjack is the casino game with the lowest house edge — and the edge only gets that low when you play correctly. Most players make instinctive decisions and give away 2–4% extra advantage to the house. Basic strategy eliminates most of those mistakes. It is not about counting cards; it is about knowing the mathematically correct play for every combination of your hand and the dealer's upcard.</p>
+
+    <p>This guide covers the core decisions: when to hit or stand on hard and soft hands, when doubling down is correct, and the key pairs to always split.</p>
+
+    <h2>How to Read the Dealer's Upcard</h2>
+
+    <p>In Blackjack you see one of the dealer's two cards. That upcard drives every decision you make. The dealer's hidden card is statistically most likely to be a 10-value card (10, J, Q, K) — so always assume their hole card is a 10 when estimating their likely total.</p>
+
+    <p>The dealer must hit until they reach 17 or higher (in most rules). This creates two clear zones:</p>
+    <ul>
+      <li><strong>Dealer upcards 2–6:</strong> The dealer is in a "bust zone" — likely to have a stiff hand (12–16) and required to keep hitting. You should play conservatively and let the dealer bust rather than risk busting yourself.</li>
+      <li><strong>Dealer upcards 7–A:</strong> The dealer is in a strong position — likely to make a hand of 17 or better. You need to hit more aggressively to compete.</li>
+    </ul>
+
+    <div class="tip-box">
+      <div class="tip-num">Tip 1</div>
+      <h2>Assume the Dealer Has a 10 in the Hole</h2>
+      <p>If the dealer shows a 6, assume their total is 16 — a stiff hand they must hit and will often bust. If they show a 9, assume their total is 19. This mental model is not always correct, but it is the most statistically sound assumption and forms the basis of all basic strategy decisions.</p>
+    </div>
+
+    <h2>Hard Hand Strategy (No Ace, or Ace Counted as 1)</h2>
+
+    <div class="rule-box">
+      <strong>Hard 8 or less: Always Hit</strong>
+      <p>You cannot bust no matter what card you draw next (since 8 + any card ≤ 18 if the card is 10). Always draw.</p>
+    </div>
+
+    <div class="rule-box">
+      <strong>Hard 9: Double vs dealer 3–6, otherwise Hit</strong>
+      <p>Against a weak dealer, doubling gives you more money in with the advantage on your side. Against a strong dealer upcard, just hit.</p>
+    </div>
+
+    <div class="rule-box">
+      <strong>Hard 10 or 11: Double vs dealer 2–9, Hit vs 10 or Ace</strong>
+      <p>Hard 10 and 11 are your strongest doubling hands — a 10-value draw makes 20 or 21. Double against most dealer upcards. Against 10 or Ace, hit instead of doubling.</p>
+    </div>
+
+    <div class="rule-box">
+      <strong>Hard 12–16 (Stiff Hands): Stand vs dealer 2–6, Hit vs 7–Ace</strong>
+      <p>This is the most important rule in the game. Against a weak dealer (2–6), do not hit your stiff hand — let the dealer bust. Against a strong dealer (7–A), you must hit despite the bust risk, because standing is worse.</p>
+    </div>
+
+    <div class="rule-box">
+      <strong>Hard 17 or more: Always Stand</strong>
+      <p>No exceptions. Standing on 17+ is always correct — the risk of busting outweighs any possible gain from drawing.</p>
+    </div>
+
+    <div class="tip-box">
+      <div class="tip-num">Tip 2</div>
+      <h2>The Hardest Rule to Follow: Stand on 16 vs Dealer 6</h2>
+      <p>Standing on a hard 16 feels wrong — you have a terrible hand and it is tempting to hit. But when the dealer shows a 6, they will bust over 40% of the time. Standing gives you a winning chance without risking your own bust. This single decision is where most players leak the most value by hitting when they should stand.</p>
+    </div>
+
+    <h2>Soft Hand Strategy (Ace Counted as 11)</h2>
+
+    <p>A soft hand contains an Ace counted as 11. The key advantage: you can always hit without busting immediately (the Ace becomes 1 if needed). This makes soft hands more aggressive doubling opportunities.</p>
+
+    <div class="rule-box">
+      <strong>Soft 13–14 (A-2, A-3): Double vs dealer 5–6, otherwise Hit</strong>
+      <p>These are weak soft hands. Only double when the dealer is at maximum bust risk (5 or 6). Otherwise hit to improve.</p>
+    </div>
+
+    <div class="rule-box">
+      <strong>Soft 15–16 (A-4, A-5): Double vs dealer 4–6, otherwise Hit</strong>
+      <p>Slightly stronger — widen the double range to include dealer 4.</p>
+    </div>
+
+    <div class="rule-box">
+      <strong>Soft 17 (A-6): Double vs dealer 3–6, otherwise Hit</strong>
+      <p>Soft 17 is a common mistake hand. You should never stand on soft 17 — it can only improve. Double against the dealer's weakest upcards; hit otherwise.</p>
+    </div>
+
+    <div class="rule-box">
+      <strong>Soft 18 (A-7): Stand vs 2, 7–8; Double vs 3–6; Hit vs 9–Ace</strong>
+      <p>Soft 18 is a nuanced hand. Stand against dealers who are likely to land on 17 or 18. Double against weak dealers. Hit against strong dealers (9, 10, A) since 18 will often lose.</p>
+    </div>
+
+    <div class="rule-box">
+      <strong>Soft 19–20: Always Stand</strong>
+      <p>These are strong hands. Stand regardless of the dealer's upcard.</p>
+    </div>
+
+    <h2>Splitting Pairs</h2>
+
+    <div class="rule-box">
+      <strong>Always split: Aces and 8s</strong>
+      <p>Aces split into two strong starting hands of 11. 8s split to escape the worst hand in Blackjack (hard 16). Split these unconditionally, against every dealer upcard.</p>
+    </div>
+
+    <div class="rule-box">
+      <strong>Never split: 10-value pairs and 5s</strong>
+      <p>A pair of 10s is 20 — one of the best hands you can have. Never break it. A pair of 5s is 10 — treat it as a hard 10 and double or hit, not split.</p>
+    </div>
+
+    <div class="rule-box">
+      <strong>Split 9s vs dealer 2–6, 8–9; Stand vs 7, 10, Ace</strong>
+      <p>Against a weak dealer, two 9s outperform one 18. Against a dealer 7, your 18 is likely winning — don't split. Against 10 or Ace, stand.</p>
+    </div>
+
+    <div class="tip-box">
+      <div class="tip-num">Tip 3</div>
+      <h2>Split Aces Even When the Table Is Inconvenient</h2>
+      <p>Players sometimes avoid splitting Aces because they only receive one additional card per Ace in most Blackjack rules. Split them anyway. Two starting hands of 11 — each drawing one card — give you a far higher expected value than a soft 12. This is the most impactful split in the game.</p>
+    </div>
+
+    <h2>Common Mistakes</h2>
+
+    <div class="mistake-box">
+      <p><strong>Mistake 1: Standing on soft 17 because "17 is okay."</strong> Soft 17 is not a good hand and cannot bust on a draw. Always hit or double soft 17 — never stand.</p>
+    </div>
+
+    <div class="mistake-box">
+      <p><strong>Mistake 2: Splitting 10s because "two hands are better than one."</strong> 20 beats almost every dealer outcome. Breaking it into two hands starting at 10 each is a significant mistake.</p>
+    </div>
+
+    <div class="mistake-box">
+      <p><strong>Mistake 3: Taking Insurance.</strong> Insurance is a side bet that the dealer has Blackjack. The house edge on insurance is over 7% — far higher than the main game. Never take it.</p>
+    </div>
+
+    <div class="mistake-box">
+      <p><strong>Mistake 4: Playing by "feel" rather than the upcard.</strong> Hitting a hard 15 against a dealer 4 because you feel unlucky is giving away real advantage. Basic strategy is designed to maximise your expected outcome — not guarantee wins, but make the most of every hand mathematically.</p>
+    </div>
+
+    <a class="cta" href="/">Play Blackjack Free — No Sign-Up</a>
+
+    <p>All points on Tricksy are virtual and have no monetary value. Blackjack on Tricksy is for entertainment only. <a href="/games/blackjack.html">Read the full rules →</a></p>
+  </div>
+
+  <footer>
+    <p>
+      <a href="/">Play Tricksy</a>
+      <a href="/blog/">Blog</a>
+      <a href="/how-to-play.html">How to Play</a>
+      <a href="/privacy.html">Privacy</a>
+      <a href="/terms.html">Terms</a>
+      <a href="/about.html">About</a>
+    </p>
+    <p style="margin-top:8px">© 2026 Tricksy · Free multiplayer card games · For entertainment only · No real money gambling</p>
+  </footer>
+</body>
+</html>

@@ -205,11 +205,21 @@
       ".write": "auth != null"
     },
 
-    // ── Error logs ────────────────────────────────────────────────────────────
+    // ── Error logs (flat, reorganised by Cloud Function into error_logs_by_date)
     "error_logs": {
       "$uid": {
         ".read":  "auth != null && auth.uid == $uid",
         ".write": "auth != null && auth.uid == $uid"
+      }
+    },
+
+    // ── Error logs by date (MM-DD-YY / uid / entryId) ────────────────────────
+    "error_logs_by_date": {
+      "$date": {
+        "$uid": {
+          ".read":  "auth != null && auth.uid == $uid",
+          ".write": false
+        }
       }
     },
 

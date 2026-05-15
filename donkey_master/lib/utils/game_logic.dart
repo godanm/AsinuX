@@ -37,7 +37,9 @@ class GameLogic {
       }
     }
 
-    return (players: updatedPlayers, aceOfSpadesHolder: aceHolder!);
+    // aceHolder is null only if the Ace of Spades fell in the undealt remainder
+    // (odd player count). Fall back to the first player so the game can continue.
+    return (players: updatedPlayers, aceOfSpadesHolder: aceHolder ?? playerIds.first);
   }
 
   /// Resolve a completed trick.
