@@ -50,11 +50,17 @@ class _TeenPattiGameScreenState extends State<TeenPattiGameScreen> {
     AdMobService.instance.suppressAppOpenAd = true;
     _stateSub = TeenPattiService.instance
         .roomStream(widget.roomId)
-        .listen(_onState);
+        .listen(_onState, onError: (e) {
+      if ('$e'.contains('permission-denied')) return;
+      debugPrint('[TeenPatti] room stream error: $e');
+    });
     _cardsSub = TeenPattiService.instance
         .cardsStream(widget.roomId, widget.playerId)
         .listen((c) {
       if (mounted) setState(() => _myCards = c);
+    }, onError: (e) {
+      if ('$e'.contains('permission-denied')) return;
+      debugPrint('[TeenPatti] cards stream error: $e');
     });
   }
 

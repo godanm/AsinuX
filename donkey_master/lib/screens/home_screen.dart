@@ -5,10 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/app_version_service.dart';
 import '../services/auth_service.dart';
 import '../services/stats_service.dart';
+import '../services/streak_service.dart';
 import '../widgets/ad_banner_widget.dart';
+import '../widgets/streak_bonus_sheet.dart';
 import '../widgets/how_to_play_overlay.dart';
+import '../widgets/update_prompt_dialog.dart';
 import '../widgets/feedback_sheet.dart';
 import '../widgets/player_avatar.dart';
 import 'matchmaking_screen.dart';
@@ -116,12 +120,48 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) return;
       final fresh = await StatsService.instance.getStats(user.uid);
       if (mounted) setState(() => _stats = fresh);
+      await _maybeShowUpdatePrompt();
+      await _maybeShowStreakBonus(user.uid);
       _maybeShowPlayStorePrompt(fresh);
     });
     // Web deep-link: navigate to the requested game once auth is ready.
     if (kIsWeb && mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _handleWebDeepLink());
     }
+  }
+
+  Future<void> _maybeShowUpdatePrompt() async {
+    if (!mounted) return;
+    final info = await AppVersionService.instance.checkForUpdate();
+    if (info.type == UpdatePromptType.none || !mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => UpdatePromptDialog(info: info),
+    );
+    // Wait for forced dialog to be resolved before showing other prompts.
+    if (info.type == UpdatePromptType.forced) return;
+  }
+
+  Future<void> _maybeShowStreakBonus(String uid) async {
+    if (!mounted) return;
+    final status = await StreakService.instance.checkStreak(uid);
+    if (!status.canClaim || !mounted) return;
+    await Future.delayed(const Duration(milliseconds: 400));
+    if (!mounted) return;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isDismissible: false,
+      enableDrag: false,
+      builder: (_) => StreakBonusSheet(
+        status: status,
+        onClaimed: () {
+          StreakService.instance.claimStreak(uid, status.currentDay, status.reward);
+          StatsService.instance.awardBonusPoints(uid, status.reward);
+        },
+      ),
+    );
   }
 
   Future<void> _maybeShowPlayStorePrompt(PlayerStats stats) async {

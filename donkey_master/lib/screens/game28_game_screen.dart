@@ -53,7 +53,10 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
     AdMobService.instance.suppressAppOpenAd = true;
     _sub = Game28Service.instance
         .roomStream(widget.roomId)
-        .listen(_onStateChange);
+        .listen(_onStateChange, onError: (e) {
+      if ('$e'.contains('permission-denied')) return;
+      debugPrint('[Game28] room stream error: $e');
+    });
   }
 
   @override
@@ -100,6 +103,9 @@ class _Game28GameScreenState extends State<Game28GameScreen> {
         if (mounted) setState(() => _preRevealTrump = suit);
         // Share trump with bot service so bots can ask for trump when void
         if (suit != null) Game28BotService.instance.setLocalTrump(suit);
+      }, onError: (e) {
+        if ('$e'.contains('permission-denied')) return;
+        debugPrint('[Game28] trump secret stream error: $e');
       });
     } else if (state.bidWinnerId != widget.playerId && _secretSub != null) {
       _secretSub?.cancel();

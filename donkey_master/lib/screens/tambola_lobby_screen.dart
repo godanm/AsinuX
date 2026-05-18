@@ -37,7 +37,10 @@ class _TambolaLobbyScreenState extends State<TambolaLobbyScreen> {
     super.initState();
     _sub = TambolaService.instance
         .roomStream(widget.roomId)
-        .listen(_onRoomUpdate);
+        .listen(_onRoomUpdate, onError: (e) {
+      if ('$e'.contains('permission-denied')) return;
+      debugPrint('[TambolaLobby] stream error: $e');
+    });
   }
 
   @override

@@ -41,10 +41,16 @@ class _WildCardGameScreenState extends State<WildCardGameScreen> {
     super.initState();
     _gameSub = WildCardService.instance
         .gameStream(widget.roomId)
-        .listen(_onGameUpdate);
+        .listen(_onGameUpdate, onError: (e) {
+      if ('$e'.contains('permission-denied')) return;
+      debugPrint('[WildCard] game stream error: $e');
+    });
     _handSub = WildCardService.instance
         .handStream(widget.roomId, widget.playerId)
-        .listen(_onHandUpdate);
+        .listen(_onHandUpdate, onError: (e) {
+      if ('$e'.contains('permission-denied')) return;
+      debugPrint('[WildCard] hand stream error: $e');
+    });
   }
 
   @override

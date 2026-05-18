@@ -200,6 +200,12 @@
       }
     },
 
+    // ── App version gate (public read, admin-only write) ──────────────────────
+    "config": {
+      ".read": true,
+      ".write": false
+    },
+
     // ── User feedback ────────────────────────────────────────────────────────
     "feedback": {
       ".write": "auth != null"

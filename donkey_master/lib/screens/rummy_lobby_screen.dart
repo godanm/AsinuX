@@ -36,7 +36,10 @@ class _RummyLobbyScreenState extends State<RummyLobbyScreen> {
     super.initState();
     _sub = RummyService.instance
         .roomStream(widget.roomId)
-        .listen(_onRoomUpdate);
+        .listen(_onRoomUpdate, onError: (e) {
+      if ('$e'.contains('permission-denied')) return;
+      debugPrint('[RummyLobby] stream error: $e');
+    });
   }
 
   @override

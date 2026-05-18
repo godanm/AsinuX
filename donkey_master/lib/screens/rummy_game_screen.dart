@@ -88,7 +88,7 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
     AdMobService.instance.suppressAppOpenAd = true;
     _sub = RummyService.instance
         .gameStream(widget.roomId, widget.playerId, widget.botIds)
-        .listen(_onStateChange);
+        .listen(_onStateChange, onError: _onStreamError);
   }
 
   @override
@@ -96,6 +96,11 @@ class _RummyGameScreenState extends State<RummyGameScreen> {
     AdMobService.instance.suppressAppOpenAd = false;
     _sub?.cancel();
     super.dispose();
+  }
+
+  void _onStreamError(Object e) {
+    if ('$e'.contains('permission-denied')) return;
+    debugPrint('[RummyGame] stream error: $e');
   }
 
   void _onStateChange(RummyGameState? state) {

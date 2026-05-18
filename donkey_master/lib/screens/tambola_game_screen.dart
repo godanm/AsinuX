@@ -51,10 +51,16 @@ class _TambolaGameScreenState extends State<TambolaGameScreen> {
     super.initState();
     _gameSub = TambolaService.instance
         .gameStream(widget.roomId)
-        .listen(_onGameUpdate);
+        .listen(_onGameUpdate, onError: (e) {
+      if ('$e'.contains('permission-denied')) return;
+      debugPrint('[Tambola] game stream error: $e');
+    });
     _ticketSub = TambolaService.instance
         .ticketStream(widget.roomId, widget.playerId)
-        .listen(_onTicketUpdate);
+        .listen(_onTicketUpdate, onError: (e) {
+      if ('$e'.contains('permission-denied')) return;
+      debugPrint('[Tambola] ticket stream error: $e');
+    });
     TambolaService.instance
         .readAllTickets(widget.roomId)
         .then((t) {
