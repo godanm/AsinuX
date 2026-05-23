@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import '../models/game_state.dart';
 import '../models/player_model.dart';
 import '../services/firebase_service.dart';
@@ -62,6 +63,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
     Clipboard.setData(ClipboardData(text: code));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Room code copied!')),
+    );
+  }
+
+  void _shareCode(String code) {
+    Share.share(
+      'Join my Donkey (Kazhutha) game on Tricksy! 🃏\n'
+      'Room code: $code\n'
+      'Play free: https://tricksy.app',
     );
   }
 
@@ -161,6 +170,13 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                         color: Colors.white54),
                                     onPressed: () =>
                                         _copyCode(state.roomCode),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.share_rounded,
+                                        color: Colors.white54),
+                                    tooltip: 'Share invite',
+                                    onPressed: () =>
+                                        _shareCode(state.roomCode),
                                   ),
                                 ],
                               ),

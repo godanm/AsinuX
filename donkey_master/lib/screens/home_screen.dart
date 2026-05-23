@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/app_version_service.dart';
@@ -231,6 +232,15 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _shareApp() {
+    Share.share(
+      'Play free card games online! 🃏\n'
+      'Donkey, Rummy, Teen Patti, Game 28 & more — no sign-up needed.\n'
+      '📱 Android: https://play.google.com/store/apps/details?id=com.asinux.app\n'
+      '🌐 Browser: https://tricksy.app',
+    );
+  }
+
   void _openSettings() {
     showModalBottomSheet(
       context: context,
@@ -352,6 +362,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         icon: const Icon(Icons.help_outline_rounded, color: Colors.white54, size: 24),
                         tooltip: 'How to play',
                         onPressed: () => showHowToPlay(context),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.share_rounded, color: Colors.white54, size: 24),
+                        tooltip: 'Share Tricksy',
+                        onPressed: _shareApp,
                       ),
                       IconButton(
                         icon: const Icon(Icons.outlined_flag, color: Colors.white54, size: 22),
