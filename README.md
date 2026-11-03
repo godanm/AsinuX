@@ -30,7 +30,8 @@ Eight games in one Flutter app. Play against the computer in Kazhutha, Game 28, 
 
 | Route | Behaviour |
 |---|---|
-| `/` | Home screen — all 8 game cards |
+| `/` | Static Learn, Practice and Play homepage |
+| `/play` | Flutter lobby with all eight games |
 | `/kazhutha` | Opens the Kazhutha bot table flow |
 | `/rummy` | Opens app → auto-navigates to Rummy matchmaking |
 | `/game-28` | Opens the Game 28 bot table flow |
@@ -40,7 +41,7 @@ Eight games in one Flutter app. Play against the computer in Kazhutha, Game 28, 
 | `/tambola` | Opens app → auto-navigates to Tambola matchmaking |
 | `/wildcard` | Opens app → auto-navigates to Wild Card matchmaking |
 
-Hosting serves the Flutter shell on the eight game paths, including mixed-case paths and an optional trailing slash. Game paths send `X-Robots-Tag: noindex`. After anonymous sign-in, `HomeScreen._handleWebDeepLink()` opens the game and suppresses the first-launch dialog.
+Hosting serves the Flutter shell on the lobby and eight game paths, including mixed-case paths and an optional trailing slash. Game paths send `X-Robots-Tag: noindex`. After anonymous sign-in, `HomeScreen._handleWebDeepLink()` opens the game and suppresses the first-launch dialog.
 
 The home-screen share action links to the app root. Public matchmaking keeps room IDs in Flutter navigation state. The standalone Kazhutha lobby contains copy/share code controls, but the current app entry points do not open that lobby or expose a join-by-code form. There is no web invite URL or room-code query parameter to route. Unknown URLs return the custom 404 page.
 

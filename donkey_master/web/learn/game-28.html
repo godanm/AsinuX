@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Learn and practice Game 28 — Tricksy</title>
+<meta name="description" content="Practice Game 28 card points, partnership bidding, trump selection and trick winners with worked examples.">
+<link rel="canonical" href="https://www.tricksy.app/learn/game-28.html">
+<link rel="stylesheet" href="/learn.css">
+<script defer src="/practice.js"></script>
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+<header class="wrap"><a class="brand" href="/">Tricksy</a>
+<nav aria-label="Main"><a href="/#learn">Learn</a><a href="/#practice">Practice</a><a href="/play">Play</a><a href="/how-to-play.html">Rules</a></nav>
+</header>
+<main class="wrap" id="content">
+<h1>Learn Game 28</h1>
+<p>Four seats form two partnerships, with partners opposite each other. Tricksy’s game link starts a table with three bots. Each team tries to collect card points in tricks, and the bidding team must meet its bid.</p>
+<p><a class="action" href="/game-28">Play Game 28</a> <a href="/games/28.html">Rules reference</a> · <a href="/blog/game-28-beginners-guide.html">Strategy guide</a></p>
+<h2>Rank and value answer different questions</h2>
+<p>Only seven through ace are used, eight ranks in four suits. Within a suit, strongest to weakest is <strong>J, 9, A, 10, K, Q, 8, 7</strong>. The jack contributes 3 points, the nine 2, and the ace and ten 1 each. The other four ranks contribute zero. Across four suits the deck contains 28 points.</p>
+<h2>Deal and bid in two stages</h2>
+<p>Each seat sees four cards before bidding. The opening bidder must bid, and bids must rise within 14–28. Passing removes a bidder from the auction. To overtake a partner’s bid, your bid must also be at least 20. A bid of 28 declares Thani and ends bidding immediately.</p>
+<p>The winner picks a trump suit from the opening cards offered by the interface. The second four cards are then dealt. The seat after the bid winner leads the first trick.</p>
+<h2>Follow suit and apply trump</h2>
+<p>Follow the lead suit if you can. When void, an off-suit card is allowed. Trump starts hidden. When revealed, a trump on the table beats all non-trumps. If the current player requests the reveal while void, they must play trump if they hold it. The highest eligible card wins, its side receives the points on the table, and the winner leads next if the round continues.</p>
+<h2 id="practice">Practice with a four-card opening</h2>
+<ul class="cards" aria-label="Cards"><li>J of hearts</li><li>9 of hearts</li><li>A of clubs</li><li>7 of diamonds</li></ul>
+<fieldset data-calculator hidden>
+<legend>Add the points in this sample hand</legend><label><input type="checkbox" value="3">Jack of hearts</label><label><input type="checkbox" value="2">Nine of hearts</label><label><input type="checkbox" value="1">Ace of clubs</label><label><input type="checkbox" value="0">Seven of diamonds</label><output aria-live="polite"></output></fieldset>
+<details><summary>Read the point calculation</summary>
+<p>Jack 3 + nine 2 + ace 1 + seven 0 = 6 card points. A bid is a team target across all tricks, not the sum of your opening hand.</p></details>
+<fieldset data-exercise hidden>
+<legend>Your partner holds the bid at 16. What is the smallest legal raise?</legend><button type="button" data-feedback="A raise over your partner must reach at least 20.">17</button><button type="button" data-feedback="Correct. It exceeds 16 and meets the partner minimum.">20</button><output aria-live="polite"></output></fieldset>
+<details><summary>Read the explanation</summary>
+<p>Twenty is the smallest legal raise. Passing remains an option once there is a bid.</p></details>
+<fieldset data-exercise hidden>
+<legend>Which offered suit holds both of your strongest cards?</legend><button type="button" data-feedback="Correct. The jack and nine are the top ranks in hearts.">Hearts</button><button type="button" data-feedback="Clubs contains an ace, below a jack and a nine within its own suit.">Clubs</button><button type="button" data-feedback="The seven is the weakest rank in diamonds.">Diamonds</button><output aria-live="polite"></output></fieldset>
+<details><summary>Read the explanation</summary>
+<p>Hearts gives you two strong trumps from the known cards. The unseen deal and your partner’s cards still matter.</p></details>
+<ul class="cards" aria-label="Cards"><li>Lead · J of clubs</li><li>Follow · 9 of clubs</li><li>Void · 7 of hearts</li><li>Follow · A of clubs</li></ul>
+<fieldset data-exercise hidden>
+<legend>Hearts is revealed trump. Who wins this trick?</legend><button type="button" data-feedback="The jack leads clubs but loses to a revealed trump.">Jack of clubs</button><button type="button" data-feedback="Correct. Even the lowest trump beats a non-trump.">Seven of hearts</button><output aria-live="polite"></output></fieldset>
+<details><summary>Read the explanation</summary>
+<p>The seven of hearts wins. The trick is worth 6 card points from the jack, nine and ace of clubs.</p></details>
+<h2>From card points to match points</h2>
+<p>The bidding side earns the round if its card-point total meets the bid. Otherwise the defending side scores. A standard bid is worth one game point, a bid of at least 20 is worth two, and a bidding-side sweep of all 28 card points earns three. A failed declared Thani gives the defenders three. The match ends when a side reaches its configured target.</p>
+<h2>FAQ</h2>
+<details><summary>Do I need the strongest card to contribute points?</summary>
+<p>No. Your partner can win the trick and collect the points from all cards in it. Consider what your card adds and which side is currently winning.</p></details>
+<details><summary>Are card points the same as the bid?</summary>
+<p>The bid is a target. The points captured across tricks determine whether the team reaches it. Game points are then awarded for the round.</p></details>
+</main>
+<footer class="wrap"><a href="/about.html">About</a> · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a> · <a href="/#help">Help</a> · <a href="/blog/">Articles</a></footer>
+</body>
+</html>

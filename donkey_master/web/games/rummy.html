@@ -41,7 +41,6 @@
     footer p{font-size:12px;color:rgba(255,255,255,.25);margin:0}
     footer a{color:rgba(255,255,255,.4);margin:0 8px;text-decoration:none}
   </style>
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9287774769346149" crossorigin="anonymous"></script>
 </head>
 <body>
   <header>
@@ -67,9 +66,9 @@
 
   <div class="container">
     <h1>🀄 13-Card Rummy</h1>
-    <p class="subtitle">13 cards · 2–6 players · Declare to win · For entertainment only</p>
+    <p class="subtitle">13 cards · 2, 4, or 6 seats · Declare to win · For entertainment only</p>
 
-    <a class="cta" href="/">Play Now — Free</a>
+    <a class="cta" href="/rummy">Play Now — Free</a>
 
     <h2>How to Play</h2>
 
@@ -77,7 +76,7 @@
       <h3><span>🏆</span> Objective</h3>
       <p>Each player is dealt 13 cards. On your turn, draw one card and discard one. Arrange all 13 cards into valid melds and declare. The first valid declaration wins — all other players score penalty points.</p>
       <ul>
-        <li>2–6 players, standard 52-card deck plus printed Jokers</li>
+        <li>2, 4, or 6 seats, standard 52-card deck plus printed Jokers</li>
         <li>One card is randomly chosen as the Wild Joker at the start</li>
         <li>You must have at least one Pure Sequence to declare</li>
         <li>Lowest penalty score wins over multiple rounds</li>
@@ -104,7 +103,7 @@
       <ul>
         <li><strong>Printed Joker</strong> — the physical Joker card in the deck. Always a wildcard.</li>
         <li><strong>Wild Joker</strong> — one rank is randomly chosen at the start (e.g., all 8s become Jokers). Any card of that rank, in any suit, acts as a Joker.</li>
-        <li>Jokers score 0 penalty points if left unmelded when another player declares.</li>
+        <li>Printed jokers count zero in the scoring function. A rank-based wild card is scored by its face rank when it remains in a losing hand.</li>
       </ul>
     </div>
 
@@ -132,10 +131,10 @@
 
     <div class="rule">
       <h3><span>🔢</span> Scoring &amp; Penalties</h3>
-      <p>When someone declares, all other players count the points of their unmelded cards. Face cards (J, Q, K, A) are worth 10 points each. Number cards are worth their face value. Jokers are worth 0.</p>
+      <p>When someone declares, all other players count the points of cards remaining in the hand. Tens and face cards (J, Q, K) are worth 10 points each. Aces are 1 point. Other number cards keep their face value, and printed jokers are zero.</p>
       <ul>
         <li>Winner scores 0 points</li>
-        <li>Other players score the sum of their unmelded card values, capped at 80</li>
+        <li>Other players score the sum of the card values in their remaining hand, capped at 80</li>
         <li>Invalid declaration: 80 points (automatic)</li>
         <li>First Drop (leaving before drawing): 20 points</li>
         <li>Middle Drop (leaving after drawing at least once): 40 points</li>
@@ -152,10 +151,13 @@
         <li><strong>Watch the discard pile.</strong> The card your opponent discards tells you what they don't need — and sometimes reveals their hand. Never pick from the discard pile if it telegraphs your meld to everyone.</li>
         <li><strong>Hold onto Jokers.</strong> A Joker is your most flexible card. Don't waste it in a Set when it could complete a critical Sequence that unlocks your declaration.</li>
         <li><strong>Drop early if your hand is bad.</strong> Starting with scattered high cards and no runs? Drop immediately for 20 points rather than risk 80. Over multiple rounds, disciplined drops add up.</li>
-        <li><strong>Discard high cards first.</strong> If you haven't melded your Aces or face cards, they'll cost 10 points each if someone else declares. Dump them early unless they're part of a forming meld.</li>
+        <li><strong>Discard high cards first.</strong> A ten or face card still in your hand costs 10 points if someone else declares. Dump them early unless they're part of a forming meld.</li>
         <li><strong>Track what's been discarded.</strong> If three 7s have been discarded, the fourth 7 will never complete your Set. Abandon that group and reorganise.</li>
       </ul>
     </div>
+
+    <h2>Why a grouped hand can still lose points</h2>
+    <div class="rule"><p>Suppose an opponent declares while you hold A♣, 9♦ and K♠ among your remaining cards. Those three cards add 20 points toward your capped score, even if you have already grouped them on screen. A printed joker adds zero.</p></div>
 
     <h2>Frequently Asked Questions</h2>
 
@@ -174,11 +176,11 @@
       </div>
       <div class="faq-item">
         <h4>Can a Wild Joker be used in a Pure Sequence?</h4>
-        <p>No. If the Wild Joker is, say, the 8 of Hearts — and you have 6♠ 7♠ 8♠ — that is a Pure Sequence (8♠ used as a natural card, not as a Joker). But if you use any wild-rank card as a substitute for a missing card, that sequence becomes impure.</p>
+        <p>No. The declaration validator treats every card of the wild rank as a joker. If eights are wild, choose a different run for your pure sequence.</p>
       </div>
       <div class="faq-item">
         <h4>What's the maximum penalty?</h4>
-        <p>80 points per round, regardless of how many unmelded high cards you hold. An invalid declaration also results in exactly 80 points.</p>
+        <p>80 points per round, regardless of how many high cards you hold. An invalid declaration also results in exactly 80 points.</p>
       </div>
       <div class="faq-item">
         <h4>Is Rummy gambling?</h4>
@@ -186,23 +188,23 @@
       </div>
     </div>
 
-    <a class="cta" href="/">Play Rummy Free Now</a>
+    <a class="cta" href="/rummy">Play Rummy Free Now</a>
 
     <h2>More Games</h2>
     <div class="game-grid">
       <a class="game-card" href="/games/kazhutha.html"><span>🃏</span><strong>Donkey</strong><span>Trick-taking · 4 players</span></a>
-      <a class="game-card" href="/games/teen-patti.html"><span>🌹</span><strong>Teen Patti</strong><span>3-card poker · 2–6 players</span></a>
+      <a class="game-card" href="/games/teen-patti.html"><span>🌹</span><strong>Teen Patti</strong><span>3-card poker · 2, 4, or 6 seats</span></a>
       <a class="game-card" href="/games/28.html"><span>🃏</span><strong>Game 28</strong><span>Trick-taking · 2 teams</span></a>
       <a class="game-card" href="/games/blackjack.html"><span>🃏</span><strong>Blackjack</strong><span>Beat the dealer</span></a>
       <a class="game-card" href="/games/bluff.html"><span>🤫</span><strong>Bluff</strong><span>Deception · 4 players</span></a>
       <a class="game-card" href="/games/tambola.html"><span>🎟</span><strong>Tambola</strong><span>90-number Housie</span></a>
-      <a class="game-card" href="/games/wildcard.html"><span>🃏</span><strong>Wild Card</strong><span>Color-matching · 2–6 players</span></a>
+      <a class="game-card" href="/games/wildcard.html"><span>🃏</span><strong>Wild Card</strong><span>Color-matching · 2, 4, or 6 seats</span></a>
     </div>
   </div>
 
   <footer>
     <p>
-      <a href="/">Play Tricksy</a>
+      <a href="/play">Play Tricksy</a>
       <a href="/how-to-play.html">How to Play</a>
       <a href="/privacy.html">Privacy</a>
       <a href="/terms.html">Terms</a>

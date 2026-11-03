@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Learn and practice Kazhutha — Tricksy</title>
+<meta name="description" content="Follow a Kazhutha trick, practice cuts and pickups, and see how Tricksy runs a four-seat tournament.">
+<link rel="canonical" href="https://www.tricksy.app/learn/kazhutha.html">
+<link rel="stylesheet" href="/learn.css">
+<script defer src="/practice.js"></script>
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+<header class="wrap"><a class="brand" href="/">Tricksy</a>
+<nav aria-label="Main"><a href="/#learn">Learn</a><a href="/#practice">Practice</a><a href="/play">Play</a><a href="/how-to-play.html">Rules</a></nav>
+</header>
+<main class="wrap" id="content">
+<h1>Learn Kazhutha</h1>
+<p>Kazhutha is a trick-taking game associated with Kerala. This lesson teaches the Tricksy table, where one player starts with three bots. Learn the cut rule before trying to empty your hand.</p>
+<p><a class="action" href="/kazhutha">Play Kazhutha</a> <a href="/games/kazhutha.html">Rules reference</a> · <a href="/blog/kazhutha-rules-beginners.html">Beginner walkthrough</a></p>
+<h2>Deal, follow, resolve</h2>
+<ol><li>The first deal distributes a shuffled 52-card deck across four seats, 13 per seat. The ace-of-spades holder leads with any card.</li><li>The first card sets the lead suit. A follower with that suit must play it. A follower with none can play any card and cuts the trick immediately.</li><li>With no cut, discard the trick. The highest card of the lead suit wins and its player leads again if still active. Otherwise the next seat with cards leads.</li><li>On a cut, the highest lead-suit player takes all cards already on the table and leads again. Seats that have yet to act keep their cards.</li></ol>
+<h2>Compare two tables</h2>
+<h3>All players follow hearts</h3>
+<ul class="cards" aria-label="Cards"><li>Leela · 4 of hearts</li><li>Ravi · J of hearts</li><li>Meera · 6 of hearts</li><li>Arun · K of hearts</li></ul>
+<p>Arun’s king is the highest heart. Discard all four cards. Arun leads if he still has a card.</p>
+<h3>Meera is out of hearts</h3>
+<ul class="cards" aria-label="Cards"><li>Leela · 4 of hearts</li><li>Ravi · J of hearts</li><li>Meera · A of spades</li></ul>
+<p>The spade cuts. Ravi picks up these three cards, even if the jack was his last. Arun never plays into this trick. If the spade was Meera’s last card, she escapes.</p>
+<h2 id="practice">Practice reading a trick</h2>
+<p>Use the two tables above. Each exercise also has a text explanation.</p>
+<fieldset data-exercise hidden>
+<legend>In the all-hearts trick, which card is highest?</legend><button type="button" data-feedback="The jack is below the king in Kazhutha.">Jack of hearts</button><button type="button" data-feedback="Correct. The king is the highest heart played.">King of hearts</button><output aria-live="polite"></output></fieldset>
+<details><summary>Read the explanation</summary>
+<p>The king outranks the jack, six and four.</p></details>
+<fieldset data-exercise hidden>
+<legend>When Meera cuts with the ace of spades, does Arun play?</legend><button type="button" data-feedback="The first cut ends the trick immediately.">Yes</button><button type="button" data-feedback="Correct. Arun keeps his card.">No</button><output aria-live="polite"></output></fieldset>
+<details><summary>Read the explanation</summary>
+<p>A cut resolves the trick immediately, before later seats play.</p></details>
+<fieldset data-exercise hidden>
+<legend>Who collects the three cards and leads?</legend><button type="button" data-feedback="Her spade causes the cut but is outside the lead suit.">Meera</button><button type="button" data-feedback="Correct. His jack is the highest heart already played.">Ravi</button><button type="button" data-feedback="Leading does not guarantee the pickup. Ravi played a higher heart.">Leela</button><output aria-live="polite"></output></fieldset>
+<details><summary>Read the explanation</summary>
+<p>Ravi takes all three and leads the next trick if the round continues.</p></details>
+<h2>Escape and elimination</h2>
+<p>An empty hand counts after resolution. The first escape earns one round score point. Once only one player has cards, that player is eliminated. Remaining seats are dealt again until one tournament winner remains. If the ace of spades is undealt in a later round, the first active seat opens.</p>
+<h2>Decisions worth practicing</h2>
+<p>With a jack of hearts already down, choosing a six over a king keeps you below the current high card. If someone later cuts, you avoid taking the pile. Remember which suits a player has cut, then revise that read after a pickup or a new deal.</p>
+<h2>FAQ</h2>
+<details><summary>Does a spade beat a heart?</summary>
+<p>Kazhutha has no trump. A spade on a heart lead can cause a cut but cannot be the highest heart.</p></details>
+<details><summary>Must the opening player use the ace of spades?</summary>
+<p>The ace selects the opener. The opener may choose a different card.</p></details>
+</main>
+<footer class="wrap"><a href="/about.html">About</a> · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a> · <a href="/#help">Help</a> · <a href="/blog/">Articles</a></footer>
+</body>
+</html>

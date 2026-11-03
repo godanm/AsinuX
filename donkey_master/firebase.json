@@ -82,10 +82,10 @@
       {"source": "/blog/index.html", "destination": "/blog/", "type": 301}
     ],
     "rewrites": [
-      { "regex": "(?i)^/(kazhutha|rummy|game-28|teen-patti|blackjack|bluff|tambola|wildcard)/?$", "destination": "/index.html" }
+      { "regex": "(?i)^/(play|kazhutha|rummy|game-28|teen-patti|blackjack|bluff|tambola|wildcard)/?$", "destination": "/index.html" }
     ],
     "headers": [
-      { "regex": "(?i)^/(kazhutha|rummy|game-28|teen-patti|blackjack|bluff|tambola|wildcard)/?$", "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }] },
+      { "regex": "(?i)^/(play|kazhutha|rummy|game-28|teen-patti|blackjack|bluff|tambola|wildcard)/?$", "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }] },
       {
         "source": "/flutter_bootstrap.js",
         "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
