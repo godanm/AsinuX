@@ -82,24 +82,10 @@
       {"source": "/blog/index.html", "destination": "/blog/", "type": 301}
     ],
     "rewrites": [
-      {"source": "/kazhutha", "destination": "/index.html"},
-      {"source": "/rummy", "destination": "/index.html"},
-      {"source": "/game-28", "destination": "/index.html"},
-      {"source": "/teen-patti", "destination": "/index.html"},
-      {"source": "/blackjack", "destination": "/index.html"},
-      {"source": "/bluff", "destination": "/index.html"},
-      {"source": "/tambola", "destination": "/index.html"},
-      {"source": "/wildcard", "destination": "/index.html"}
+      { "regex": "(?i)^/(kazhutha|rummy|game-28|teen-patti|blackjack|bluff|tambola|wildcard)/?$", "destination": "/index.html" }
     ],
     "headers": [
-      { "source": "/kazhutha", "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }] },
-      { "source": "/rummy", "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }] },
-      { "source": "/game-28", "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }] },
-      { "source": "/teen-patti", "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }] },
-      { "source": "/blackjack", "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }] },
-      { "source": "/bluff", "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }] },
-      { "source": "/tambola", "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }] },
-      { "source": "/wildcard", "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }] },
+      { "regex": "(?i)^/(kazhutha|rummy|game-28|teen-patti|blackjack|bluff|tambola|wildcard)/?$", "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }] },
       {
         "source": "/flutter_bootstrap.js",
         "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]

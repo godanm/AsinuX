@@ -79,7 +79,7 @@
         <li>Get closer to 21 than the dealer</li>
         <li>Go over 21 and you "bust" — instant loss</li>
         <li>Dealer busts? You win automatically</li>
-        <li>Equal totals = push (bet returned, no chips won or lost)</li>
+        <li>Equal final totals = push (chip balance unchanged)</li>
       </ul>
     </div>
 
@@ -100,7 +100,7 @@
       <ul>
         <li><strong>Hit</strong> — draw another card to increase your total</li>
         <li><strong>Stand</strong> — keep your current hand and end your turn</li>
-        <li><strong>Double Down</strong> — double your bet, draw exactly one more card, then stand automatically. Only available on your first two cards.</li>
+        <li><strong>Double Down</strong> — double your bet, draw exactly one more card, then stand automatically. Available on your first two cards when you can cover twice the stake.</li>
       </ul>
     </div>
 
@@ -111,7 +111,7 @@
         <li>Dealer always hits until reaching 17 or higher</li>
         <li>Dealer stands on 17, 18, 19, 20, and 21</li>
         <li>The hidden card is revealed after you Stand or Bust</li>
-        <li>If the dealer busts, all players still in the hand win</li>
+        <li>If the dealer busts after your turn, you win</li>
       </ul>
     </div>
 
@@ -120,8 +120,8 @@
       <p>Your winnings depend on how you won. Blackjack (natural 21 on the first two cards) pays a special bonus above a regular win.</p>
       <ul>
         <li>Regular win → +1× your bet</li>
-        <li>Blackjack (Ace + 10-value card) → +1.5× your bet</li>
-        <li>Push (tie) → bet returned, no gain or loss</li>
+        <li>Blackjack (Ace + 10-value card) → +1.5× your bet, rounded to the nearest whole chip</li>
+        <li>Push (tie) → chip balance unchanged</li>
         <li>Bust or lower total → lose your bet</li>
       </ul>
     </div>
@@ -143,19 +143,19 @@
       </div>
       <div class="faq-item">
         <h4>When should I Double Down?</h4>
-        <p>Double Down is strongest when your two cards total 10 or 11 — you have a high probability of drawing a 10-value card and ending up with 20 or 21. Also consider doubling on 9 if the dealer shows a 3, 4, 5, or 6 (the "bust zone").</p>
+        <p>Consider whether you are comfortable committing to one draw at twice the stake. With 11, a ten-value card gives you 21. A low draw leaves you at a lower total with no further Hit available.</p>
       </div>
       <div class="faq-item">
         <h4>What happens if both I and the dealer get Blackjack?</h4>
-        <p>It's a push — your bet is returned and no chips are won or lost. Both having natural Blackjack on the same hand results in a tie.</p>
+        <p>It’s a push. Your chip balance stays the same.</p>
       </div>
       <div class="faq-item">
         <h4>Can the dealer get Blackjack?</h4>
-        <p>Yes. If the dealer's hidden card combines with their visible card to make an Ace + 10-value hand, they have Blackjack. This beats any non-Blackjack player hand, including totals of 21 built with 3+ cards.</p>
+        <p>Yes. If the dealer's hidden card combines with their visible card to make an Ace + 10-value hand, they have Blackjack. If you also have a natural, the result is a push. When the dealer plays out a hand, equal final totals push, including a player’s later 21 against a dealer’s two-card 21.</p>
       </div>
       <div class="faq-item">
         <h4>Does Tricksy use a single deck or multiple decks?</h4>
-        <p>Tricksy uses a standard single-deck variant for simplicity and speed. The deck is reshuffled before each hand, so there is no card counting advantage.</p>
+        <p>Tricksy draws from one shuffled standard deck at a time. Before a draw, the game replaces the deck with a freshly shuffled one if fewer than 15 cards remain. This can happen during a hand.</p>
       </div>
       <div class="faq-item">
         <h4>Is Blackjack on Tricksy gambling?</h4>

@@ -55,13 +55,26 @@
     <main>
       <h1>Tricksy Blackjack: Hit, Stand or Double Down</h1>
       <p><a href="/games/blackjack.html">Read the full rules</a> · <a href="/blog/">All guides</a></p>
-      <p>Tricksy Blackjack pairs you with a computer dealer and uses virtual chips. Your choices are Hit, Stand and, on an eligible two-card hand, Double Down.</p>
-      <h2>Try a hard and a soft total</h2>
-      <p>Ten and seven form a hard 17. Drawing a five takes that hand to 22. An ace and a six form a soft 17. Drawing the same five gives 12 because the ace can count as 1. Check how the ace is counted before deciding whether another card can bust the hand.</p>
+      <p>Tricksy Blackjack is a solo game against a computer dealer using virtual chips. Start by choosing a stake and dealing two cards to each side. One dealer card is visible. Your goal is to finish with a higher total than the dealer without going over 21, or to stay at 21 or below while the dealer busts.</p>
+      <h2>Count the same draw on a hard and a soft hand</h2>
+      <p>Number cards keep their face value and jacks, queens and kings count as ten. The game starts each ace at 11 and subtracts ten for each ace it needs to count as 1. A total is <em>soft</em> when an ace still counts as 11.</p>
+      <ul>
+        <li><strong>Hard 17:</strong> Ten plus seven is 17. Drawing a five makes 22, so you bust.</li>
+        <li><strong>Soft 17:</strong> Ace plus six is 17. Drawing the same five changes the ace to 1 and gives you 12.</li>
+        <li><strong>Two aces:</strong> Ace, ace and nine total 21. One ace counts as 11 and the other as 1. This is a three-card 21.</li>
+      </ul>
       <h2>Read the dealer’s visible card</h2>
-      <p>The dealer keeps drawing below 17 and stands on 17 or higher. If you stand on 18 and the dealer has 16, the dealer must draw. A two ties your 18, a three beats it and a six makes the dealer bust.</p>
-      <h2>Know when your turn ends</h2>
-      <p>Hit leaves you free to act again if the hand continues. Stand sends play to the dealer. Double Down increases the virtual stake, draws exactly one card and ends your turn. A pair stays in one hand in this version.</p>
+      <p>Standing hands play over to the dealer. The dealer reveals the hidden card, draws below 17 and stops at 17 or higher, including a soft 17. The visible card is only part of that total. A visible six could make 17 with an ace or 16 with a ten.</p>
+      <p>If you stand on 18 and the dealer reveals a total of 16, the dealer must draw. A two makes 18 and pushes. A three makes 19 and beats your hand. A six makes 22 and gives you the win. This is why choosing Stand on 18 can lead to several different outcomes.</p>
+      <h2>Compare Hit, Stand and Double Down</h2>
+      <ul>
+        <li><strong>Hit</strong> draws one card. If the new total exceeds 21, you lose the stake. Otherwise you can choose another action.</li>
+        <li><strong>Stand</strong> keeps your current total and lets the dealer finish.</li>
+        <li><strong>Double Down</strong> appears on your first two cards if you can cover twice the stake. It doubles the stake, draws exactly one card and ends your turn. If the draw busts you, the hand ends immediately.</li>
+      </ul>
+      <p>For example, with a six and a five at a 50-chip stake, a queen after Double Down gives you 21 with 100 chips at stake. If the dealer finishes at 20, you gain 100 chips. If the dealer finishes at 21, the result is a push and your balance stays the same. With Hit instead, your stake would stay at 50. Pairs stay together in a single hand.</p>
+      <h2>Tell a natural blackjack from a later 21</h2>
+      <p>An ace and a ten-value card on the initial deal form a natural blackjack. If you have one, the game immediately checks the dealer’s two cards. Two naturals push. A player natural on its own adds 1.5 times the stake, rounded to a whole chip. A 25-chip stake adds 38 chips. For a hand played out through the dealer’s turn, Tricksy compares final totals. A later 21 ties a dealer total of 21, even if the dealer reached it with two cards.</p>
       <a class="cta" href="/blackjack">Play on Tricksy</a>
     </main>
   </div>
