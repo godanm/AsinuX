@@ -1,37 +1,15 @@
-# AdSense Setup — AsinuX Web
+# AdSense review for Tricksy web
 
-## Status
-- [ ] AdSense account approved
-- [ ] Domain kazhutha.app connected to Firebase
-- [ ] Verification script added to index.html
-- [ ] Ad units created
-- [ ] Ad slots added to game
+## Site and verification
 
-## Step 1 — After AdSense approval
-Google will give you a verification script like:
-```html
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXXX"
-     crossorigin="anonymous"></script>
-```
-Paste this to Claude and it will inject it into `web/index.html` and redeploy.
+The public pages use `https://www.tricksy.app/` in their canonical tags, sitemap and robots file. Firebase Hosting may also serve the app on other connected domains. Check the preferred host and any domain redirects in the Firebase console before requesting review.
 
-## Step 2 — Create Ad Units in AdSense Console
-Recommended units for AsinuX:
-1. **Display ad** — for home screen / between games (responsive)
-2. **In-article ad** — for results/stats screen
+In AdSense, open the site entry and follow the verification instructions shown there. This repository already publishes `donkey_master/web/ads.txt` and loads the AdSense script on editorial pages. Check that the live `/ads.txt` returns HTTP 200 and that its publisher ID matches the AdSense account. Search Console verification is separate from AdSense verification.
 
-## Step 3 — Where to place ads in the app
-- Home screen: banner below the PLAY NOW button
-- Results screen: between round result and Next Round button
-- Stats screen: bottom of page
+## Preview before publishing
 
-## AdSense vs AdMob
-| | AdSense | AdMob |
-|---|---|---|
-| Platform | Web only | Android / iOS |
-| Approval | Site-level, 1–14 days | App-level, after Play Store publish |
-| Status | Waiting for approval | Test IDs active, real IDs ready |
+Run `flutter build web --release --pwa-strategy=none` in `donkey_master`, then run `firebase emulators:start --only hosting --project demo-tricksy` to preview locally. Check the app root, game links, guide redirects, privacy and terms pages, and an unknown URL. Unknown URLs should return HTTP 404. The eight playable game links should still open the app and send `X-Robots-Tag: noindex`.
 
-## Publisher ID
-(fill in after approval)
-`ca-pub-XXXXXXXXXXXXXXXXX`
+After an approved Hosting release, verify the same routes on the public domain, submit `/sitemap.xml` in Search Console and inspect representative guide URLs. Review the site status, verification and privacy messaging in the AdSense account, including any consent requirements for the regions served. Keep ads away from navigation and game controls.
+
+[AdSense site readiness](https://support.google.com/adsense/answer/7299563) · [Ads.txt setup](https://support.google.com/adsense/answer/12171612) · [Google consent requirements](https://support.google.com/adsense/answer/13554116)
