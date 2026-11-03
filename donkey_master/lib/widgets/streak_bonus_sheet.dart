@@ -82,12 +82,14 @@ class _StreakBonusSheetState extends State<StreakBonusSheet> {
               final tileDay = i + 1;
               final isPast = tileDay < day;
               final isCurrent = tileDay == day;
-              return _DayTile(
-                day: tileDay,
-                pts: kStreakRewards[i],
-                isPast: isPast,
-                isCurrent: isCurrent,
-              ).animate(delay: (i * 60).ms).fadeIn(duration: 250.ms).scale(begin: const Offset(0.8, 0.8));
+              return Expanded(
+                child: _DayTile(
+                  day: tileDay,
+                  pts: kStreakRewards[i],
+                  isPast: isPast,
+                  isCurrent: isCurrent,
+                ).animate(delay: (i * 60).ms).fadeIn(duration: 250.ms).scale(begin: const Offset(0.8, 0.8)),
+              );
             }),
           ),
 
@@ -181,30 +183,28 @@ class _DayTile extends StatelessWidget {
       textColor = Colors.white38;
     }
 
-    return Expanded(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 3),
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: bg,
-          border: Border.all(color: border, width: isCurrent ? 1.5 : 1),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Column(
-          children: [
-            isPast
-                ? Icon(Icons.check_rounded, color: textColor, size: 14)
-                : Text(
-                    'D$day',
-                    style: TextStyle(color: textColor, fontSize: 10, fontWeight: FontWeight.w700),
-                  ),
-            const SizedBox(height: 3),
-            Text(
-              '${pts >= 1000 ? '${pts ~/ 1000}k' : pts}',
-              style: TextStyle(color: textColor, fontSize: 9, fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 3),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: bg,
+        border: Border.all(color: border, width: isCurrent ? 1.5 : 1),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        children: [
+          isPast
+              ? Icon(Icons.check_rounded, color: textColor, size: 14)
+              : Text(
+                  'D$day',
+                  style: TextStyle(color: textColor, fontSize: 10, fontWeight: FontWeight.w700),
+                ),
+          const SizedBox(height: 3),
+          Text(
+            '${pts >= 1000 ? '${pts ~/ 1000}k' : pts}',
+            style: TextStyle(color: textColor, fontSize: 9, fontWeight: FontWeight.w600),
+          ),
+        ],
       ),
     );
   }
