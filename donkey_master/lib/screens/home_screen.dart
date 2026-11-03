@@ -51,12 +51,15 @@ class _HomeScreenState extends State<HomeScreen> {
     '/tambola', '/wildcard',
   };
 
+  String get _webGamePath =>
+      Uri.base.path.toLowerCase().replaceFirst(RegExp(r'/$'), '');
+
   @override
   void initState() {
     super.initState();
     // Detect deep link synchronously before the first-launch dialog is scheduled,
     // so we can suppress it when the user arrived via a game URL.
-    if (kIsWeb && _kDeepLinkPaths.contains(Uri.base.path.toLowerCase())) {
+    if (kIsWeb && _kDeepLinkPaths.contains(_webGamePath)) {
       _suppressFirstLaunch = true;
     }
     _loadName();
@@ -195,7 +198,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _handleWebDeepLink() {
     if (!mounted) return;
-    switch (Uri.base.path.toLowerCase()) {
+    switch (_webGamePath) {
       case '/kazhutha':
         Navigator.push(context, MaterialPageRoute(builder: (_) => MatchmakingScreen(playerName: _playerName)));
       case '/rummy':

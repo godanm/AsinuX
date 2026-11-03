@@ -1,6 +1,6 @@
 # Tricksy — AsinuX Card Games
 
-Eight multiplayer card games in one Flutter app. Play online with real players or bots across Kazhutha, Rummy, Game 28, Teen Patti, Blackjack, Bluff, Tambola, and Wild Card.
+Eight games in one Flutter app. Play against the computer in Kazhutha, Game 28, Teen Patti, Blackjack and Bluff, or use public matchmaking in Rummy, Tambola and Wild Card.
 
 ## Live App
 
@@ -16,9 +16,9 @@ Eight multiplayer card games in one Flutter app. Play online with real players o
 | Kazhutha | Trick-taking — avoid being the Donkey | 4 |
 | Rummy | 13-card Indian Rummy — declare to win | 2–6 |
 | Game 28 | Bidding + trick-taking (teams) | 4 |
-| Teen Patti | 3-card Indian poker | 2–6 |
+| Teen Patti | 3-card Indian poker | 1 player and 3 bots |
 | Blackjack | Beat the dealer to 21 | 1 vs bot |
-| Bluff | Deception — empty your hand first | 2–6 |
+| Bluff | Deception — empty your hand first | 1 player and 3 bots |
 | Tambola | 90-number Housie / Bingo | 2–6 |
 | Wild Card | UNO-style colour matching | 2–6 |
 
@@ -26,37 +26,42 @@ Eight multiplayer card games in one Flutter app. Play online with real players o
 
 ## Web Routes
 
-### Flutter app (catch-all → `index.html`)
+### Flutter app
 
 | Route | Behaviour |
 |---|---|
-| `/` | Home screen — all 8 game cards |
-| `/kazhutha` | Opens app → auto-navigates to Kazhutha matchmaking |
+| `/` | Static Learn, Practice and Play homepage |
+| `/play` | Flutter lobby with all eight games |
+| `/kazhutha` | Opens the Kazhutha bot table flow |
 | `/rummy` | Opens app → auto-navigates to Rummy matchmaking |
-| `/game-28` | Opens app → auto-navigates to Game 28 matchmaking |
-| `/teen-patti` | Opens app → auto-navigates to Teen Patti matchmaking |
+| `/game-28` | Opens the Game 28 bot table flow |
+| `/teen-patti` | Opens the Teen Patti bot table flow |
 | `/blackjack` | Opens app → auto-navigates to Blackjack game |
 | `/bluff` | Opens app → auto-navigates to Bluff game |
 | `/tambola` | Opens app → auto-navigates to Tambola matchmaking |
 | `/wildcard` | Opens app → auto-navigates to Wild Card matchmaking |
 
-Deep-link routing is handled in `HomeScreen._handleWebDeepLink()` — reads `Uri.base.path` after auth completes and pushes the target screen. The first-launch dialog is suppressed on deep-link arrivals via `_kDeepLinkPaths`.
+Hosting serves the Flutter shell on the lobby and eight game paths, including mixed-case paths and an optional trailing slash. Game paths send `X-Robots-Tag: noindex`. After anonymous sign-in, `HomeScreen._handleWebDeepLink()` opens the game and suppresses the first-launch dialog.
 
-### Static HTML pages (explicit Firebase Hosting rewrites)
+The home-screen share action links to the app root. Public matchmaking keeps room IDs in Flutter navigation state. The standalone Kazhutha lobby contains copy/share code controls, but the current app entry points do not open that lobby or expose a join-by-code form. There is no web invite URL or room-code query parameter to route. Unknown URLs return the custom 404 page.
+
+### Static HTML pages
 
 | Route | File | Description |
 |---|---|---|
-| `/games/kazhutha` | `web/games/kazhutha.html` | Kazhutha rules + SEO |
-| `/games/rummy` | `web/games/rummy.html` | Rummy rules + SEO |
-| `/games/28` | `web/games/28.html` | Game 28 rules + SEO |
-| `/games/teen-patti` | `web/games/teen-patti.html` | Teen Patti rules + SEO |
-| `/games/blackjack` | `web/games/blackjack.html` | Blackjack rules + SEO |
-| `/games/bluff` | `web/games/bluff.html` | Bluff rules + SEO |
-| `/games/tambola` | `web/games/tambola.html` | Tambola rules + SEO |
-| `/games/wildcard` | `web/games/wildcard.html` | Wild Card rules + SEO |
-| `/how-to-play` | `web/how-to-play.html` | All-games rules hub |
-| `/about` | `web/about.html` | About page |
-| `/privacy` | `web/privacy.html` | Privacy policy |
+| `/games/kazhutha.html` | `web/games/kazhutha.html` | Kazhutha rules + SEO |
+| `/games/rummy.html` | `web/games/rummy.html` | Rummy rules + SEO |
+| `/games/28.html` | `web/games/28.html` | Game 28 rules + SEO |
+| `/games/teen-patti.html` | `web/games/teen-patti.html` | Teen Patti rules + SEO |
+| `/games/blackjack.html` | `web/games/blackjack.html` | Blackjack rules + SEO |
+| `/games/bluff.html` | `web/games/bluff.html` | Bluff rules + SEO |
+| `/games/tambola.html` | `web/games/tambola.html` | Tambola rules + SEO |
+| `/games/wildcard.html` | `web/games/wildcard.html` | Wild Card rules + SEO |
+| `/how-to-play.html` | `web/how-to-play.html` | All-games rules hub |
+| `/about.html` | `web/about.html` | About page |
+| `/privacy.html` | `web/privacy.html` | Privacy policy |
+
+Extensionless and legacy guide URLs redirect to the corresponding `.html` pages.
 
 ---
 

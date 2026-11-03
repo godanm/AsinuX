@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -17,6 +17,7 @@
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="theme-color" content="#E63946">
 
@@ -29,47 +30,68 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>Tricksy — Play 6 Card Games Online Free</title>
-  <meta name="description" content="Play Donkey, Rummy, Game 28, Teen Patti, Blackjack &amp; Bluff online free. Instant matchmaking, no sign-up needed.">
+  <title>Tricksy — Learn, Practice and Play Card Games</title>
+  <meta name="description" content="Play Kazhutha, Rummy, Game 28, Teen Patti, Blackjack, Bluff, Wild Card and Tambola. Read the rules and choose a solo or multiplayer game.">
   <meta name="google-site-verification" content="2rgvXwvmLmBdyp22XUabUC2K0d57v1Xr5oLPNHU-cCk" />
   <link rel="canonical" href="https://www.tricksy.app/" />
   <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
   <link rel="manifest" href="manifest.json">
 
   <!-- Analytics handled by firebase_analytics Flutter package (measurementId G-6MBDL2081K) -->
-</head>
+<link rel="stylesheet" href="/learn.css"></head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
-
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
-  <script src="flutter_bootstrap.js" async></script>
-
-  <!-- Visible to search crawlers when JS is not rendered -->
-  <noscript>
-    <div style="font-family:sans-serif;max-width:720px;margin:40px auto;padding:20px;color:#333">
-      <h1>Tricksy — Free Multiplayer Card Games</h1>
-      <p>Play 8 classic card games online free — no sign-up, no download required. Instant matchmaking with bots or invite friends with a room code.</p>
-      <h2>Games Available</h2>
-      <ul>
-        <li><a href="/games/kazhutha.html">Donkey (Kazhutha)</a> — classic Kerala trick-taking card game, 4 players</li>
-        <li><a href="/games/rummy.html">Indian Rummy</a> — 13-card rummy with sequences, sets and jokers</li>
-        <li><a href="/games/teen-patti.html">Teen Patti</a> — India's most popular 3-card betting game</li>
-        <li><a href="/games/28.html">Game 28</a> — Kerala trick-taking partnership game with bidding</li>
-        <li><a href="/games/blackjack.html">Blackjack</a> — beat the dealer to 21</li>
-        <li><a href="/games/bluff.html">Bluff</a> — shed cards by lying; catch other players cheating</li>
-        <li><a href="/games/wildcard.html">Wild Card</a> — fast-paced matching game with special action cards</li>
-        <li><a href="/games/tambola.html">Tambola (Housie)</a> — 90-number Indian bingo with 5 prize patterns</li>
-      </ul>
-      <h2>How It Works</h2>
-      <p>Open the app, choose a game, and play instantly. No account or sign-up required. Play against AI bots or create a private room and share a 4-letter code with friends.</p>
-      <p>All games use virtual points for entertainment only. No real money is involved.</p>
-      <p><a href="/how-to-play.html">How to play all games →</a> &nbsp;|&nbsp; <a href="/blog/">Strategy guides and tips →</a> &nbsp;|&nbsp; <a href="/about.html">About Tricksy →</a></p>
-    </div>
-  </noscript>
+<div id="website">
+<a class="skip" href="#content">Skip to content</a>
+<header class="wrap"><a class="brand" href="/">Tricksy</a>
+<nav aria-label="Main"><a href="/#learn">Learn</a><a href="/#practice">Practice</a><a href="/play">Play</a><a href="/how-to-play.html">Rules</a></nav>
+</header>
+<main class="wrap" id="content">
+<section class="hero">
+<h1>Learn, practice and play card games</h1>
+<p>Tricksy pairs playable games with instructions grounded in how each table works. Read a worked example, try a decision, then open the game in your browser.</p><a class="action" href="#practice">Try a lesson</a> <a class="action" href="/play">Open the game lobby</a></section>
+<h2 id="learn">Learn the rules</h2>
+<p>Every game has a reference guide and a direct play link.</p><div class="grid">
+<article class="panel">
+<h3>Kazhutha</h3>
+<p>Follow suit, cut the trick, and escape before the last player. Four seats, three bots.</p><a href="/games/kazhutha.html">Kazhutha rules</a> · <a href="/kazhutha">Play Kazhutha</a></article>
+<article class="panel">
+<h3>Game 28</h3>
+<p>Bid with a bot partner and take tricks with a hidden trump. Four seats, three bots.</p><a href="/games/28.html">Game 28 rules</a> · <a href="/game-28">Play Game 28</a></article>
+<article class="panel">
+<h3>Indian Rummy</h3>
+<p>Make sequences and sets before declaring. Public tables with bot fill.</p><a href="/games/rummy.html">Indian Rummy rules</a> · <a href="/rummy">Play Indian Rummy</a></article>
+<article class="panel">
+<h3>Teen Patti</h3>
+<p>Compare three-card hands and play with virtual chips against three bots.</p><a href="/games/teen-patti.html">Teen Patti rules</a> · <a href="/teen-patti">Play Teen Patti</a></article>
+<article class="panel">
+<h3>Blackjack</h3>
+<p>Read hard and soft totals against a computer dealer.</p><a href="/games/blackjack.html">Blackjack rules</a> · <a href="/blackjack">Play Blackjack</a></article>
+<article class="panel">
+<h3>Bluff</h3>
+<p>Challenge claims and empty your hand before three bots.</p><a href="/games/bluff.html">Bluff rules</a> · <a href="/bluff">Play Bluff</a></article>
+<article class="panel">
+<h3>Wild Card</h3>
+<p>Match colors, numbers and actions. Public table flow with bot fill.</p><a href="/games/wildcard.html">Wild Card rules</a> · <a href="/wildcard">Play Wild Card</a></article>
+<article class="panel">
+<h3>Tambola</h3>
+<p>Mark called numbers and claim ticket patterns. Public tables with bot fill.</p><a href="/games/tambola.html">Tambola rules</a> · <a href="/tambola">Play Tambola</a></article>
+</div>
+<h2 id="practice">Practice a decision</h2><div class="grid">
+<article class="panel">
+<h3>Kazhutha trick lab</h3>
+<p>Compare a clean trick with a cut and work out who picks up the cards.</p><a href="/learn/kazhutha.html">Practice Kazhutha</a></article>
+<article class="panel">
+<h3>Game 28 bid and trump lab</h3>
+<p>Count an opening hand, check a partner raise and resolve a trump trick.</p><a href="/learn/game-28.html">Practice Game 28</a></article>
+</div>
+<h2 id="help">Help</h2>
+<details><summary>Do I need an account?</summary>
+<p>The guides are public. The Flutter game uses Firebase anonymous sign-in when you play.</p></details>
+<details><summary>Can I join by room code?</summary>
+<p>The web game opens bot tables or public matchmaking. The current UI does not offer a private join-by-code form.</p></details>
+<p>For contact information, see <a href="/about.html">About Tricksy</a>.</p></main>
+<footer class="wrap"><a href="/about.html">About</a> · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a> · <a href="/#help">Help</a> · <a href="/blog/">Articles</a></footer>
+</div>
+<script src="/play-loader.js"></script>
 </body>
 </html>
